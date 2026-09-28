@@ -3,16 +3,9 @@
 ## Automated checks (run before every commit)
 
 ```bash
-# PHP syntax (all files)
-find . -name "*.php" -not -path "./node_modules/*" -print0 | xargs -0 -n1 php -l
-
-# JS syntax
-node --check assets/js/sccm-frontend.js
-node --check assets/js/sccm-admin.js
-
-# JS unit tests (consent logic, wildcard matching, GPC, cookie parsing)
-npm install   # first time only (dev dependency: jsdom)
-npm test
+npm install          # first time only (dev dependency: Playwright)
+npm test             # php -l on every PHP file, node --check on JS, PHP unit tests (tests/php/run.php)
+SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e   # 40 browser checks (see tests/e2e/README.md)
 ```
 
 End-to-end (optional, local): `tests/e2e/README.md` explains how to run WordPress locally

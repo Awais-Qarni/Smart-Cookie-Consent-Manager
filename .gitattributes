@@ -1,0 +1,10 @@
+# Keep development files out of the plugin zip (GitHub "Download ZIP" / git archive).
+/tests            export-ignore
+/docs             export-ignore
+/.github          export-ignore
+/package.json     export-ignore
+/package-lock.json export-ignore
+/AGENTS.md        export-ignore
+/CLAUDE.md        export-ignore
+/.gitignore       export-ignore
+/.gitattributes   export-ignore

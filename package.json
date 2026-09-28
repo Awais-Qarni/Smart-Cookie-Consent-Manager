@@ -1,0 +1,15 @@
+{
+  "name": "smart-cookie-consent-manager",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Development tooling for the Smart Cookie Consent Manager WordPress plugin (not needed to run the plugin).",
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "lint": "find . -name '*.php' -not -path './node_modules/*' -print0 | xargs -0 -n1 php -l > /dev/null && node --check assets/js/sccm-frontend.js && node --check assets/js/sccm-boot.js && node --check assets/js/sccm-admin.js && echo 'Lint OK'",
+    "test": "npm run lint && php tests/php/run.php",
+    "e2e": "node tests/e2e/run.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.50.0"
+  }
+}

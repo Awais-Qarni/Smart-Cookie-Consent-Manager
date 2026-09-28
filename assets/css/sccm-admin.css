@@ -1,0 +1,117 @@
+/* Smart Cookie Consent Manager — admin. */
+.sccm-admin .sccm-tab {
+	margin-top: 16px;
+}
+
+.sccm-cards {
+	display: grid;
+	gap: 16px;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	margin: 16px 0 24px;
+}
+
+.sccm-card,
+.sccm-panel {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	padding: 16px 20px;
+}
+
+.sccm-panel {
+	margin-bottom: 20px;
+}
+
+.sccm-card h3 {
+	margin-top: 0;
+}
+
+.sccm-card ul {
+	margin: 0;
+}
+
+.sccm-toolbar {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	justify-content: space-between;
+}
+
+.sccm-toolbar .subsubsub {
+	margin: 0;
+}
+
+.sccm-inline-form,
+.sccm-inline-forms form {
+	display: inline-block;
+	margin: 0 8px 12px 0;
+}
+
+.sccm-inline-forms {
+	margin: 12px 0 20px;
+}
+
+.sccm-filters {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 12px 0;
+}
+
+.sccm-table-admin td {
+	vertical-align: top;
+}
+
+.sccm-row-actions form {
+	display: inline-block;
+	margin: 0 4px 4px 0;
+}
+
+.sccm-row-pending {
+	background: #fff8e5 !important;
+}
+
+.sccm-status {
+	border-radius: 999px;
+	display: inline-block;
+	font-size: 12px;
+	padding: 1px 8px;
+}
+
+.sccm-status--active {
+	background: #edfaef;
+	color: #1a6b2a;
+}
+
+.sccm-status--pending {
+	background: #fcf0d9;
+	color: #8a5a00;
+}
+
+.sccm-status--ignored {
+	background: #f0f0f1;
+	color: #50575e;
+}
+
+.sccm-tag {
+	background: #eef4fa;
+	border-radius: 4px;
+	color: #135e96;
+	font-size: 11px;
+	padding: 1px 6px;
+}
+
+.sccm-break {
+	word-break: break-all;
+}
+
+.sccm-services td,
+.sccm-services th {
+	vertical-align: middle;
+}
+
+.sccm-list li {
+	margin-bottom: 4px;
+}
