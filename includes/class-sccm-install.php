@@ -15,7 +15,7 @@ class SCCM_Install {
 	/**
 	 * Database schema version. Bump when the table structure changes.
 	 */
-	const DB_VERSION = '1';
+	const DB_VERSION = '2';
 
 	/**
 	 * Option that stores the installed schema version.
@@ -60,16 +60,50 @@ class SCCM_Install {
 		self::create_tables();
 
 		if ( false === get_option( SCCM_Settings::OPTION ) ) {
-			add_option( SCCM_Settings::OPTION, SCCM_Settings::defaults(), '', false );
+			// Autoloaded: the front end reads the settings on every request, so they should arrive
+			// with the other options instead of costing an extra query.
+			add_option( SCCM_Settings::OPTION, SCCM_Settings::defaults(), '', true );
 		}
 		if ( false === get_option( 'sccm_consent_version' ) ) {
 			add_option( 'sccm_consent_version', 1 );
 		}
 
+		$previous = get_option( self::DB_VERSION_OPTION );
 		SCCM_Cookies::seed_defaults();
 		self::schedule_events();
+		if ( false !== $previous && version_compare( (string) $previous, '2', '<' ) ) {
+			self::upgrade_to_2();
+		}
 
 		update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
+	}
+
+	/**
+	 * Version 2: clean up the noisy cookie list of version 0.1.0.
+	 *
+	 *  - WordPress login cookies were listed for visitors (only logged-in users have them).
+	 *  - Unreviewed items reported by browsers (local storage keys, extension cookies…) cluttered
+	 *    the list. Real cookies are found again by the next scan.
+	 *  - The settings are now autoloaded.
+	 */
+	private static function upgrade_to_2() {
+		global $wpdb;
+		$table = SCCM_Cookies::table();
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE source = %s AND service = %s", 'default', 'wordpress' ) );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE status = %s AND source = %s", 'pending', 'scanner' ) );
+		// phpcs:enable
+		delete_option( 'sccm_pending_alert' );
+
+		$settings = get_option( SCCM_Settings::OPTION );
+		if ( is_array( $settings ) ) {
+			delete_option( SCCM_Settings::OPTION );
+			add_option( SCCM_Settings::OPTION, $settings, '', true );
+		}
+
+		// Fill the list again with what is really on the site.
+		wp_schedule_single_event( time() + MINUTE_IN_SECONDS, 'sccm_scan_event' );
 	}
 
 	/**
@@ -168,7 +202,7 @@ class SCCM_Install {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}sccm_consent_log" );
 
-		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert' ) as $option ) {
+		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates' ) as $option ) {
 			delete_option( $option );
 		}
 

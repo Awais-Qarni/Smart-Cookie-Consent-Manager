@@ -35,11 +35,12 @@ class SCCM_Settings {
 			// General.
 			'enabled'              => 1,
 			'position'             => 'bottom',   // bottom | top | bottom-left | bottom-right | center.
+			'banner_categories'    => 1,          // Show the category switches inside the banner.
 			'floating_button'      => 1,
-			'floating_position'    => 'bottom-left', // bottom-left | bottom-right.
+			'floating_position'    => 'bottom-left', // bottom-left | bottom-right | bottom-center | left-center | right-center.
 			'policy_page_id'       => 0,
 			'show_privacy_link'    => 1,
-			'consent_expiry_days'  => 365,
+			'consent_expiry_days'  => 365,        // 0 = session only; 1-395 days.
 			'reask_on_change'      => 1,
 			'reject_grace_days'    => 0,
 			'reload_on_withdraw'   => 1,
@@ -122,10 +123,12 @@ class SCCM_Settings {
 	public static function default_texts() {
 		return array(
 			'banner_title'      => __( 'We value your privacy', 'smart-cookie-consent-manager' ),
-			'banner_text'       => __( 'We use cookies to make this website work. With your consent, we also use cookies to understand how the site is used and to support our marketing. You can accept all cookies, reject non-essential cookies, or choose which ones to allow. You can change your choice at any time.', 'smart-cookie-consent-manager' ),
+			'banner_text'       => __( 'We use cookies to make this website work. With your consent, we also use cookies to understand how the site is used and to support our marketing. Choose which cookies you allow, or accept or reject them all. You can change your choice at any time.', 'smart-cookie-consent-manager' ),
 			'btn_accept'        => __( 'Accept all', 'smart-cookie-consent-manager' ),
 			'btn_reject'        => __( 'Reject non-essential', 'smart-cookie-consent-manager' ),
+			'btn_selection'     => __( 'Allow selection', 'smart-cookie-consent-manager' ),
 			'btn_manage'        => __( 'Manage preferences', 'smart-cookie-consent-manager' ),
+			'btn_details'       => __( 'Show details', 'smart-cookie-consent-manager' ),
 			'btn_save'          => __( 'Save preferences', 'smart-cookie-consent-manager' ),
 			'prefs_title'       => __( 'Cookie preferences', 'smart-cookie-consent-manager' ),
 			'prefs_text'        => __( 'Choose which cookies you allow. Necessary cookies are always on because the website cannot work without them. Other cookies are only used if you switch them on.', 'smart-cookie-consent-manager' ),
@@ -141,6 +144,15 @@ class SCCM_Settings {
 			'settings_button'   => __( 'Cookie settings', 'smart-cookie-consent-manager' ),
 			'close'             => __( 'Close', 'smart-cookie-consent-manager' ),
 			'consent_id'        => __( 'Your consent ID', 'smart-cookie-consent-manager' ),
+			'consent_status'    => __( 'Your current choice', 'smart-cookie-consent-manager' ),
+			'consent_date'      => __( 'Date', 'smart-cookie-consent-manager' ),
+			'no_choice'         => __( 'You have not made a choice yet.', 'smart-cookie-consent-manager' ),
+			'copy'              => __( 'Copy', 'smart-cookie-consent-manager' ),
+			'copied'            => __( 'Copied', 'smart-cookie-consent-manager' ),
+			'choice_accept_all' => __( 'Accepted all cookies', 'smart-cookie-consent-manager' ),
+			'choice_reject_all' => __( 'Rejected non-essential cookies', 'smart-cookie-consent-manager' ),
+			'choice_custom'     => __( 'Chose which cookies to allow', 'smart-cookie-consent-manager' ),
+			'choice_gpc'        => __( 'Browser privacy signal (GPC) honoured', 'smart-cookie-consent-manager' ),
 			'gpc_notice'        => __( 'Your browser sent a Global Privacy Control (GPC) signal. We have honoured it, so the following cookies stay off: %s.', 'smart-cookie-consent-manager' ),
 			'placeholder_text'  => __( 'This content is provided by a third party and may set %s cookies. It is blocked until you allow them.', 'smart-cookie-consent-manager' ),
 			'placeholder_btn'   => __( 'Allow and load', 'smart-cookie-consent-manager' ),
@@ -207,7 +219,7 @@ class SCCM_Settings {
 	public static function update( array $input ) {
 		$current = self::get();
 		$clean   = self::sanitize( $input, $current );
-		update_option( self::OPTION, $clean, false );
+		update_option( self::OPTION, $clean, true );
 		self::$cache = null;
 		return self::get();
 	}
@@ -230,7 +242,7 @@ class SCCM_Settings {
 		$defaults = self::defaults();
 		$out      = $current;
 
-		$bools = array( 'enabled', 'floating_button', 'show_privacy_link', 'reask_on_change', 'reload_on_withdraw', 'ads_data_redaction', 'url_passthrough', 'blocker_enabled', 'iframe_placeholder', 'gpc_enabled', 'scanner_client', 'alerts_enabled', 'log_enabled', 'delete_on_uninstall' );
+		$bools = array( 'enabled', 'banner_categories', 'floating_button', 'show_privacy_link', 'reask_on_change', 'reload_on_withdraw', 'ads_data_redaction', 'url_passthrough', 'blocker_enabled', 'iframe_placeholder', 'gpc_enabled', 'scanner_client', 'alerts_enabled', 'log_enabled', 'delete_on_uninstall' );
 		foreach ( $bools as $key ) {
 			if ( array_key_exists( $key, $input ) ) {
 				$out[ $key ] = empty( $input[ $key ] ) ? 0 : 1;
@@ -239,7 +251,7 @@ class SCCM_Settings {
 
 		$enums = array(
 			'position'          => array( 'bottom', 'top', 'bottom-left', 'bottom-right', 'center' ),
-			'floating_position' => array( 'bottom-left', 'bottom-right' ),
+			'floating_position' => array( 'bottom-left', 'bottom-right', 'bottom-center', 'left-center', 'right-center' ),
 			'consent_mode'      => array( 'basic', 'advanced', 'off' ),
 			'gpc_scope'         => array( 'all', 'marketing' ),
 			'scan_schedule'     => array( 'daily', 'weekly', 'off' ),
@@ -254,7 +266,7 @@ class SCCM_Settings {
 
 		$ints = array(
 			'policy_page_id'      => array( 0, PHP_INT_MAX ),
-			'consent_expiry_days' => array( 1, 395 ),
+			'consent_expiry_days' => array( 0, 395 ),
 			'reject_grace_days'   => array( 0, 395 ),
 			'border_radius'       => array( 0, 32 ),
 			'retention_months'    => array( 0, 120 ),
@@ -286,8 +298,7 @@ class SCCM_Settings {
 		}
 
 		if ( isset( $input['alert_email'] ) ) {
-			$email              = sanitize_email( $input['alert_email'] );
-			$out['alert_email'] = is_email( $email ) ? $email : '';
+			$out['alert_email'] = implode( ', ', self::parse_emails( (string) $input['alert_email'] ) );
 		}
 
 		if ( isset( $input['texts'] ) && is_array( $input['texts'] ) ) {
@@ -343,6 +354,37 @@ class SCCM_Settings {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Split a list of email addresses (commas, semicolons, spaces or new lines) into valid,
+	 * unique addresses. At most 10.
+	 *
+	 * @param string $raw Raw input.
+	 * @return array
+	 */
+	public static function parse_emails( $raw ) {
+		$out = array();
+		foreach ( preg_split( '/[\s,;]+/', (string) $raw, -1, PREG_SPLIT_NO_EMPTY ) as $candidate ) {
+			$email = sanitize_email( $candidate );
+			if ( $email && is_email( $email ) && ! in_array( strtolower( $email ), array_map( 'strtolower', $out ), true ) ) {
+				$out[] = $email;
+			}
+		}
+		return array_slice( $out, 0, 10 );
+	}
+
+	/**
+	 * Recipients of the scanner email: the configured list, or the site admin email.
+	 *
+	 * @return array
+	 */
+	public static function alert_recipients() {
+		$list = self::parse_emails( (string) self::get( 'alert_email' ) );
+		if ( ! $list ) {
+			$list = self::parse_emails( (string) get_option( 'admin_email' ) );
+		}
+		return $list;
 	}
 
 	/**

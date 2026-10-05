@@ -5,11 +5,14 @@
 ```bash
 npm install          # first time only (dev dependency: Playwright)
 npm test             # php -l on every PHP file, node --check on JS, PHP unit tests (tests/php/run.php)
-SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e   # 40 browser checks (see tests/e2e/README.md)
+
+# Need a development WordPress with the plugin active (see tests/e2e/README.md):
+SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 65 browser checks (visitor side)
+SCCM_WP=/path/to/wp npm run test:wp                              # 31 checks of the cookie list, settings and email (WP-CLI)
+SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 23 checks of the admin screens
 ```
 
-End-to-end (optional, local): `tests/e2e/README.md` explains how to run WordPress locally
-with SQLite and drive it with Playwright.
+`test:wp` and `e2e:admin` reset the cookie list and settings of the site they run on: dev sites only.
 
 ## Manual test checklist (staging)
 
@@ -32,20 +35,28 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 - [ ] C2 Consent Log row: choice `reject_all`, categories = necessary only.
 
 ### D. Manage Preferences (features 3, 10)
-- [ ] D1 Necessary switch on + disabled; all others off.
+- [ ] D1 Necessary switch on + disabled; all others off (in the banner and in the window).
 - [ ] D2 Expanding a category lists its cookies.
+- [ ] D5 Banner shows Necessary / Preferences / Statistics / Marketing switches; "Allow
+      selection" releases only the ticked ones; Reject and Accept look identical.
+- [ ] D6 After choosing, the preferences window shows the choice, date and consent ID; Copy works.
 - [ ] D3 Enable Analytics only → only analytics tags load; log row `custom` with `analytics`.
 - [ ] D4 Tab/Shift+Tab stay inside the modal; Esc closes without saving.
 
 ### E. Change / withdraw (feature 4)
 - [ ] E1 Floating button, `[sccm_cookie_settings]` and a menu link to `#sccm-preferences`
       all open the preferences window.
+- [ ] E3 Banner tab → cookie settings button: try all five positions. Bottom centre / left edge /
+      right edge show a half-circle peeking from the screen edge that slides out on hover; no
+      horizontal scrolling on mobile.
 - [ ] E2 After Accept All, switch Analytics off and save → `_ga*` cookies deleted, page
       reloads, analytics no longer loads, new log row.
 
 ### F. Remember & re-ask (feature 6)
 - [ ] F1 Reload/other pages → no banner, choice applied.
 - [ ] F2 Admin → Tools → "Ask everyone again" → banner shows again on next page view.
+- [ ] F5 Settings → "Remember the choice for": pick "Until the browser is closed" → the
+      `sccm_consent` cookie is a session cookie; pick 3 months → it expires in about 90 days.
 - [ ] F3 Add/approve a new cookie in the registry → banner shows again (if setting on).
 - [ ] F4 Set consent period to 1 day, change system clock or edit cookie `t` → banner returns.
 
@@ -62,9 +73,14 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 - [ ] H3 IP shown as anonymised/hashed according to the setting.
 
 ### I. Scanner (feature 9)
-- [ ] I1 Add a test script that sets `test_unknown_cookie` → it appears as Pending.
-- [ ] I2 Scanner tab → "Scan now" lists detected services and cookies.
-- [ ] I3 Email digest received (check with a mail-logging plugin on staging).
+- [ ] I1 Add a test script that sets `test_unknown_cookie`; browse the site with two different
+      browsers/devices (logged out) → after both, it appears under **Needs review**. A single
+      browser, or a logged-in admin, never adds it.
+- [ ] I2 Cookies tab → "Scan now": detected services' cookies are added automatically in the
+      right category; the list stays short (about as many cookies as your real services set).
+- [ ] I3 Settings → Cookie scan and email alerts → add two addresses → "Send me a sample email":
+      both receive a readable HTML email (check spam folder and a mail-logging plugin).
+- [ ] I4 Approving a cookie needs a category choice; "Ignore all" empties the review list.
 
 ### J. GPC (feature 11)
 - [ ] J1 Enable GPC in the browser (Firefox: Settings → Privacy → "Tell websites not to sell

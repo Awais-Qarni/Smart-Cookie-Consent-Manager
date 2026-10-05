@@ -1,6 +1,6 @@
 <?php
 /**
- * Admin tab: Consent Log.
+ * Admin tab: Consent Records — the proof of every visitor's choice.
  *
  * @package SmartCookieConsentManager
  * @var array $settings
@@ -20,11 +20,11 @@ $sccm_choices = array(
 	'gpc'        => __( 'GPC signal', 'smart-cookie-consent-manager' ),
 );
 ?>
-<p><?php esc_html_e( 'Evidence of every choice: consent ID (shown to the visitor in the preferences window), date and time (UTC), choice, allowed categories, GPC signal, consent version and page.', 'smart-cookie-consent-manager' ); ?></p>
+<p><?php esc_html_e( 'Every time a visitor chooses, a record is saved here: their consent ID, the date and time (UTC), what they chose, which categories they allowed and on which page. A visitor can read their consent ID in the cookie preferences window, so you can find their record by pasting it in the search box.', 'smart-cookie-consent-manager' ); ?></p>
 
 <form method="get" class="sccm-filters">
 	<input type="hidden" name="page" value="<?php echo esc_attr( SCCM_Admin::SLUG ); ?>">
-	<input type="hidden" name="tab" value="log">
+	<input type="hidden" name="tab" value="records">
 	<label><span class="screen-reader-text"><?php esc_html_e( 'Consent ID', 'smart-cookie-consent-manager' ); ?></span>
 		<input type="search" name="search" value="<?php echo esc_attr( $sccm_filters['search'] ?? '' ); ?>" placeholder="<?php esc_attr_e( 'Consent ID', 'smart-cookie-consent-manager' ); ?>"></label>
 	<label><span class="screen-reader-text"><?php esc_html_e( 'Choice', 'smart-cookie-consent-manager' ); ?></span>
@@ -98,25 +98,15 @@ $sccm_choices = array(
 	</div></div>
 <?php endif; ?>
 
-<h2><?php esc_html_e( 'Log settings', 'smart-cookie-consent-manager' ); ?></h2>
-<?php SCCM_Admin::form_open( 'log' ); ?>
-<table class="form-table" role="presentation">
+<p class="description">
 	<?php
-	SCCM_Admin::checkbox( 'log_enabled', __( 'Record consents', 'smart-cookie-consent-manager' ), $settings['log_enabled'] );
-	SCCM_Admin::select(
-		'ip_mode',
-		__( 'Visitor IP address', 'smart-cookie-consent-manager' ),
-		$settings['ip_mode'],
-		array(
-			'anonymize' => __( 'Store anonymised (last part removed)', 'smart-cookie-consent-manager' ),
-			'hash'      => __( 'Store as a one-way hash', 'smart-cookie-consent-manager' ),
-			'none'      => __( 'Do not store', 'smart-cookie-consent-manager' ),
-		)
+	printf(
+		/* translators: %s: link to the settings tab */
+		esc_html__( 'How long records are kept, and how the IP address is stored, is set in %s.', 'smart-cookie-consent-manager' ),
+		'<a href="' . esc_url( SCCM_Admin::url( 'settings' ) ) . '">' . esc_html__( 'Settings', 'smart-cookie-consent-manager' ) . '</a>'
 	);
-	SCCM_Admin::input( 'retention_months', __( 'Keep records for (months)', 'smart-cookie-consent-manager' ), $settings['retention_months'], 'number', __( 'Older records are deleted automatically every day. 0 = keep forever.', 'smart-cookie-consent-manager' ), array( 'min' => 0, 'max' => 120 ) );
 	?>
-</table>
-<?php SCCM_Admin::form_close(); ?>
+</p>
 
 <div class="sccm-inline-forms">
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">

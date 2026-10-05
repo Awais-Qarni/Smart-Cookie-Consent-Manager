@@ -28,6 +28,7 @@ class SCCM_Frontend {
 		add_action( 'wp_head', array( __CLASS__, 'print_google_tags' ), -999 );
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
 		add_filter( 'script_loader_tag', array( __CLASS__, 'script_tag' ), 10, 2 );
+		add_filter( 'style_loader_tag', array( __CLASS__, 'style_tag' ), 10, 2 );
 	}
 
 	/**
@@ -142,7 +143,44 @@ class SCCM_Frontend {
 	}
 
 	/**
+	 * Load our stylesheet without blocking the first paint.
+	 *
+	 * The banner is built by JavaScript after the page is parsed, and the script waits for the
+	 * stylesheet before showing anything, so nothing appears unstyled. Pages that print the cookie
+	 * policy table in their content keep the normal (blocking) stylesheet, because that markup is
+	 * visible immediately. Without JavaScript the normal stylesheet is used too.
+	 *
+	 * @param string $tag    HTML tag.
+	 * @param string $handle Style handle.
+	 * @return string
+	 */
+	public static function style_tag( $tag, $handle ) {
+		if ( 'sccm-frontend' !== $handle ) {
+			return $tag;
+		}
+		$post = is_singular() ? get_post() : null;
+		if ( $post && has_shortcode( (string) $post->post_content, 'sccm_cookie_policy' ) ) {
+			return $tag;
+		}
+		/**
+		 * Keep the stylesheet render-blocking (return false to load it the usual way).
+		 *
+		 * @param bool $async Whether to load it without blocking.
+		 */
+		if ( ! apply_filters( 'sccm_async_css', true ) ) {
+			return $tag;
+		}
+		$async = preg_replace( '/media=([\'"])all\1/', 'media="print" onload="this.media=\'all\'" data-no-optimize="1"', $tag, 1, $count );
+		if ( ! $count || null === $async ) {
+			return $tag;
+		}
+		return $async . '<noscript>' . $tag . '</noscript>';
+	}
+
+	/**
 	 * Build the config passed to the browser.
+	 *
+	 * Kept compact on purpose: it is printed in every page.
 	 *
 	 * @return array
 	 */
@@ -170,17 +208,17 @@ class SCCM_Frontend {
 			);
 		}
 
-		// Clean-up list: registry + library cookies of optional categories.
+		// Clean-up list (names to delete when a category is refused), grouped by category:
+		// c = cookies, l = local storage, s = session storage. Registry + library cookies.
+		$slots   = array(
+			'cookie'         => 'c',
+			'localStorage'   => 'l',
+			'sessionStorage' => 's',
+		);
 		$cleanup = array();
-		$seen    = array();
 		foreach ( SCCM_Cookies::query( array( 'status' => 'active' ) ) as $row ) {
 			if ( 'necessary' !== $row['category'] ) {
-				$cleanup[]                                = array(
-					'n' => $row['name'],
-					't' => $row['type'],
-					'c' => $row['category'],
-				);
-				$seen[ $row['type'] . ':' . $row['name'] ] = true;
+				$cleanup[ $row['category'] ][ $slots[ $row['type'] ] ][ $row['name'] ] = true;
 			}
 		}
 		foreach ( SCCM_Services::all() as $service ) {
@@ -188,24 +226,22 @@ class SCCM_Frontend {
 				continue;
 			}
 			foreach ( $service['cookies'] as $cookie ) {
-				$type = isset( $cookie[3] ) ? $cookie[3] : 'cookie';
-				if ( empty( $seen[ $type . ':' . $cookie[0] ] ) ) {
-					$cleanup[] = array(
-						'n' => $cookie[0],
-						't' => $type,
-						'c' => $service['category'],
-					);
-				}
+				$type = isset( $cookie[3] ) && isset( $slots[ $cookie[3] ] ) ? $cookie[3] : 'cookie';
+				$cleanup[ $service['category'] ][ $slots[ $type ] ][ $cookie[0] ] = true;
+			}
+		}
+		foreach ( $cleanup as $category => $by_slot ) {
+			foreach ( $by_slot as $slot => $names ) {
+				$cleanup[ $category ][ $slot ] = array_keys( $names );
 			}
 		}
 
-		// Known names for the visitor-side scanner (any status).
+		// Cookie names already in the registry (any status): the visitor-side scanner skips these.
 		$known = array();
 		foreach ( SCCM_Cookies::all_rows() as $row ) {
-			$known[] = array(
-				'n' => $row['name'],
-				't' => $row['type'],
-			);
+			if ( 'cookie' === $row['type'] ) {
+				$known[] = $row['name'];
+			}
 		}
 
 		$config = array(
@@ -215,6 +251,7 @@ class SCCM_Frontend {
 			'graceDays'   => (int) $settings['reject_grace_days'],
 			'reload'      => (bool) $settings['reload_on_withdraw'],
 			'position'    => $settings['position'],
+			'bannerCats'  => (bool) $settings['banner_categories'],
 			'floating'    => (bool) $settings['floating_button'],
 			'floatingPos' => $settings['floating_position'],
 			'placeholder' => (bool) $settings['iframe_placeholder'],

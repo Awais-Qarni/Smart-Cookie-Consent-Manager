@@ -9,10 +9,64 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 - **Version:** 0.1.0 (feature-complete for the 12 features, not yet staging-tested on a real site)
 - **Branch:** `feature/v1-build` (pull request to `main`)
-- **Phase:** 5, Quality (see `ROADMAP.md`)
-- **Last updated:** 2026-09-28
+- **Phase:** 5b, pre-staging changes done (see `ROADMAP.md`); staging test is next
+- **Last updated:** 2026-10-05
 
 ---
+
+## 2026-10-05 — Session 3 (pre-staging changes, 10 requests)
+
+**Done** (numbers refer to the owner's list)
+1+6. **Admin simplified.** 9 tabs → 6 (Dashboard, Cookies, Banner, Settings, Consent Records,
+   Tools). Dashboard = live status + "Needs your attention" to-do + 3 numbers + how-it-works.
+   ⓘ **Help** panel on every page (`views/help.php`) explains how it works and every
+   tab/button/option; the current tab's section opens. Old tab slugs still work.
+2+5. **Cookiebot-style UI from public knowledge of Cookiebot** (see blockers): categories
+   renamed Necessary / Preferences / Statistics / Marketing (keys unchanged); the four
+   category switches are on the banner's first layer ("Reject", "Accept", "Allow selection",
+   "Show details"); the details window has per-category cards.
+3. **Performance review** → `docs/PERFORMANCE.md`. Done: non-blocking CSS, autoloaded settings,
+   cheap admin badge, cached wildcard regex, bounded "Scan now", idle-time reporter. Tried and
+   **reverted** a blocker pre-check (6.8 ms vs 1.55 ms: slower). Plugin overhead measured ≈ 0.5 ms
+   per page view (noise level).
+4. **Cookie list noise fixed** (root causes in the CHANGELOG): the 6 "active" were seeded
+   WordPress login cookies; the ~30 "pending" came from browsers reporting every cookie and
+   localStorage key (admin extensions etc.). Now: no WP login cookies, cookies-only reporting,
+   never from logged-in users, ≥ 2 different visitors needed, cap 50, GA4 split from Universal
+   Analytics, conditional cookies (`_fbc`…) only when seen, approve needs an explicit category,
+   "Ignore all". DB version 2 cleans old noise on upgrade and schedules a re-scan.
+7. **Widget**: bottom-left/right = round; bottom-centre / left-centre / right-centre = half-circle
+   peeking from the edge, slides out on hover/focus (CSS only).
+8. **Alert email**: HTML (tables + inline CSS) + plain-text, several recipients (one per line,
+   max 10), "Send me a sample email" and "Send waiting alerts now" buttons.
+9. **Consent ID**: was already a UUID in the cookie + log; now shown with the choice and date
+   in the details window (Copy button), in the `dataLayer` event and `SCCM.getConsentId()`.
+10. **Consent expiry** is a choice: presets, custom days (1–395) or 0 = browser session.
+   Max stays 395: browsers cap cookie lifetime (~400 days), longer values would be cut silently.
+
+**Tests**: `npm test` (33 unit), `npm run e2e` 65/65, `npm run test:wp` 31/31,
+`npm run e2e:admin` 23/23, all against a real WordPress 6.5 + MariaDB built in the session
+(WordPress via Composer, WP-CLI via Composer; see `tests/e2e/README.md`). The upgrade path
+0.1.0 → this version was tested through a real front-end request.
+
+**Next**
+1. Install on staging and run `docs/TESTING.md` (new items D5, D6, E3, F5, I1–I4 are for this
+   round). Look at the admin on a real site and compare the banner with the live Cookiebot one.
+2. Check Cookies → "Needs review" after a day of real traffic: it should hold only genuine,
+   unknown cookies (expect 0–3). If a real cookie never shows up, lower
+   `SCCM_Cookies::MIN_VISITORS` or add it by hand.
+3. Generate the `.pot` file; tag 1.0.0 after sign-off.
+
+**Notes & blockers**
+- The build environment could **not reach** `primasystemmov.wpengine.com` (egress policy) and
+  has **no browser tool or Cookiebot login**, and the "attached docs" with the 11-cookie scan were
+  not available. The Cookiebot-inspired parts follow Cookiebot's public conventions (category
+  names, switches on the first layer, "Allow selection", consent ID/date), not a side-by-side
+  review. A side-by-side review is still open (ROADMAP Phase 5b).
+- Safari limits JavaScript-set cookies to 7 days, so consent for Safari visitors may be asked
+  again sooner than the chosen period. A server-set cookie would avoid it (idea for "Later").
+- Test tips: a long-running `php -S` keeps following an old plugin symlink target
+  (`-d realpath_cache_ttl=0`); `pkill -f` can kill your own shell, match by exact name.
 
 ## 2026-09-28 — Session 2 (build v0.1.0)
 

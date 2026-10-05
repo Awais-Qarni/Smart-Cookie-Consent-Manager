@@ -27,8 +27,8 @@ Smart Cookie Consent Manager adds a complete, self-hosted cookie consent system 
 == Installation ==
 
 1. Upload the plugin and activate it.
-2. Go to Cookie Consent → General → "Create a Cookie Policy page for me".
-3. Go to Scanner → "Scan now", then review any pending cookies.
+2. Go to Cookie Consent → Dashboard and follow "Needs your attention" (create the Cookie Policy page, scan).
+3. Cookies tab → approve any cookies under "Needs review".
 4. Clear your page cache.
 
 == Frequently Asked Questions ==
@@ -40,6 +40,13 @@ Use the floating button, the [sccm_cookie_settings] shortcode, or a menu link to
 Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 == Changelog ==
+
+= Unreleased =
+* Simpler admin: 6 tabs, a Dashboard with a to-do list, and a Help panel explaining everything.
+* Categories renamed to Necessary, Preferences, Statistics, Marketing.
+* Category switches in the banner, consent ID/date shown to visitors, your choice of consent expiry.
+* New floating button positions (bottom centre, left/right edge as a half-circle).
+* Much shorter, more accurate cookie list; readable HTML alert emails to several recipients.
 
 = 0.1.0 =
 * First version.

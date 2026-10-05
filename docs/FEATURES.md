@@ -4,14 +4,15 @@ These 12 features are the agreed scope. Every release must keep all of them work
 Each has acceptance criteria that map to steps in `docs/TESTING.md`.
 
 Cookie categories are fixed to four keys (they map cleanly to Google Consent Mode and to
-typical compliance inventories). Labels and descriptions are editable in the admin.
+typical compliance inventories). Labels and descriptions are editable in the admin. The default
+labels follow the Cookiebot convention.
 
 | Key | Default label | Can be refused? | Google Consent Mode types |
 |---|---|---|---|
 | `necessary` | Necessary | No (always on) | `security_storage` |
-| `functional` | Functional | Yes | `functionality_storage`, `personalization_storage` |
-| `analytics` | Analytics | Yes | `analytics_storage` |
-| `marketing` | Tracking / Advertising | Yes | `ad_storage`, `ad_user_data`, `ad_personalization` |
+| `functional` | Preferences | Yes | `functionality_storage`, `personalization_storage` |
+| `analytics` | Statistics | Yes | `analytics_storage` |
+| `marketing` | Marketing | Yes | `ad_storage`, `ad_user_data`, `ad_personalization` |
 
 ---
 
@@ -23,7 +24,8 @@ One button in the banner that grants every category.
 - [ ] Blocked scripts/iframes/fonts load immediately without a page reload.
 
 ### 2. Reject Non-Essential
-One button that grants only `necessary`.
+One button that grants only `necessary`. Optionally (setting, on by default) the banner also
+shows the four category switches and an "Allow selection" button on its first layer.
 - [ ] Same size, style and prominence as Accept All; visible on the first layer.
 - [ ] Saves consent (cookie + record); nothing non-essential loads.
 
@@ -36,7 +38,9 @@ A settings window (modal) with an on/off switch per category.
 - [ ] Keyboard accessible (focus trap, Esc closes without saving, ARIA labels).
 
 ### 4. Change or withdraw anytime
-- [ ] Optional floating "Cookie settings" button (on by default).
+- [ ] Optional floating "Cookie settings" button (on by default) in five positions: bottom
+      left/right (round button) and bottom centre, left edge, right edge (a half-circle that
+      peeks out from the screen edge and slides out on hover or focus).
 - [ ] Shortcode `[sccm_cookie_settings]` renders a link/button.
 - [ ] Any element with class `sccm-open-preferences` or a link to `#sccm-preferences`
       (e.g. a menu item) opens the preferences window.
@@ -50,8 +54,9 @@ A settings window (modal) with an on/off switch per category.
 - [ ] Ignoring the banner = no consent; banner stays until a choice is made.
 
 ### 6. Remember and re-ask
-- [ ] Choice stored in first-party cookie `sccm_consent` (no personal data) for the configured
-      period (default 365 days, max 395).
+- [ ] Choice stored in first-party cookie `sccm_consent` (no personal data) for the period the
+      site owner chooses: a preset or any number of days from 1 to 395 (default 365; browsers do
+      not keep a cookie longer), or 0 = until the browser is closed.
 - [ ] Banner shown again when the consent period expires.
 - [ ] Banner shown again when the **consent version** changes: automatically when a new cookie
       is added/approved in the registry (setting, on by default), or manually ("Ask everyone
@@ -78,15 +83,23 @@ A settings window (modal) with an on/off switch per category.
       page URL, date/time (UTC), anonymised or hashed IP (setting), user agent.
 - [ ] Admin list with search by consent ID and date filter; CSV export; retention period
       with automatic purge.
-- [ ] Visitor can see their Consent ID in the preferences window (for evidence requests).
+- [ ] Visitor can see their current choice, its date and their Consent ID (with a Copy button)
+      in the preferences window (for evidence requests). The ID is also in the `dataLayer`
+      event and available as `SCCM.getConsentId()`.
 
 ### 9. Cookie scanner
-- [ ] Visitor-side detection: browser reports cookie/localStorage names that are not in the
-      registry (names only, never values; rate-limited).
+- [ ] Visitor-side detection: browsers report **cookie** names that are not in the registry
+      (names only, never values; rate-limited; never from logged-in users; local storage is not
+      reported). An unknown cookie is listed only after at least two different visitors
+      reported it; at most 50 items wait for review.
 - [ ] Server-side scan (scheduled + "Scan now"): fetches key pages, reads `Set-Cookie`
       headers and third-party scripts/iframes/fonts, matches the service library.
-- [ ] New items appear as **Pending** in the Cookies tab; admin assigns a category.
-- [ ] Email alert (digest, max once per day) to the configured address.
+- [ ] Known cookies are added automatically as Active in the right category; only cookies the
+      service always sets are added (conditional ones are categorised when actually seen).
+- [ ] Unknown cookies appear under **Needs review** in the Cookies tab; the admin must choose a
+      category to approve (never pre-selected) or ignore them.
+- [ ] Email alert (digest, max once per day, HTML + plain text) to one or more configured
+      addresses; a sample email can be sent on demand.
 
 ### 10. Cookie list for visitors
 - [ ] Preferences window lists cookies per category (from the registry).

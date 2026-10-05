@@ -6,7 +6,10 @@
  *  - name, provider, category (necessary|functional|analytics|marketing)
  *  - google:   true if the service honours Google Consent Mode (skipped by the blocker in Advanced mode)
  *  - patterns: substrings matched against script src / iframe src / link href / inline script code
- *  - cookies:  list of array( name (supports * wildcard), duration, purpose, type = cookie|localStorage )
+ *  - cookies:  list of array( name (supports * wildcard), duration, purpose, type = cookie|localStorage, only_if_seen = false )
+ *              A cookie marked only_if_seen (5th value true) is only set in special cases (e.g. after an ad click).
+ *              It is recognised and categorised when a scan or visitor reports it, but not listed just because
+ *              the service was found.
  *
  * Add services with the `sccm_services` filter. Keep this file generic: no site-specific entries.
  *
@@ -163,16 +166,26 @@ return array(
 		'cookies'  => array(),
 	),
 	'google-analytics'   => array(
-		'name'     => 'Google Analytics',
+		'name'     => 'Google Analytics 4',
 		'provider' => 'Google LLC',
 		'category' => 'analytics',
 		'google'   => true,
-		'patterns' => array( 'googletagmanager.com/gtag/js', 'google-analytics.com/analytics.js', 'google-analytics.com/ga.js', "gtag('config'", 'gtag("config"', "ga('create'" ),
+		'patterns' => array( 'googletagmanager.com/gtag/js', "gtag('config'", 'gtag("config"' ),
 		'cookies'  => array(
 			array( '_ga', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Distinguishes unique visitors.', 'smart-cookie-consent-manager' ) ),
 			array( '_ga_*', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Keeps the session state.', 'smart-cookie-consent-manager' ) ),
+		),
+	),
+	'universal-analytics' => array(
+		'name'     => 'Google Analytics (Universal)',
+		'provider' => 'Google LLC',
+		'category' => 'analytics',
+		'google'   => true,
+		'patterns' => array( 'google-analytics.com/analytics.js', 'google-analytics.com/ga.js', "ga('create'" ),
+		'cookies'  => array(
+			array( '_ga', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Distinguishes unique visitors.', 'smart-cookie-consent-manager' ) ),
 			array( '_gid', __( '24 hours', 'smart-cookie-consent-manager' ), __( 'Distinguishes visitors.', 'smart-cookie-consent-manager' ) ),
-			array( '_gat*', __( '1 minute', 'smart-cookie-consent-manager' ), __( 'Limits the request rate.', 'smart-cookie-consent-manager' ) ),
+			array( '_gat*', __( '1 minute', 'smart-cookie-consent-manager' ), __( 'Limits the request rate.', 'smart-cookie-consent-manager' ), 'cookie', true ),
 		),
 	),
 	'microsoft-clarity'  => array(
@@ -234,7 +247,7 @@ return array(
 		'patterns' => array( 'connect.facebook.net', 'facebook.com/tr', 'fbq(' ),
 		'cookies'  => array(
 			array( '_fbp', __( '3 months', 'smart-cookie-consent-manager' ), __( 'Identifies browsers for advertising and analytics.', 'smart-cookie-consent-manager' ) ),
-			array( '_fbc', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Stores the last ad click.', 'smart-cookie-consent-manager' ) ),
+			array( '_fbc', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Stores the last ad click.', 'smart-cookie-consent-manager' ), 'cookie', true ),
 		),
 	),
 	'linkedin-insight'   => array(
@@ -243,7 +256,7 @@ return array(
 		'category' => 'marketing',
 		'patterns' => array( 'snap.licdn.com', 'px.ads.linkedin.com', '_linkedin_partner_id' ),
 		'cookies'  => array(
-			array( 'li_fat_id', __( '30 days', 'smart-cookie-consent-manager' ), __( 'Measures LinkedIn ad conversions.', 'smart-cookie-consent-manager' ) ),
+			array( 'li_fat_id', __( '30 days', 'smart-cookie-consent-manager' ), __( 'Measures LinkedIn ad conversions.', 'smart-cookie-consent-manager' ), 'cookie', true ),
 		),
 	),
 	'tiktok-pixel'       => array(
@@ -271,7 +284,7 @@ return array(
 		'category' => 'marketing',
 		'patterns' => array( 'static.ads-twitter.com', 'ads-twitter.com/uwt.js' ),
 		'cookies'  => array(
-			array( '_twclid', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Measures X ad conversions.', 'smart-cookie-consent-manager' ) ),
+			array( '_twclid', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Measures X ad conversions.', 'smart-cookie-consent-manager' ), 'cookie', true ),
 		),
 	),
 	'pinterest-tag'      => array(

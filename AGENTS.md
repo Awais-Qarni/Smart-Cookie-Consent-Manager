@@ -33,6 +33,7 @@ changes. It is NOT built for one specific website.
 | `docs/ARCHITECTURE.md` | How the plugin is built and why (design decisions). |
 | `docs/TESTING.md` | Manual test checklist (staging) incl. GPC tests + automated checks. |
 | `docs/HOOKS.md` | Public filters/actions/JS API for developers. |
+| `docs/PERFORMANCE.md` | What the plugin costs (measured) and what was tuned. Re-check after changes to the front end. |
 | `CHANGELOG.md` | User-facing change history. |
 | `README.md` | Product overview, install, usage. |
 | `readme.txt` | WordPress.org-format readme. |
@@ -57,12 +58,12 @@ includes/
   class-sccm-shortcodes.php        [sccm_cookie_policy], [sccm_cookie_settings]
   data/services.php                Service signatures (data only)
   admin/class-sccm-admin.php       Admin menu, tabs, form handlers
-  admin/views/*.php                One view file per admin tab
+  admin/views/*.php                One view per admin tab (dashboard, cookies, banner, settings, records, tools) + help.php
 assets/js/sccm-frontend.js         Banner, preferences modal, unblocking, GPC, cleanup, reporting
 assets/css/sccm-frontend.css       Banner/modal styles (CSS variables for theming)
 assets/js/sccm-admin.js            Small admin helpers
 assets/css/sccm-admin.css          Admin styles
-tests/                             Automated checks (see docs/TESTING.md)
+tests/                             Automated checks (see docs/TESTING.md): php/ unit, wp/ (WP-CLI), e2e/ (browser)
 ```
 
 ## 4. Golden rules (do not break these)

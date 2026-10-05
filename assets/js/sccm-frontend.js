@@ -70,14 +70,19 @@
 		return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
 	}
 
-	/** Wildcard match: '*' = any characters. */
+	var patternCache = {};
+
+	/** Wildcard match: '*' = any characters. Compiled patterns are cached. */
 	function nameMatches(pattern, name) {
 		if (pattern.indexOf('*') === -1) {
 			return pattern === name;
 		}
-		var re = new RegExp('^' + pattern.split('*').map(function (part) {
-			return part.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
-		}).join('.*') + '$');
+		var re = patternCache[pattern];
+		if (!re) {
+			re = patternCache[pattern] = new RegExp('^' + pattern.split('*').map(function (part) {
+				return part.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+			}).join('.*') + '$');
+		}
 		return re.test(name);
 	}
 
@@ -127,6 +132,45 @@
 		return out;
 	}
 
+	/*
+	 * The stylesheet is loaded without blocking the first paint (see SCCM_Frontend::style_tag).
+	 * Anything we draw waits until it is applied, so nothing ever appears unstyled.
+	 */
+	var stylesReady = false;
+	var styleQueue = [];
+
+	function flushStyles() {
+		if (stylesReady) {
+			return;
+		}
+		stylesReady = true;
+		var link = d.getElementById('sccm-frontend-css');
+		if (link && link.media && link.media !== 'all') {
+			link.media = 'all';
+		}
+		styleQueue.splice(0).forEach(function (fn) {
+			fn();
+		});
+	}
+
+	function afterStyles(fn) {
+		if (stylesReady) {
+			fn();
+		} else {
+			styleQueue.push(fn);
+		}
+	}
+
+	(function watchStyles() {
+		var link = d.getElementById('sccm-frontend-css');
+		if (!link || !link.media || link.media === 'all') {
+			stylesReady = true;
+			return;
+		}
+		link.addEventListener('load', flushStyles);
+		setTimeout(flushStyles, 1500);
+	})();
+
 	function post(url, body) {
 		if (!url) {
 			return;
@@ -159,9 +203,10 @@
 
 	function writeConsent(consent) {
 		var value = encodeURIComponent(JSON.stringify(consent));
-		var expires = new Date(Date.now() + C.days * 86400000).toUTCString();
+		// C.days = 0 means "session only": the cookie has no expiry date.
+		var expires = C.days > 0 ? '; expires=' + new Date(Date.now() + C.days * 86400000).toUTCString() : '';
 		var secure = w.location.protocol === 'https:' ? '; Secure' : '';
-		d.cookie = C.cookie + '=' + value + '; expires=' + expires + '; path=/; SameSite=Lax' + secure;
+		d.cookie = C.cookie + '=' + value + expires + '; path=/; SameSite=Lax' + secure;
 	}
 
 	function deleteCookie(name) {
@@ -179,30 +224,44 @@
 		});
 	}
 
-	/** Delete known cookies / storage keys of categories that are not granted. */
+	function removeStorage(type, patterns, keys) {
+		(patterns || []).forEach(function (pattern) {
+			keys.forEach(function (key) {
+				if (nameMatches(pattern, key)) {
+					try {
+						w[type].removeItem(key);
+					} catch (e) { /* ignore */ }
+				}
+			});
+		});
+	}
+
+	/**
+	 * Delete known cookies / storage keys of categories that are not granted.
+	 * C.cleanup = { category: { c: [cookie names], l: [localStorage keys], s: [sessionStorage keys] } }
+	 */
 	function cleanup() {
+		var map = C.cleanup || {};
+		var refused = Object.keys(map).filter(function (category) {
+			return !granted(category);
+		});
+		if (!refused.length) {
+			return;
+		}
 		var names = cookieNames();
 		var local = storageKeys('localStorage');
 		var session = storageKeys('sessionStorage');
-		(C.cleanup || []).forEach(function (item) {
-			if (granted(item.c)) {
-				return;
-			}
-			if (item.t === 'localStorage' || item.t === 'sessionStorage') {
-				(item.t === 'localStorage' ? local : session).forEach(function (key) {
-					if (nameMatches(item.n, key)) {
-						try {
-							w[item.t].removeItem(key);
-						} catch (e) { /* ignore */ }
+		refused.forEach(function (category) {
+			var slots = map[category] || {};
+			(slots.c || []).forEach(function (pattern) {
+				names.forEach(function (name) {
+					if (nameMatches(pattern, name)) {
+						deleteCookie(name);
 					}
 				});
-				return;
-			}
-			names.forEach(function (name) {
-				if (nameMatches(item.n, name)) {
-					deleteCookie(name);
-				}
 			});
+			removeStorage('localStorage', slots.l, local);
+			removeStorage('sessionStorage', slots.s, session);
 		});
 	}
 
@@ -301,9 +360,10 @@
 
 	function addPlaceholder(frame) {
 		var prev = frame.previousElementSibling;
-		if (prev && prev.classList.contains('sccm-placeholder')) {
+		if ((prev && prev.classList.contains('sccm-placeholder')) || frame.hasAttribute('data-sccm-ph')) {
 			return;
 		}
+		frame.setAttribute('data-sccm-ph', '1');
 		var category = String(frame.getAttribute('data-sccm-category')).split(/[\s,]+/)[0];
 		var label = category;
 		C.categories.forEach(function (cat) {
@@ -334,7 +394,12 @@
 			button
 		]);
 		frame.style.display = 'none';
-		frame.parentNode.insertBefore(box, frame);
+		afterStyles(function () {
+			// Allowed in the meantime: nothing to show.
+			if (frame.hasAttribute('data-sccm-category') && frame.parentNode) {
+				frame.parentNode.insertBefore(box, frame);
+			}
+		});
 	}
 
 	/* ------------------------------------------------------------------ Consent actions */
@@ -394,7 +459,7 @@
 		}
 
 		if (w.dataLayer && typeof w.dataLayer.push === 'function') {
-			w.dataLayer.push({ event: 'sccm_consent_update', sccm_categories: OPTIONAL.filter(function (key) { return grants[key]; }), sccm_method: method });
+			w.dataLayer.push({ event: 'sccm_consent_update', sccm_categories: OPTIONAL.filter(function (key) { return grants[key]; }), sccm_method: method, sccm_consent_id: consent.id });
 		}
 
 		hideBanner();
@@ -441,26 +506,101 @@
 		return links.length ? el('p', { 'class': 'sccm-links' }, links) : null;
 	}
 
-	function actionButtons(withSave) {
+	/**
+	 * Reject and Accept always come first and always look the same (fair consent UI).
+	 *
+	 * @param {string} extra '' | 'save' (preferences window) | 'selection' (banner with switches)
+	 */
+	function actionButtons(extra) {
 		var buttons = [
 			el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--reject', 'data-sccm-action': 'reject', text: T.btn_reject }),
 			el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--accept', 'data-sccm-action': 'accept', text: T.btn_accept })
 		];
-		if (withSave) {
+		if (extra === 'save') {
 			buttons.push(el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--save', 'data-sccm-action': 'save', text: T.btn_save }));
+		} else if (extra === 'selection') {
+			buttons.push(el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--selection', 'data-sccm-action': 'selection', text: T.btn_selection }));
 		}
 		return buttons;
 	}
 
-	function showBanner() {
+	/** One category as a compact switch for the first layer of the banner. */
+	function categoryPill(cat) {
+		var id = 'sccm-bcat-' + cat.key;
+		var locked = cat.locked || isGpcBlocked(cat.key);
+		return el('label', { 'class': 'sccm-pill', 'for': id }, [
+			el('span', { 'class': 'sccm-switch sccm-switch--sm' }, [
+				el('input', {
+					type: 'checkbox',
+					role: 'switch',
+					id: id,
+					'data-sccm-bcat': cat.locked ? null : cat.key,
+					checked: cat.locked || (!isGpcBlocked(cat.key) && state.grants[cat.key] === true),
+					disabled: locked
+				}),
+				el('span', { 'class': 'sccm-slider', 'aria-hidden': 'true' })
+			]),
+			el('span', { 'class': 'sccm-pill__label', text: cat.label })
+		]);
+	}
+
+	function saveFromBanner() {
+		var input = {};
+		banner.querySelectorAll('input[data-sccm-bcat]').forEach(function (box) {
+			input[box.getAttribute('data-sccm-bcat')] = box.checked;
+		});
+		save('custom', input);
+	}
+
+	var bannerQueued = false;
+
+	/**
+	 * Show the banner. Nothing is drawn before the stylesheet is applied.
+	 *
+	 * @param {boolean} force Show even when the visitor has already chosen (admin preview).
+	 */
+	function showBanner(force) {
 		if (banner) {
 			banner.hidden = false;
+			if (floating) {
+				floating.hidden = true;
+			}
 			return;
 		}
+		if (bannerQueued) {
+			return;
+		}
+		bannerQueued = true;
+		afterStyles(function () {
+			bannerQueued = false;
+			if (state.needsChoice || force === true) {
+				buildBanner();
+			}
+		});
+	}
+
+	function buildBanner() {
 		var isModal = C.position === 'center';
+		var withCats = !!C.bannerCats;
+		var content = [
+			el('p', { 'class': 'sccm-title', id: 'sccm-banner-title', role: 'heading', 'aria-level': '2', text: T.banner_title }),
+			el('div', { 'class': 'sccm-text', id: 'sccm-banner-text', html: T.banner_text }),
+			linksRow()
+		];
+		var actions;
+		if (withCats) {
+			content.push(el('div', { 'class': 'sccm-cats' }, C.categories.map(categoryPill).concat([
+				el('button', { type: 'button', 'class': 'sccm-btn--manage sccm-linkbtn', 'data-sccm-action': 'manage', text: T.btn_details })
+			])));
+			actions = actionButtons('selection');
+		} else {
+			actions = actionButtons('').concat([
+				el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--manage', 'data-sccm-action': 'manage', text: T.btn_manage })
+			]);
+		}
 		banner = el('div', {
 			id: 'sccm-banner',
-			'class': 'sccm-root sccm-banner sccm-pos-' + C.position,
+			'class': 'sccm-root sccm-banner sccm-pos-' + C.position + (withCats ? ' sccm-banner--cats' : ''),
 			role: isModal ? 'dialog' : 'region',
 			'aria-modal': isModal ? 'true' : null,
 			'aria-labelledby': 'sccm-banner-title',
@@ -468,14 +608,8 @@
 		}, [
 			isModal ? el('div', { 'class': 'sccm-overlay' }) : null,
 			el('div', { 'class': 'sccm-banner__inner' }, [
-				el('div', { 'class': 'sccm-banner__content' }, [
-					el('p', { 'class': 'sccm-title', id: 'sccm-banner-title', role: 'heading', 'aria-level': '2', text: T.banner_title }),
-					el('div', { 'class': 'sccm-text', id: 'sccm-banner-text', html: T.banner_text }),
-					linksRow()
-				]),
-				el('div', { 'class': 'sccm-actions' }, actionButtons(false).concat([
-					el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--manage', 'data-sccm-action': 'manage', text: T.btn_manage })
-				]))
+				el('div', { 'class': 'sccm-banner__content' }, content),
+				el('div', { 'class': 'sccm-actions' }, actions)
 			])
 		]);
 		d.body.appendChild(banner);
@@ -517,7 +651,8 @@
 
 	function buildModal() {
 		var body = el('div', { 'class': 'sccm-modal__body' }, [
-			el('div', { 'class': 'sccm-text', html: T.prefs_text })
+			el('div', { 'class': 'sccm-text', html: T.prefs_text }),
+			el('div', { 'class': 'sccm-status', 'aria-live': 'polite' })
 		]);
 
 		if (state.gpc && state.gpcBlocked.length) {
@@ -552,6 +687,7 @@
 			var head = el('div', { 'class': 'sccm-cat__head' }, [
 				el('div', { 'class': 'sccm-cat__title' }, [
 					el('p', { 'class': 'sccm-cat__label', role: 'heading', 'aria-level': '3', text: cat.label }),
+					el('span', { 'class': 'sccm-count', text: String(cat.cookies.length) }),
 					cat.locked ? el('span', { 'class': 'sccm-badge', text: T.always_on }) : null
 				]),
 				control
@@ -567,8 +703,6 @@
 			]));
 		});
 
-		var idLine = el('p', { 'class': 'sccm-consent-id sccm-muted' });
-		body.appendChild(idLine);
 		var links = linksRow();
 		if (links) {
 			body.appendChild(links);
@@ -582,11 +716,71 @@
 					el('button', { type: 'button', 'class': 'sccm-close', 'data-sccm-action': 'close', 'aria-label': T.close, html: '&times;' })
 				]),
 				body,
-				el('div', { 'class': 'sccm-modal__footer sccm-actions' }, actionButtons(true))
+				el('div', { 'class': 'sccm-modal__footer sccm-actions' }, actionButtons('save'))
 			])
 		]);
 		modal.addEventListener('keydown', trapFocus);
 		d.body.appendChild(modal);
+	}
+
+	/** "Accepted all cookies · date", and the consent ID the visitor can quote as evidence. */
+	function renderStatus() {
+		var box = modal.querySelector('.sccm-status');
+		box.textContent = '';
+		var consent = state.consent;
+		if (!consent) {
+			box.appendChild(el('p', { 'class': 'sccm-muted', text: T.no_choice }));
+			return;
+		}
+		var when = new Date(consent.t * 1000);
+		var whenText;
+		try {
+			whenText = when.toLocaleString();
+		} catch (e) {
+			whenText = when.toISOString();
+		}
+		var copy = el('button', { type: 'button', 'class': 'sccm-copy', text: T.copy });
+		copy.addEventListener('click', function () {
+			copyText(consent.id, function () {
+				copy.textContent = T.copied;
+				setTimeout(function () {
+					copy.textContent = T.copy;
+				}, 1600);
+			});
+		});
+		box.appendChild(el('p', { 'class': 'sccm-status__row' }, [
+			el('strong', { text: T.consent_status + ': ' }),
+			T['choice_' + consent.m] || ''
+		]));
+		box.appendChild(el('p', { 'class': 'sccm-status__row' }, [
+			el('strong', { text: T.consent_date + ': ' }),
+			whenText
+		]));
+		box.appendChild(el('p', { 'class': 'sccm-status__row sccm-consent-id' }, [
+			T.consent_id + ': ',
+			el('code', { text: consent.id }),
+			copy
+		]));
+	}
+
+	function copyText(text, done) {
+		function fallback() {
+			var area = el('textarea', { readonly: true, style: 'position:fixed;opacity:0;top:0;left:0' });
+			area.value = text;
+			d.body.appendChild(area);
+			area.select();
+			try {
+				if (d.execCommand('copy')) {
+					done();
+				}
+			} catch (e) { /* ignore */ }
+			d.body.removeChild(area);
+		}
+		if (w.navigator.clipboard && w.navigator.clipboard.writeText) {
+			w.navigator.clipboard.writeText(text).then(done, fallback);
+		} else {
+			fallback();
+		}
 	}
 
 	function syncModal() {
@@ -594,8 +788,7 @@
 			var key = box.getAttribute('data-sccm-cat');
 			box.checked = !isGpcBlocked(key) && state.grants[key] === true;
 		});
-		var idLine = modal.querySelector('.sccm-consent-id');
-		idLine.textContent = state.consent ? T.consent_id + ': ' + state.consent.id : '';
+		renderStatus();
 	}
 
 	function focusables(root) {
@@ -629,16 +822,18 @@
 	}
 
 	function openPreferences() {
-		if (!modal) {
-			buildModal();
-		}
-		syncModal();
-		lastFocus = d.activeElement;
-		modal.hidden = false;
-		d.documentElement.classList.add('sccm-noscroll');
-		var dialog = modal.querySelector('.sccm-modal__dialog');
-		var items = focusables(dialog);
-		(items[0] || dialog).focus();
+		afterStyles(function () {
+			if (!modal) {
+				buildModal();
+			}
+			syncModal();
+			lastFocus = d.activeElement;
+			modal.hidden = false;
+			d.documentElement.classList.add('sccm-noscroll');
+			var dialog = modal.querySelector('.sccm-modal__dialog');
+			var items = focusables(dialog);
+			(items[0] || dialog).focus();
+		});
 	}
 
 	function closePreferences() {
@@ -654,54 +849,65 @@
 
 	/* ------------------------------------------------------------------ UI: floating button */
 
+	/**
+	 * The "Cookie settings" widget. Corners get a round button; the three centred positions
+	 * (bottom centre, left centre, right centre) get a small half-circle that peeks out from the
+	 * edge of the screen and slides out when hovered or focused (see the CSS).
+	 */
 	function renderFloating() {
 		if (!C.floating) {
 			return;
 		}
-		if (!floating) {
-			floating = el('button', {
-				type: 'button',
-				'class': 'sccm-root sccm-floating sccm-floating--' + C.floatingPos,
-				'data-sccm-action': 'manage',
-				'aria-label': T.settings_button,
-				title: T.settings_button,
-				html: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5zm-4.5 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm2 5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>'
-			});
-			d.body.appendChild(floating);
-		}
-		floating.hidden = !!(banner && !banner.hidden);
+		afterStyles(function () {
+			if (!floating) {
+				floating = el('button', {
+					type: 'button',
+					'class': 'sccm-root sccm-floating sccm-floating--' + C.floatingPos,
+					'data-sccm-action': 'manage',
+					'aria-label': T.settings_button,
+					title: T.settings_button,
+					html: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5zm-4.5 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm2 5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>'
+				});
+				d.body.appendChild(floating);
+			}
+			floating.hidden = !!(banner && !banner.hidden);
+		});
 	}
 
 	/* ------------------------------------------------------------------ Scanner (names only) */
 
+	/**
+	 * Tell the server about cookie NAMES (never values) that are not in the list yet.
+	 * Cookies only, and never from logged-in users (their browsers carry extensions and admin
+	 * tools that are not part of the website). The server lists a cookie only after several
+	 * different visitors reported it.
+	 */
 	function reportUnknown() {
 		if (!C.scan || !C.rest.report) {
 			return;
 		}
+		var cls = d.body ? d.body.classList : null;
+		if (cls && (cls.contains('logged-in') || cls.contains('admin-bar'))) {
+			return;
+		}
 		var known = C.known || [];
 		var items = [];
-		function check(name, type) {
-			if (name === C.cookie) {
+		cookieNames().forEach(function (name) {
+			if (name === C.cookie || items.length >= 30) {
 				return;
 			}
-			var isKnown = known.some(function (k) {
-				return k.t === type && nameMatches(k.n, name);
+			var isKnown = known.some(function (pattern) {
+				return nameMatches(pattern, name);
 			});
-			if (!isKnown && items.length < 30) {
-				items.push({ n: name, t: type });
+			if (!isKnown) {
+				items.push({ n: name, t: 'cookie' });
 			}
-		}
-		cookieNames().forEach(function (name) {
-			check(name, 'cookie');
-		});
-		storageKeys('localStorage').forEach(function (name) {
-			check(name, 'localStorage');
 		});
 		if (!items.length) {
 			return;
 		}
 		var signature = items.map(function (i) {
-			return i.t + ':' + i.n;
+			return i.n;
 		}).sort().join('|');
 		try {
 			if (w.sessionStorage.getItem('sccm_reported') === signature) {
@@ -739,6 +945,9 @@
 			case 'save':
 				saveFromModal();
 				break;
+			case 'selection':
+				saveFromBanner();
+				break;
 			case 'manage':
 				openPreferences();
 				break;
@@ -765,11 +974,18 @@
 		if (w.location.hash === '#sccm-preferences') {
 			openPreferences();
 		} else if (w.location.hash === '#sccm-banner') {
-			// Preview the banner (e.g. from the admin Appearance tab).
-			showBanner();
+			// Preview the banner (e.g. from the admin Banner tab).
+			showBanner(true);
 		}
 		if (C.scan) {
-			setTimeout(reportUnknown, 4000);
+			// Low priority: wait until the page is idle so it never competes with the visitor.
+			setTimeout(function () {
+				if (w.requestIdleCallback) {
+					w.requestIdleCallback(reportUnknown, { timeout: 3000 });
+				} else {
+					reportUnknown();
+				}
+			}, 4000);
 		}
 		emit('sccm:ready', { grants: state.grants, consent: state.consent });
 	}
@@ -778,6 +994,9 @@
 		version: C.v,
 		getConsent: function () {
 			return state.consent;
+		},
+		getConsentId: function () {
+			return state.consent ? state.consent.id : null;
 		},
 		hasConsent: function (category) {
 			return category === 'necessary' || state.grants[category] === true;

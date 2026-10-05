@@ -70,15 +70,38 @@
 .sccm-close:focus-visible,
 .sccm-floating:focus-visible,
 .sccm-root summary:focus-visible,
-.sccm-switch input:focus-visible + .sccm-slider {
+.sccm-switch input:focus-visible + .sccm-slider,
+.sccm-copy:focus-visible {
 	outline: 3px solid var(--sccm-link);
 	outline-offset: 2px;
 }
 
-/* "Manage" is a secondary action; Accept and Reject always share the same style. */
-.sccm-btn--manage {
+/* "Manage" and "Allow selection" are secondary actions; Accept and Reject always share the same style. */
+.sccm-btn--manage,
+.sccm-btn--selection {
 	background: transparent;
 	color: var(--sccm-btn-bg);
+}
+
+/* A quiet text button (e.g. "Show details" next to the category switches). */
+.sccm-linkbtn {
+	appearance: none;
+	background: none;
+	border: 0;
+	color: var(--sccm-link);
+	cursor: pointer;
+	font: inherit;
+	font-size: 0.9em;
+	font-weight: 600;
+	margin: 0;
+	min-height: 32px;
+	padding: 4px 6px;
+	text-decoration: underline;
+}
+
+.sccm-linkbtn:focus-visible {
+	outline: 3px solid var(--sccm-link);
+	outline-offset: 2px;
 }
 
 .sccm-actions {
@@ -128,6 +151,37 @@
 	font-size: 0.9em;
 	gap: 16px;
 	margin-top: 10px !important;
+}
+
+/* Category switches on the first layer of the banner */
+.sccm-cats {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 14px;
+}
+
+.sccm-pill {
+	align-items: center;
+	background: var(--sccm-soft);
+	border: 1px solid var(--sccm-border);
+	border-radius: 999px;
+	cursor: pointer;
+	display: inline-flex;
+	font-size: 0.9em;
+	font-weight: 600;
+	gap: 8px;
+	padding: 5px 12px 5px 6px;
+}
+
+.sccm-pill:has(input:disabled) {
+	cursor: default;
+}
+
+/* Accept and Reject side by side, "Allow selection" full width below them (boxes, small screens). */
+.sccm-banner--cats .sccm-actions .sccm-btn--selection {
+	flex: 1 1 100%;
 }
 
 /* Full-width bar */
@@ -332,8 +386,46 @@
 	font-size: 0.88em;
 }
 
-.sccm-consent-id:empty {
-	display: none;
+/* What the visitor chose, when, and the consent ID they can quote as evidence */
+.sccm-status {
+	background: var(--sccm-soft);
+	border-radius: var(--sccm-radius);
+	font-size: 0.9em;
+}
+
+.sccm-status:not(:empty) {
+	padding: 10px 14px;
+}
+
+.sccm-status__row {
+	margin: 2px 0 !important;
+	overflow-wrap: anywhere;
+}
+
+.sccm-status code {
+	font-size: 0.95em;
+	margin-inline-end: 8px;
+}
+
+.sccm-copy {
+	background: transparent;
+	border: 1px solid var(--sccm-border);
+	border-radius: 999px;
+	color: inherit;
+	cursor: pointer;
+	font: inherit;
+	font-size: 0.85em;
+	padding: 1px 10px;
+}
+
+.sccm-count {
+	background: var(--sccm-soft);
+	border-radius: 999px;
+	font-size: 0.78em;
+	font-weight: 600;
+	min-width: 22px;
+	padding: 1px 8px;
+	text-align: center;
 }
 
 /* Switch */
@@ -392,6 +484,20 @@
 
 .sccm-switch input:disabled + .sccm-slider {
 	opacity: 0.6;
+}
+
+.sccm-switch--sm {
+	height: 22px;
+	width: 38px;
+}
+
+.sccm-switch--sm .sccm-slider::before {
+	height: 16px;
+	width: 16px;
+}
+
+.sccm-switch--sm input:checked + .sccm-slider::before {
+	transform: translateX(16px);
 }
 
 .sccm-sr {
@@ -477,7 +583,6 @@
 	background: var(--sccm-btn-bg);
 	border: 0;
 	border-radius: 50%;
-	bottom: 16px;
 	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 	color: var(--sccm-btn-text);
 	cursor: pointer;
@@ -486,15 +591,70 @@
 	justify-content: center;
 	padding: 0;
 	position: fixed;
+	transition: transform 0.2s ease;
 	width: 46px;
 }
 
+/* Corners: a round button */
 .sccm-floating--bottom-left {
-	inset-inline-start: 16px;
+	bottom: 16px;
+	left: 16px;
 }
 
 .sccm-floating--bottom-right {
-	inset-inline-end: 16px;
+	bottom: 16px;
+	right: 16px;
+}
+
+/*
+ * Centred positions: a minimal half-circle that peeks out from the edge of the screen. The
+ * other half is outside the window. It slides out when hovered or focused; on touch screens
+ * it simply stays as a small tab.
+ */
+.sccm-floating--bottom-center,
+.sccm-floating--left-center,
+.sccm-floating--right-center {
+	height: 52px;
+	width: 52px;
+}
+
+.sccm-floating--bottom-center {
+	align-items: flex-start;
+	bottom: 0;
+	left: 50%;
+	padding-top: 7px;
+	transform: translate(-50%, 50%);
+}
+
+.sccm-floating--left-center {
+	justify-content: flex-end;
+	left: 0;
+	padding-right: 7px;
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.sccm-floating--right-center {
+	justify-content: flex-start;
+	padding-left: 7px;
+	right: 0;
+	top: 50%;
+	transform: translate(50%, -50%);
+}
+
+.sccm-floating--bottom-center:hover,
+.sccm-floating--bottom-center:focus-visible {
+	transform: translate(-50%, 12%);
+}
+
+.sccm-floating--left-center:hover,
+.sccm-floating--left-center:focus-visible {
+	transform: translate(-12%, -50%);
+}
+
+.sccm-floating--right-center:hover,
+.sccm-floating--right-center:focus-visible {
+	transform: translate(12%, -50%);
 }
 
 /* ---------------------------------------------------------------- Blocked iframe placeholder */

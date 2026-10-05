@@ -37,6 +37,7 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 
 ## Phase 4 — Admin
 - [x] Menu + tabs: General, Appearance, Texts, Categories, Cookies, Blocking, Scanner, Consent Log, Tools
+      (v0.1.0; **simplified in Phase 5b to Dashboard, Cookies, Banner, Settings, Consent Records, Tools**)
 - [x] Cookies tab: list, add/edit/delete, approve pending, add from library
 - [x] Consent Log tab: list, search, date filter, CSV export, purge
 - [x] Tools tab: export/import settings JSON, "Ask everyone again", create Cookie Policy page
@@ -50,6 +51,15 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - [ ] Staging test on a real site with the TESTING.md checklist (incl. Compliance review)
 - [ ] Release 1.0.0 (tag + zip)
 
+## Phase 5b — Pre-staging changes requested after v0.1.0 (2026-10-05)
+- [x] Simpler admin: Dashboard (status, to-do, key numbers), 6 tabs, Help panel
+- [x] Cookiebot-style category names; category switches in the banner; consent status/ID/date
+- [x] Quiet scanner: short accurate cookie list, Needs review inbox, upgrade clean-up
+- [x] Optional consent expiry (presets, custom days, session); five widget positions incl. half-circle edge tabs
+- [x] HTML alert email, several recipients, sample email
+- [x] Performance review (see `PERFORMANCE.md`)
+- [ ] Review against the live Cookiebot banner and account (not reachable from the build environment)
+
 ## Later (not in scope for 1.0)
 - Geo-targeting (different banner per region)
 - IAB TCF v2.x / Google-certified CMP
@@ -57,3 +67,4 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - Block editor block for the cookie policy
 - Consent sharing across subdomains
 - "Do Not Sell or Share" link mode for US state laws
+- Server-set consent cookie (Safari caps JavaScript-set cookies at 7 days)

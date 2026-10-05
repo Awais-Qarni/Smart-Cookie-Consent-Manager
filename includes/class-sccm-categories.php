@@ -26,19 +26,19 @@ class SCCM_Categories {
 		return array(
 			'necessary'  => array(
 				'label'       => __( 'Necessary', 'smart-cookie-consent-manager' ),
-				'description' => __( 'Required for the website to work, for example security, page loading and remembering your cookie choice. They cannot be switched off.', 'smart-cookie-consent-manager' ),
+				'description' => __( 'Necessary cookies make the website usable by enabling basic functions such as page navigation, security and remembering your cookie choice. The website cannot work properly without them.', 'smart-cookie-consent-manager' ),
 			),
 			'functional' => array(
-				'label'       => __( 'Functional', 'smart-cookie-consent-manager' ),
-				'description' => __( 'Remember your settings and provide extra features, such as language preferences, embedded fonts and content.', 'smart-cookie-consent-manager' ),
+				'label'       => __( 'Preferences', 'smart-cookie-consent-manager' ),
+				'description' => __( 'Preference cookies let the website remember choices that change how it looks or behaves, such as your language or region, and provide extra features like embedded maps, fonts and chat.', 'smart-cookie-consent-manager' ),
 			),
 			'analytics'  => array(
-				'label'       => __( 'Analytics', 'smart-cookie-consent-manager' ),
-				'description' => __( 'Help us understand how visitors use the website so we can improve it. Information is collected in aggregate.', 'smart-cookie-consent-manager' ),
+				'label'       => __( 'Statistics', 'smart-cookie-consent-manager' ),
+				'description' => __( 'Statistics cookies help us understand how visitors use the website by collecting and reporting information anonymously, so we can improve it.', 'smart-cookie-consent-manager' ),
 			),
 			'marketing'  => array(
-				'label'       => __( 'Tracking / Advertising', 'smart-cookie-consent-manager' ),
-				'description' => __( 'Used by advertising and social media partners to measure campaigns and show relevant ads on other websites.', 'smart-cookie-consent-manager' ),
+				'label'       => __( 'Marketing', 'smart-cookie-consent-manager' ),
+				'description' => __( 'Marketing cookies are used to track visitors across websites. The aim is to show ads that are relevant to you, and to measure how well advertising campaigns perform.', 'smart-cookie-consent-manager' ),
 			),
 		);
 	}

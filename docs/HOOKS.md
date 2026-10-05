@@ -15,6 +15,7 @@
 | `sccm_client_ip` | `string $ip` | Client IP (e.g. read a trusted proxy header). |
 | `sccm_scan_urls` | `array $urls` | Pages fetched by the server-side scanner. |
 | `sccm_scan_sslverify` | `bool $verify` | Set to `false` for staging with self-signed certificates. |
+| `sccm_async_css` | `bool $async` | Return `false` to load the front-end stylesheet the usual (render-blocking) way. |
 
 Example: add a service.
 
@@ -26,6 +27,8 @@ add_filter( 'sccm_services', function ( $services ) {
 		'category' => 'functional',
 		'patterns' => array( 'widget.mychat.example' ),
 		'cookies'  => array( array( 'mychat_id', '1 year', 'Identifies the chat visitor.' ) ),
+		// A 5th value `true` after the type marks a cookie that is only set in special cases:
+		// array( 'mychat_vip', '1 year', 'Set for returning VIPs.', 'cookie', true ).
 	);
 	return $services;
 } );
@@ -44,6 +47,7 @@ add_filter( 'sccm_services', function ( $services ) {
 ```js
 window.SCCM.hasConsent('analytics');   // true | false
 window.SCCM.getConsent();              // { id, v, t, c: {functional, analytics, marketing}, m, g } | null
+window.SCCM.getConsentId();            // the visitor's consent ID, or null before a choice
 window.SCCM.openPreferences();
 window.SCCM.showBanner();
 window.SCCM.acceptAll();
@@ -55,7 +59,7 @@ document.addEventListener('sccm:consent', (e) => console.log(e.detail.method, e.
 ```
 
 `dataLayer` event for Google Tag Manager triggers: `sccm_consent_update` with
-`sccm_categories` (array of allowed categories) and `sccm_method`.
+`sccm_categories` (array of allowed categories), `sccm_method` and `sccm_consent_id`.
 
 ## HTML attributes
 

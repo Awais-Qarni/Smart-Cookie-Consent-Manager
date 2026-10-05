@@ -26,28 +26,42 @@ class SCCM_Admin {
 		add_filter( 'plugin_action_links_' . SCCM_BASENAME, array( __CLASS__, 'action_links' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'notices' ) );
 
-		$actions = array( 'save', 'cookie_save', 'cookie_delete', 'cookie_status', 'add_service', 'scan_now', 'send_digest', 'export_log', 'purge_log', 'delete_log', 'export_settings', 'import_settings', 'bump_version', 'create_policy_page', 'reset_settings', 'add_rule' );
+		$actions = array( 'save', 'cookie_save', 'cookie_delete', 'cookie_status', 'ignore_all', 'add_service', 'scan_now', 'send_digest', 'send_test_email', 'export_log', 'purge_log', 'delete_log', 'export_settings', 'import_settings', 'bump_version', 'create_policy_page', 'reset_settings', 'add_rule' );
 		foreach ( $actions as $action ) {
 			add_action( 'admin_post_sccm_' . $action, array( __CLASS__, 'handle_' . $action ) );
 		}
 	}
 
 	/**
-	 * Tabs: slug => label.
+	 * Tabs: slug => label. Six tabs, in the order a site owner needs them.
 	 *
 	 * @return array
 	 */
 	public static function tabs() {
 		return array(
-			'general'    => __( 'General', 'smart-cookie-consent-manager' ),
-			'appearance' => __( 'Appearance', 'smart-cookie-consent-manager' ),
-			'texts'      => __( 'Texts', 'smart-cookie-consent-manager' ),
-			'categories' => __( 'Categories', 'smart-cookie-consent-manager' ),
-			'cookies'    => __( 'Cookies', 'smart-cookie-consent-manager' ),
-			'blocking'   => __( 'Blocking', 'smart-cookie-consent-manager' ),
-			'scanner'    => __( 'Scanner', 'smart-cookie-consent-manager' ),
-			'log'        => __( 'Consent Log', 'smart-cookie-consent-manager' ),
-			'tools'      => __( 'Tools', 'smart-cookie-consent-manager' ),
+			'dashboard' => __( 'Dashboard', 'smart-cookie-consent-manager' ),
+			'cookies'   => __( 'Cookies', 'smart-cookie-consent-manager' ),
+			'banner'    => __( 'Banner', 'smart-cookie-consent-manager' ),
+			'settings'  => __( 'Settings', 'smart-cookie-consent-manager' ),
+			'records'   => __( 'Consent Records', 'smart-cookie-consent-manager' ),
+			'tools'     => __( 'Tools', 'smart-cookie-consent-manager' ),
+		);
+	}
+
+	/**
+	 * Tab names of version 0.1.0, so old links and bookmarks keep working.
+	 *
+	 * @return array old slug => new slug.
+	 */
+	private static function legacy_tabs() {
+		return array(
+			'general'    => 'dashboard',
+			'appearance' => 'banner',
+			'texts'      => 'banner',
+			'categories' => 'banner',
+			'blocking'   => 'settings',
+			'scanner'    => 'cookies',
+			'log'        => 'records',
 		);
 	}
 
@@ -55,7 +69,7 @@ class SCCM_Admin {
 	 * Admin menu.
 	 */
 	public static function menu() {
-		$pending = SCCM_Cookies::counts()['pending'];
+		$pending = SCCM_Cookies::pending_count();
 		$badge   = $pending ? ' <span class="awaiting-mod"><span class="pending-count">' . (int) $pending . '</span></span>' : '';
 		add_menu_page(
 			__( 'Cookie Consent', 'smart-cookie-consent-manager' ),
@@ -101,7 +115,7 @@ class SCCM_Admin {
 	}
 
 	/**
-	 * Notices: result messages + pending cookies reminder.
+	 * Notices: result messages, and a reminder when cookies wait for review.
 	 */
 	public static function notices() {
 		$screen = get_current_screen();
@@ -113,37 +127,50 @@ class SCCM_Admin {
 			$type = ( ! empty( $_GET['sccm_err'] ) ) ? 'error' : 'success';
 			echo '<div class="notice notice-' . esc_attr( $type ) . ' is-dismissible"><p>' . esc_html( sanitize_text_field( wp_unslash( $_GET['sccm_msg'] ) ) ) . '</p></div>';
 		}
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'dashboard';
 		// phpcs:enable
-		$pending = SCCM_Cookies::counts()['pending'];
-		if ( $pending ) {
+		// The Dashboard and the Cookies tab already show what is waiting; elsewhere, remind.
+		$pending = SCCM_Cookies::pending_count();
+		if ( $pending && ! in_array( $tab, array( 'dashboard', 'cookies', '' ), true ) ) {
 			echo '<div class="notice notice-warning"><p>';
 			printf(
 				/* translators: %d: number of cookies */
-				esc_html( _n( '%d new cookie was found and needs a category.', '%d new cookies were found and need a category.', $pending, 'smart-cookie-consent-manager' ) ),
+				esc_html( _n( '%d cookie is waiting for your approval.', '%d cookies are waiting for your approval.', $pending, 'smart-cookie-consent-manager' ) ),
 				(int) $pending
 			);
-			echo ' <a href="' . esc_url( self::url( 'cookies', array( 'status' => 'pending' ) ) ) . '">' . esc_html__( 'Review now', 'smart-cookie-consent-manager' ) . '</a></p></div>';
+			echo ' <a href="' . esc_url( self::url( 'cookies' ) ) . '">' . esc_html__( 'Review now', 'smart-cookie-consent-manager' ) . '</a></p></div>';
 		}
 	}
 
 	/**
-	 * Render the settings page.
+	 * Render the settings page: header, help panel, tabs, then the tab's view.
 	 */
 	public static function page() {
 		if ( ! current_user_can( self::CAP ) ) {
 			return;
 		}
-		$tabs     = self::tabs();
-		$tab      = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$tab      = isset( $tabs[ $tab ] ) ? $tab : 'general';
+		$tabs   = self::tabs();
+		$legacy = self::legacy_tabs();
+		$tab    = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'dashboard'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$tab    = isset( $legacy[ $tab ] ) ? $legacy[ $tab ] : $tab;
+		$tab    = isset( $tabs[ $tab ] ) ? $tab : 'dashboard';
 		$settings = SCCM_Settings::get();
+		$pending  = SCCM_Cookies::pending_count();
 
 		echo '<div class="wrap sccm-admin">';
-		echo '<h1>' . esc_html__( 'Smart Cookie Consent Manager', 'smart-cookie-consent-manager' ) . '</h1>';
+		echo '<div class="sccm-header">';
+		echo '<h1>' . esc_html__( 'Cookie Consent', 'smart-cookie-consent-manager' ) . '</h1>';
+		echo '<span class="sccm-pill sccm-pill--' . ( $settings['enabled'] ? 'on' : 'off' ) . '">' . ( $settings['enabled'] ? esc_html__( 'Banner on', 'smart-cookie-consent-manager' ) : esc_html__( 'Banner off', 'smart-cookie-consent-manager' ) ) . '</span>';
+		echo '<button type="button" class="button sccm-help-toggle" id="sccm-help-toggle" aria-expanded="false" aria-controls="sccm-help"><span class="dashicons dashicons-editor-help" aria-hidden="true"></span> ' . esc_html__( 'Help: how it works', 'smart-cookie-consent-manager' ) . '</button>';
+		echo '</div>';
+
+		include SCCM_PATH . 'includes/admin/views/help.php';
+
 		echo '<nav class="nav-tab-wrapper">';
 		foreach ( $tabs as $slug => $label ) {
 			$class = 'nav-tab' . ( $slug === $tab ? ' nav-tab-active' : '' );
-			echo '<a class="' . esc_attr( $class ) . '" href="' . esc_url( self::url( $slug ) ) . '">' . esc_html( $label ) . '</a>';
+			$badge = ( 'cookies' === $slug && $pending ) ? ' <span class="sccm-badge-count">' . (int) $pending . '</span>' : '';
+			echo '<a class="' . esc_attr( $class ) . '" href="' . esc_url( self::url( $slug ) ) . '">' . esc_html( $label ) . $badge . '</a>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- badge is a number.
 		}
 		echo '</nav><div class="sccm-tab">';
 		include SCCM_PATH . 'includes/admin/views/tab-' . $tab . '.php';
@@ -286,6 +313,27 @@ class SCCM_Admin {
 	}
 
 	/**
+	 * A visual picker: small "screens" that show where the banner or widget will appear.
+	 * Plain radio buttons underneath, so it works with the keyboard and without JavaScript.
+	 *
+	 * @param string|array $path    Setting path.
+	 * @param string       $current Current value.
+	 * @param array        $options value => label.
+	 * @param string       $kind    banner|widget (decides how the preview is drawn).
+	 */
+	public static function picker( $path, $current, array $options, $kind ) {
+		echo '<div class="sccm-picker sccm-picker--' . esc_attr( $kind ) . '" role="radiogroup">';
+		foreach ( $options as $value => $label ) {
+			echo '<label class="sccm-pos' . ( (string) $value === (string) $current ? ' is-selected' : '' ) . '">';
+			echo '<input type="radio" name="' . esc_attr( self::name( $path ) ) . '" value="' . esc_attr( $value ) . '"' . checked( (string) $value, (string) $current, false ) . '>';
+			echo '<span class="sccm-pos__screen" aria-hidden="true"><i class="sccm-pos__ui sccm-pos__ui--' . esc_attr( $value ) . '"></i></span>';
+			echo '<span class="sccm-pos__label">' . esc_html( $label ) . '</span>';
+			echo '</label>';
+		}
+		echo '</div>';
+	}
+
+	/**
 	 * Field description.
 	 *
 	 * @param string $desc Text (may contain <code>, <a>, <strong>).
@@ -349,10 +397,11 @@ class SCCM_Admin {
 	 */
 	public static function handle_save() {
 		self::guard( 'sccm_save' );
-		$tab   = isset( $_POST['tab'] ) ? sanitize_key( wp_unslash( $_POST['tab'] ) ) : 'general';
+		$tab   = isset( $_POST['tab'] ) ? sanitize_key( wp_unslash( $_POST['tab'] ) ) : 'dashboard';
 		$input = isset( $_POST['sccm'] ) && is_array( $_POST['sccm'] ) ? wp_unslash( $_POST['sccm'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitised in SCCM_Settings::sanitize().
 
-		if ( 'blocking' === $tab ) {
+		// The Settings tab lists the known services as ticked boxes: unticked ones are the disabled ones.
+		if ( isset( $_POST['sccm_services_form'] ) ) {
 			$active                     = isset( $_POST['sccm_services'] ) ? array_map( 'sanitize_key', (array) wp_unslash( $_POST['sccm_services'] ) ) : array();
 			$input['disabled_services'] = array_values( array_diff( array_keys( SCCM_Services::active_candidates() ), $active ) );
 			$input['rules']             = isset( $input['rules'] ) && is_array( $input['rules'] ) ? $input['rules'] : array();
@@ -407,11 +456,25 @@ class SCCM_Admin {
 		$status   = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : 'active';
 		$category = isset( $_POST['category'] ) ? sanitize_key( wp_unslash( $_POST['category'] ) ) : '';
 		$data     = array( 'status' => 'ignored' === $status ? 'ignored' : 'active' );
-		if ( $category ) {
+		if ( 'active' === $data['status'] ) {
+			// Never guess: the site owner decides what an unknown cookie is for.
+			if ( ! SCCM_Categories::is_valid( $category ) ) {
+				self::back( 'cookies', __( 'Please choose a category for the cookie first.', 'smart-cookie-consent-manager' ), true );
+			}
 			$data['category'] = $category;
 		}
 		SCCM_Cookies::save( $data, $id );
-		self::back( 'cookies', __( 'Cookie updated.', 'smart-cookie-consent-manager' ), false, array( 'status' => 'pending' ) );
+		self::back( 'cookies', 'active' === $data['status'] ? __( 'Cookie approved. It now appears in the cookie list.', 'smart-cookie-consent-manager' ) : __( 'Cookie ignored. It will not be reported again.', 'smart-cookie-consent-manager' ) );
+	}
+
+	/**
+	 * Ignore everything that waits for review.
+	 */
+	public static function handle_ignore_all() {
+		self::guard( 'sccm_ignore_all' );
+		$changed = SCCM_Cookies::bulk_status( 'pending', 'ignored' );
+		/* translators: %d: number of cookies */
+		self::back( 'cookies', sprintf( _n( '%d cookie ignored.', '%d cookies ignored.', $changed, 'smart-cookie-consent-manager' ), $changed ) );
 	}
 
 	/**
@@ -430,9 +493,9 @@ class SCCM_Admin {
 	 */
 	public static function handle_scan_now() {
 		self::guard( 'sccm_scan_now' );
-		$results = SCCM_Scanner::run();
+		$results = SCCM_Scanner::run( true );
 		/* translators: 1: pages, 2: services */
-		self::back( 'scanner', sprintf( __( 'Scan finished: %1$d page(s) checked, %2$d service(s) detected.', 'smart-cookie-consent-manager' ), count( $results['pages'] ), count( $results['services'] ) ) );
+		self::back( 'cookies', sprintf( __( 'Scan finished: %1$d page(s) checked, %2$d service(s) detected.', 'smart-cookie-consent-manager' ), count( $results['pages'] ), count( $results['services'] ) ) );
 	}
 
 	/**
@@ -441,7 +504,20 @@ class SCCM_Admin {
 	public static function handle_send_digest() {
 		self::guard( 'sccm_send_digest' );
 		$sent = SCCM_Scanner::send_digest( true );
-		self::back( 'scanner', $sent ? __( 'Email sent.', 'smart-cookie-consent-manager' ) : __( 'Nothing to send, or the email could not be sent.', 'smart-cookie-consent-manager' ), ! $sent );
+		self::back( 'settings', $sent ? __( 'Email sent.', 'smart-cookie-consent-manager' ) : __( 'Nothing to send, or the email could not be sent.', 'smart-cookie-consent-manager' ), ! $sent );
+	}
+
+	/**
+	 * Send a sample alert email to the configured recipients.
+	 */
+	public static function handle_send_test_email() {
+		self::guard( 'sccm_send_test_email' );
+		$sent = SCCM_Scanner::send_test();
+		if ( $sent ) {
+			/* translators: %s: email addresses */
+			self::back( 'settings', sprintf( __( 'Sample email sent to %s. If it does not arrive, check your spam folder or your site\'s email setup.', 'smart-cookie-consent-manager' ), implode( ', ', SCCM_Settings::alert_recipients() ) ) );
+		}
+		self::back( 'settings', __( 'The sample email could not be sent. Your website may not be set up to send email.', 'smart-cookie-consent-manager' ), true );
 	}
 
 	/**
@@ -464,7 +540,7 @@ class SCCM_Admin {
 		self::guard( 'sccm_purge_log' );
 		$deleted = SCCM_Consent_Log::purge( (int) SCCM_Settings::get( 'retention_months' ) );
 		/* translators: %d: rows */
-		self::back( 'log', sprintf( __( '%d old record(s) deleted.', 'smart-cookie-consent-manager' ), $deleted ) );
+		self::back( 'records', sprintf( __( '%d old record(s) deleted.', 'smart-cookie-consent-manager' ), $deleted ) );
 	}
 
 	/**
@@ -473,7 +549,7 @@ class SCCM_Admin {
 	public static function handle_delete_log() {
 		self::guard( 'sccm_delete_log' );
 		SCCM_Consent_Log::delete_all();
-		self::back( 'log', __( 'All consent records deleted.', 'smart-cookie-consent-manager' ) );
+		self::back( 'records', __( 'All consent records deleted.', 'smart-cookie-consent-manager' ) );
 	}
 
 	/**
@@ -529,10 +605,10 @@ class SCCM_Admin {
 			true
 		);
 		if ( is_wp_error( $page_id ) ) {
-			self::back( 'general', $page_id->get_error_message(), true );
+			self::back( 'dashboard', $page_id->get_error_message(), true );
 		}
 		SCCM_Settings::update( array( 'policy_page_id' => $page_id ) );
-		self::back( 'general', __( 'Cookie Policy page created and linked in the banner.', 'smart-cookie-consent-manager' ) );
+		self::back( 'dashboard', __( 'Cookie Policy page created and linked in the banner.', 'smart-cookie-consent-manager' ) );
 	}
 
 	/**
@@ -559,7 +635,7 @@ class SCCM_Admin {
 			'category' => $category,
 		);
 		SCCM_Settings::update( array( 'rules' => $rules ) );
-		self::back( 'scanner', __( 'Blocking rule added.', 'smart-cookie-consent-manager' ) );
+		self::back( 'cookies', __( 'Blocking rule added.', 'smart-cookie-consent-manager' ) );
 	}
 
 	/**

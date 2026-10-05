@@ -5,6 +5,14 @@
  * The registry is the single source for: the cookie list shown to visitors, the cookie
  * policy, cookie clean-up for refused categories, and the scanner's "known" list.
  *
+ * How cookies get in (kept deliberately quiet, so the list stays short and accurate):
+ *  - Known cookies (the service library) are added automatically as Active, in the right
+ *    category. Nothing to do for the site owner.
+ *  - Unknown cookies seen by the server scan are added as "Needs review".
+ *  - Unknown cookies reported by visitors' browsers are added as "Needs review" only after
+ *    at least two different visitors reported them (browser extensions and other one-off
+ *    noise never reach the list). Logged-in users never report.
+ *
  * @package SmartCookieConsentManager
  */
 
@@ -20,6 +28,21 @@ class SCCM_Cookies {
 	const SOURCES  = array( 'default', 'library', 'manual', 'scanner', 'import' );
 
 	/**
+	 * Most items that can wait for review at the same time (flood protection).
+	 */
+	const MAX_PENDING = 50;
+
+	/**
+	 * Different visitors that must report an unknown cookie before it is listed.
+	 */
+	const MIN_VISITORS = 2;
+
+	/**
+	 * Option that holds cookies reported by visitors but not yet listed.
+	 */
+	const CANDIDATES_OPTION = 'sccm_candidates';
+
+	/**
 	 * Request cache of all rows.
 	 *
 	 * @var array|null
@@ -32,6 +55,13 @@ class SCCM_Cookies {
 	 * @var bool
 	 */
 	private static $suppress_bump = false;
+
+	/**
+	 * A bump was requested while suppressed.
+	 *
+	 * @var bool
+	 */
+	private static $bump_pending = false;
 
 	/**
 	 * Table name.
@@ -145,6 +175,21 @@ class SCCM_Cookies {
 	}
 
 	/**
+	 * Number of items waiting for review. One cheap query, safe to call on every admin page.
+	 *
+	 * @return int
+	 */
+	public static function pending_count() {
+		global $wpdb;
+		if ( null !== self::$rows ) {
+			return self::counts()['pending'];
+		}
+		$table = self::table();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'pending' ) );
+	}
+
+	/**
 	 * One row by id.
 	 *
 	 * @param int $id Row id.
@@ -227,7 +272,37 @@ class SCCM_Cookies {
 	}
 
 	/**
-	 * Add all cookies of a library service as active entries.
+	 * Move every item with one status to another (e.g. ignore everything waiting for review).
+	 *
+	 * @param string $from Current status.
+	 * @param string $to   New status (ignored|active).
+	 * @return int Rows changed.
+	 */
+	public static function bulk_status( $from, $to ) {
+		global $wpdb;
+		if ( ! in_array( $from, self::STATUSES, true ) || ! in_array( $to, self::STATUSES, true ) || $from === $to ) {
+			return 0;
+		}
+		$changed = (int) $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			self::table(),
+			array(
+				'status'     => $to,
+				'updated_at' => current_time( 'mysql', true ),
+			),
+			array( 'status' => $from )
+		);
+		self::$rows = null;
+		if ( $changed && 'active' === $to ) {
+			self::maybe_bump_version();
+		}
+		return $changed;
+	}
+
+	/**
+	 * Add the cookies of a library service as active entries.
+	 *
+	 * Cookies the library marks "only if seen" are skipped when the service was merely detected
+	 * (source 'scanner'); an explicit "add this service" (source 'library') adds them all.
 	 *
 	 * @param string $service_key Service id.
 	 * @param string $source      Source label.
@@ -238,59 +313,64 @@ class SCCM_Cookies {
 		if ( ! $service ) {
 			return 0;
 		}
-		$was_suppressed      = self::$suppress_bump;
-		self::$suppress_bump = true;
-		$added               = 0;
-		foreach ( $service['cookies'] as $cookie ) {
-			$type = isset( $cookie[3] ) ? $cookie[3] : 'cookie';
-			if ( self::find_exact( $cookie[0], $type ) ) {
-				continue;
+		return (int) self::bulk(
+			function () use ( $service, $service_key, $source ) {
+				$added = 0;
+				foreach ( $service['cookies'] as $cookie ) {
+					$type = isset( $cookie[3] ) ? $cookie[3] : 'cookie';
+					if ( 'scanner' === $source && ! empty( $cookie[4] ) ) {
+						continue;
+					}
+					if ( self::find_exact( $cookie[0], $type ) ) {
+						continue;
+					}
+					$id = self::save(
+						array(
+							'name'     => $cookie[0],
+							'type'     => $type,
+							'category' => $service['category'],
+							'provider' => $service['provider'],
+							'purpose'  => isset( $cookie[2] ) ? $cookie[2] : '',
+							'duration' => isset( $cookie[1] ) ? $cookie[1] : '',
+							'service'  => $service_key,
+							'status'   => 'active',
+							'source'   => $source,
+						)
+					);
+					if ( $id ) {
+						++$added;
+					}
+				}
+				return $added;
 			}
-			$id = self::save(
-				array(
-					'name'     => $cookie[0],
-					'type'     => $type,
-					'category' => $service['category'],
-					'provider' => $service['provider'],
-					'purpose'  => isset( $cookie[2] ) ? $cookie[2] : '',
-					'duration' => isset( $cookie[1] ) ? $cookie[1] : '',
-					'service'  => $service_key,
-					'status'   => 'active',
-					'source'   => $source,
-				)
-			);
-			if ( $id ) {
-				++$added;
-			}
-		}
-		self::$suppress_bump = $was_suppressed;
-		if ( $added ) {
-			self::maybe_bump_version();
-		}
-		return $added;
+		);
 	}
 
 	/**
 	 * Record a cookie seen by the scanner or a visitor's browser.
 	 *
-	 * Known → update last_seen. Found in the library → add as active. Unknown → pending.
+	 * Known → update last_seen. Found in the library → add as active (automatic category).
+	 * Unknown → "needs review" (from a visitor's browser: only once enough visitors reported it).
 	 *
-	 * @param string $name Cookie name.
-	 * @param string $type Storage type.
-	 * @return string '' when already known, 'active' or 'pending' when added.
+	 * @param string $name   Cookie name.
+	 * @param string $type   Storage type.
+	 * @param string $origin 'scanner' (server scan) or 'visitor' (reported by a browser).
+	 * @return string '' when nothing was added, 'active' or 'pending' when added.
 	 */
-	public static function record_seen( $name, $type = 'cookie' ) {
+	public static function record_seen( $name, $type = 'cookie', $origin = 'scanner' ) {
 		global $wpdb;
 
 		$now      = current_time( 'mysql', true );
 		$existing = self::find_matching( $name, $type );
 		if ( $existing ) {
-			$wpdb->update( self::table(), array( 'last_seen' => $now ), array( 'id' => (int) $existing['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			if ( 'scanner' === $origin ) {
+				$wpdb->update( self::table(), array( 'last_seen' => $now ), array( 'id' => (int) $existing['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			}
 			return '';
 		}
 
 		$known = SCCM_Services::match_cookie( $name );
-		if ( $known ) {
+		if ( $known && $known['type'] === $type ) {
 			self::save(
 				array(
 					'name'       => $known['name'],
@@ -310,6 +390,13 @@ class SCCM_Cookies {
 			return 'active';
 		}
 
+		if ( self::pending_count() >= self::MAX_PENDING ) {
+			return '';
+		}
+		if ( 'visitor' === $origin && ! self::add_candidate( $name, $type ) ) {
+			return '';
+		}
+
 		self::save(
 			array(
 				'name'       => $name,
@@ -323,6 +410,49 @@ class SCCM_Cookies {
 		);
 		self::queue_alert( $name, $type, 'pending', '' );
 		return 'pending';
+	}
+
+	/**
+	 * Count one visitor's report of an unknown cookie.
+	 *
+	 * @param string $name Cookie name.
+	 * @param string $type Storage type.
+	 * @return bool True when enough different visitors have reported it (list it now).
+	 */
+	private static function add_candidate( $name, $type ) {
+		$candidates = get_option( self::CANDIDATES_OPTION, array() );
+		$candidates = is_array( $candidates ) ? $candidates : array();
+		$now        = time();
+		$key        = $type . ':' . $name;
+		$visitor    = substr( md5( SCCM_Consent_Log::client_ip() . '|' . wp_salt( 'nonce' ) ), 0, 10 );
+
+		// Forget stale candidates.
+		foreach ( $candidates as $k => $candidate ) {
+			if ( ! isset( $candidate['t'] ) || $now - (int) $candidate['t'] > 14 * DAY_IN_SECONDS ) {
+				unset( $candidates[ $k ] );
+			}
+		}
+
+		if ( ! isset( $candidates[ $key ] ) ) {
+			if ( count( $candidates ) >= 100 ) {
+				return false;
+			}
+			$candidates[ $key ] = array(
+				'v' => array(),
+				't' => $now,
+			);
+		}
+		if ( ! in_array( $visitor, $candidates[ $key ]['v'], true ) ) {
+			$candidates[ $key ]['v'][] = $visitor;
+			$candidates[ $key ]['t']   = $now;
+		}
+
+		$promote = count( $candidates[ $key ]['v'] ) >= self::MIN_VISITORS;
+		if ( $promote ) {
+			unset( $candidates[ $key ] );
+		}
+		update_option( self::CANDIDATES_OPTION, $candidates, false );
+		return $promote;
 	}
 
 	/**
@@ -346,16 +476,22 @@ class SCCM_Cookies {
 	}
 
 	/**
-	 * Seed the registry with the plugin's own cookie and WordPress core cookies.
+	 * Seed the registry with the plugin's own cookie (and WooCommerce's when active).
+	 *
+	 * WordPress login cookies are not listed: only logged-in users have them, visitors never
+	 * do. If a visitor-facing WordPress cookie ever appears (e.g. comment cookies) the scanner
+	 * adds it from the library automatically.
 	 */
 	public static function seed_defaults() {
-		self::$suppress_bump = true;
-		self::add_service( 'sccm', 'default' );
-		self::add_service( 'wordpress', 'default' );
-		if ( class_exists( 'WooCommerce' ) ) {
-			self::add_service( 'woocommerce', 'default' );
-		}
-		self::$suppress_bump = false;
+		self::bulk(
+			function () {
+				self::add_service( 'sccm', 'default' );
+				if ( class_exists( 'WooCommerce' ) ) {
+					self::add_service( 'woocommerce', 'default' );
+				}
+			},
+			false
+		);
 	}
 
 	/**
@@ -381,26 +517,49 @@ class SCCM_Cookies {
 	 * @return int Number imported.
 	 */
 	public static function import_rows( array $rows ) {
+		return (int) self::bulk(
+			function () use ( $rows ) {
+				$count = 0;
+				foreach ( $rows as $row ) {
+					if ( ! is_array( $row ) || empty( $row['name'] ) ) {
+						continue;
+					}
+					$type = isset( $row['type'] ) ? $row['type'] : 'cookie';
+					if ( self::find_exact( $row['name'], $type ) ) {
+						continue;
+					}
+					$row['source'] = 'import';
+					if ( self::save( $row ) ) {
+						++$count;
+					}
+				}
+				return $count;
+			}
+		);
+	}
+
+	/**
+	 * Run a bulk operation: registry changes inside it ask everyone again at most once, at the end.
+	 *
+	 * @param callable $operation Work to do.
+	 * @param bool     $bump      Whether to bump the consent version afterwards when needed.
+	 * @return mixed Whatever the operation returns.
+	 */
+	public static function bulk( callable $operation, $bump = true ) {
+		$was_suppressed      = self::$suppress_bump;
+		$was_pending         = self::$bump_pending;
 		self::$suppress_bump = true;
-		$count               = 0;
-		foreach ( $rows as $row ) {
-			if ( ! is_array( $row ) || empty( $row['name'] ) ) {
-				continue;
-			}
-			$type = isset( $row['type'] ) ? $row['type'] : 'cookie';
-			if ( self::find_exact( $row['name'], $type ) ) {
-				continue;
-			}
-			$row['source'] = 'import';
-			if ( self::save( $row ) ) {
-				++$count;
-			}
+		self::$bump_pending  = false;
+
+		$result = $operation();
+
+		$needed              = self::$bump_pending;
+		self::$suppress_bump = $was_suppressed;
+		self::$bump_pending  = $was_pending || ( $needed && $was_suppressed );
+		if ( $needed && $bump && ! $was_suppressed ) {
+			self::bump_version();
 		}
-		self::$suppress_bump = false;
-		if ( $count ) {
-			self::maybe_bump_version();
-		}
-		return $count;
+		return $result;
 	}
 
 	/**
@@ -424,9 +583,14 @@ class SCCM_Cookies {
 	 * Bump the version if "ask again when the cookie list changes" is on.
 	 */
 	public static function maybe_bump_version() {
-		if ( ! self::$suppress_bump && SCCM_Settings::get( 'reask_on_change' ) ) {
-			self::bump_version();
+		if ( ! SCCM_Settings::get( 'reask_on_change' ) ) {
+			return;
 		}
+		if ( self::$suppress_bump ) {
+			self::$bump_pending = true;
+			return;
+		}
+		self::bump_version();
 	}
 
 	/**

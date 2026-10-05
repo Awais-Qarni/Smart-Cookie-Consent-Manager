@@ -42,7 +42,8 @@
 
 	var now = Math.floor(Date.now() / 1000);
 	var stored = parseConsent();
-	var valid = !!(stored && stored.v === C.v && now - stored.t < C.days * 86400 && stored.t <= now + 300);
+	// C.days = 0 means "session only": the cookie itself disappears when the browser closes.
+	var valid = !!(stored && stored.v === C.v && (C.days === 0 || now - stored.t < C.days * 86400) && stored.t <= now + 300);
 
 	// Optional grace period: after a "Reject", do not ask again for N days even if the version changed.
 	if (!valid && stored && stored.m === 'reject_all' && C.graceDays > 0 && now - stored.t < C.graceDays * 86400) {

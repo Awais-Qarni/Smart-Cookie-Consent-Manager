@@ -84,7 +84,11 @@ class SCCM_REST {
 	}
 
 	/**
-	 * Receive cookie/localStorage names seen in a browser that are not in the registry.
+	 * Receive cookie names seen in a browser that are not in the registry.
+	 *
+	 * Cookies only (local storage is plugin-internal state, not tracking, and made the list noisy).
+	 * An unknown cookie is listed only after several different visitors reported it, see
+	 * SCCM_Cookies::record_seen().
 	 *
 	 * @param WP_REST_Request $request Request.
 	 * @return WP_REST_Response|WP_Error
@@ -106,10 +110,10 @@ class SCCM_REST {
 			}
 			$name = isset( $item['n'] ) ? (string) $item['n'] : '';
 			$type = isset( $item['t'] ) ? (string) $item['t'] : 'cookie';
-			if ( ! self::valid_name( $name ) || ! in_array( $type, array( 'cookie', 'localStorage' ), true ) ) {
+			if ( ! self::valid_name( $name ) || 'cookie' !== $type ) {
 				continue;
 			}
-			if ( '' !== SCCM_Cookies::record_seen( $name, $type ) ) {
+			if ( '' !== SCCM_Cookies::record_seen( $name, 'cookie', 'visitor' ) ) {
 				++$added;
 			}
 		}

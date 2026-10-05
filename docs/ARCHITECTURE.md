@@ -36,7 +36,9 @@ Browser
   7. Delete known cookies/localStorage of denied categories
   8. On a choice: write cookie → POST /wp-json/sccm/v1/consent → gtag update → release
      (if a previously granted category is withdrawn → clean up + reload)
-  9. Scanner: compare cookie/localStorage names with the registry → POST /sccm/v1/report
+  9. Scanner: compare cookie names with the registry → POST /sccm/v1/report
+     (cookies only, never from logged-in users; the server lists a cookie only after
+     several different visitors reported it)
 ```
 
 ## Data
@@ -51,11 +53,33 @@ Browser
   by services enabled from the library.
 - **Scan results** — option `sccm_last_scan`.
 
+## How the cookie list is built (and kept short)
+
+| Source | What it adds |
+|---|---|
+| Install | `sccm_consent` (and WooCommerce's cookies when active). Not the WordPress login cookies: only logged-in users have them. |
+| Server scan (cron / "Scan now") | Cookies in `Set-Cookie` headers of real pages (known → Active, unknown → Needs review); for each service detected in the HTML, the cookies it always sets. |
+| Visitor reports | Known library cookies → Active at once. Unknown cookies → candidates in option `sccm_candidates`; listed as Needs review only after `SCCM_Cookies::MIN_VISITORS` (2) different visitors reported them. |
+
+Guards: pending items are capped (`MAX_PENDING` = 50), ignored cookies are never re-added, a
+scan bumps the consent version at most once (never on the first scan), and approving needs an
+explicit category. See `tests/wp/registry-test.php`.
+
+## Admin structure
+
+Six tabs, each one view file in `includes/admin/views/`: `dashboard`, `cookies`, `banner`,
+`settings`, `records`, `tools`, plus `help.php` (the ⓘ panel, shown on every tab). Old tab
+slugs (`general`, `appearance`, `texts`, `categories`, `blocking`, `scanner`, `log`) are mapped
+in `SCCM_Admin::legacy_tabs()`. Forms that sit inside the Settings form (sample email, send
+waiting alerts) use the HTML `form` attribute because forms cannot be nested.
+
 ## Consent cookie
 `sccm_consent` = URI-encoded JSON, first-party, `Path=/`, `SameSite=Lax`, `Secure` on HTTPS.
 ```json
 { "id": "uuid-v4", "v": 3, "t": 1790000000, "c": { "functional": 0, "analytics": 1, "marketing": 0 }, "m": "custom", "g": 0 }
 ```
+The cookie has an expiry date of N days, or none (session cookie) when the owner chose "until
+the browser is closed" (`days: 0`).
 `id` = consent ID (shown to visitor, stored in the log), `v` = consent version, `t` = unix time,
 `c` = granted categories, `m` = method, `g` = GPC applied.
 
