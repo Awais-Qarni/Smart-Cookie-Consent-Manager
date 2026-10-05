@@ -66,17 +66,50 @@ final class SCCM_Plugin {
 	}
 
 	/**
-	 * Version string for an asset: plugin version + file modification time.
+	 * Public URL of a plugin asset whose FILE NAME changes whenever the file changes.
 	 *
-	 * Browsers, CDNs and hosts (e.g. WP Engine) cache files by URL. Without this, an updated
-	 * stylesheet or script keeps being served from the cache until the plugin version changes.
+	 * Hosts, CDNs and optimisation plugins (WP Engine, NitroPack, Cloudflare…) often cache static
+	 * files by path and ignore the "?ver=" query string, so an updated script could keep being
+	 * served in its old version to logged-out visitors. The asset is therefore copied once to
+	 * wp-content/uploads/sccm-assets/<name>.<hash>.<ext>; a new hash means a new URL that no cache
+	 * has seen. If the copy is not possible, the normal plugin URL with "?ver=" is used.
 	 *
-	 * @param string $relative Path relative to the plugin root, e.g. 'assets/css/sccm-admin.css'.
-	 * @return string
+	 * @param string $relative Path relative to the plugin root, e.g. 'assets/js/sccm-frontend.js'.
+	 * @return array array( url, ver ) for wp_enqueue_script()/wp_enqueue_style().
 	 */
-	public static function asset_version( $relative ) {
-		$time = @filemtime( SCCM_PATH . $relative ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-		return SCCM_VERSION . ( $time ? '.' . $time : '' );
+	public static function asset( $relative ) {
+		$source = SCCM_PATH . $relative;
+		$time   = @filemtime( $source ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		$ver    = SCCM_VERSION . ( $time ? '.' . $time : '' );
+		/**
+		 * Copy assets to uploads with a versioned file name (return false to serve them from the plugin folder).
+		 *
+		 * @param bool $copy Whether to copy.
+		 */
+		if ( ! $time || ! apply_filters( 'sccm_versioned_asset_files', true ) ) {
+			return array( SCCM_URL . $relative, $ver );
+		}
+		$uploads = wp_upload_dir( null, false );
+		if ( ! empty( $uploads['error'] ) ) {
+			return array( SCCM_URL . $relative, $ver );
+		}
+		$info = pathinfo( $relative );
+		$hash = substr( md5( $ver . '|' . filesize( $source ) ), 0, 10 );
+		$name = $info['filename'] . '.' . $hash . '.' . $info['extension'];
+		$dir  = trailingslashit( $uploads['basedir'] ) . 'sccm-assets';
+		$file = $dir . '/' . $name;
+		if ( ! file_exists( $file ) ) {
+			if ( ! wp_mkdir_p( $dir ) || ! @copy( $source, $file ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				return array( SCCM_URL . $relative, $ver );
+			}
+			// Remove older copies of this asset.
+			foreach ( (array) glob( $dir . '/' . $info['filename'] . '.*.' . $info['extension'] ) as $old ) {
+				if ( $old && $old !== $file ) {
+					wp_delete_file( $old );
+				}
+			}
+		}
+		return array( set_url_scheme( trailingslashit( $uploads['baseurl'] ) . 'sccm-assets/' . $name ), null );
 	}
 
 	/**

@@ -149,11 +149,13 @@ class SCCM_Frontend {
 		if ( ! self::is_active() ) {
 			return;
 		}
-		wp_enqueue_style( 'sccm-frontend', SCCM_URL . 'assets/css/sccm-frontend.css', array(), SCCM_Plugin::asset_version( 'assets/css/sccm-frontend.css' ) );
+		list( $css_url, $css_ver ) = SCCM_Plugin::asset( 'assets/css/sccm-frontend.css' );
+		wp_enqueue_style( 'sccm-frontend', $css_url, array(), $css_ver );
 		wp_add_inline_style( 'sccm-frontend', self::inline_css() );
 
 		$args = array( 'strategy' => 'defer' );
-		wp_enqueue_script( 'sccm-frontend', SCCM_URL . 'assets/js/sccm-frontend.js', array(), SCCM_Plugin::asset_version( 'assets/js/sccm-frontend.js' ), version_compare( get_bloginfo( 'version' ), '6.3', '>=' ) ? $args : false );
+		list( $js_url, $js_ver ) = SCCM_Plugin::asset( 'assets/js/sccm-frontend.js' );
+		wp_enqueue_script( 'sccm-frontend', $js_url, array(), $js_ver, version_compare( get_bloginfo( 'version' ), '6.3', '>=' ) ? $args : false );
 	}
 
 	/**
@@ -254,12 +256,12 @@ class SCCM_Frontend {
 			}
 		}
 		foreach ( SCCM_Services::all() as $service ) {
-			if ( 'necessary' === $service['category'] ) {
-				continue;
-			}
 			foreach ( $service['cookies'] as $cookie ) {
-				$type = isset( $cookie[3] ) && isset( $slots[ $cookie[3] ] ) ? $cookie[3] : 'cookie';
-				$cleanup[ $service['category'] ][ $slots[ $type ] ][ $cookie[0] ] = true;
+				$category = SCCM_Services::cookie_category( $service, $cookie );
+				if ( 'necessary' !== $category ) {
+					$type = isset( $cookie[3] ) && isset( $slots[ $cookie[3] ] ) ? $cookie[3] : 'cookie';
+					$cleanup[ $category ][ $slots[ $type ] ][ $cookie[0] ] = true;
+				}
 			}
 		}
 		foreach ( $cleanup as $category => $by_slot ) {
@@ -284,6 +286,7 @@ class SCCM_Frontend {
 			'reload'      => (bool) $settings['reload_on_withdraw'],
 			'position'    => $settings['position'],
 			'order'       => $settings['button_order'],
+			'layout'      => $settings['banner_layout'],
 			'scanMode'    => self::is_scan_mode(),
 			'floating'    => (bool) $settings['floating_button'],
 			'floatingPos' => $settings['floating_position'],

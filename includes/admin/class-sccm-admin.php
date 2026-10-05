@@ -94,8 +94,10 @@ class SCCM_Admin {
 			return;
 		}
 		wp_enqueue_style( 'wp-color-picker' );
-		wp_enqueue_style( 'sccm-admin', SCCM_URL . 'assets/css/sccm-admin.css', array(), SCCM_Plugin::asset_version( 'assets/css/sccm-admin.css' ) );
-		wp_enqueue_script( 'sccm-admin', SCCM_URL . 'assets/js/sccm-admin.js', array( 'jquery', 'wp-color-picker' ), SCCM_Plugin::asset_version( 'assets/js/sccm-admin.js' ), true );
+		list( $css_url, $css_ver ) = SCCM_Plugin::asset( 'assets/css/sccm-admin.css' );
+		list( $js_url, $js_ver )   = SCCM_Plugin::asset( 'assets/js/sccm-admin.js' );
+		wp_enqueue_style( 'sccm-admin', $css_url, array(), $css_ver );
+		wp_enqueue_script( 'sccm-admin', $js_url, array( 'jquery', 'wp-color-picker' ), $js_ver, true );
 		wp_localize_script(
 			'sccm-admin',
 			'SCCM_ADMIN',

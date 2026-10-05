@@ -7,9 +7,9 @@ npm install          # first time only (dev dependency: Playwright)
 npm test             # php -l on every PHP file, node --check on JS, PHP unit tests (tests/php/run.php)
 
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
-SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 69 browser checks (visitor side)
-SCCM_WP=/path/to/wp npm run test:wp                              # 45 checks: cookie list, browser-scan rules, settings, email (WP-CLI)
-SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 33 checks of the admin screens, incl. a real browser scan
+SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 76 browser checks (visitor side)
+SCCM_WP=/path/to/wp npm run test:wp                              # 56 checks: cookie list, browser-scan rules, settings, email (WP-CLI)
+SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 35 checks of the admin screens, incl. a real browser scan
 ```
 
 `test:wp` and `e2e:admin` reset the cookie list and settings of the site they run on: dev sites only.
@@ -37,7 +37,9 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 ### D. Manage Preferences (features 3, 10)
 - [ ] D1 Necessary switch on + disabled; all others off (in the banner and in the window).
 - [ ] D2 Expanding a category lists its cookies.
-- [ ] D5 Banner has Consent / Details / About tabs; Consent shows Necessary / Preferences /
+- [ ] D0 Default (compact) banner: Allow all, Deny, Customize. Customize opens the window with
+      the tabs and Allow selection; Esc/close without choosing shows the banner again.
+- [ ] D5 Banner style "Detailed": banner has Consent / Details / About tabs; Consent shows Necessary / Preferences /
       Statistics / Marketing switches; "Allow selection" releases only the ticked ones; the three
       buttons look identical; Banner tab → Button order changes the order.
 - [ ] D6 Details tab: each category opens to providers, each provider to cookie cards (name,
@@ -46,6 +48,9 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 - [ ] D4 Tab/Shift+Tab stay inside the modal; Esc closes without saving.
 
 ### E. Change / withdraw (feature 4)
+- [ ] E0 After updating the plugin on a site with NitroPack/CDN: purge once, then a private
+      window shows the same banner as a logged-in browser (script URL is
+      `…/uploads/sccm-assets/sccm-frontend.<hash>.js`).
 - [ ] E1 Floating button, `[sccm_cookie_settings]` and a menu link to `#sccm-preferences`
       all open the cookie settings dialog.
 - [ ] E3 Banner tab → cookie settings button: try all five positions. Corners show a round icon;

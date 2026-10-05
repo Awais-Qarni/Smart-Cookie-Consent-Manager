@@ -23,6 +23,7 @@ $sccm_text_groups = array(
 		'btn_selection' => __( '"Allow selection" button', 'smart-cookie-consent-manager' ),
 		'btn_reject'    => __( 'Reject button', 'smart-cookie-consent-manager' ),
 		'btn_details'   => __( '"Show details" link', 'smart-cookie-consent-manager' ),
+		'btn_customize' => __( '"Customize" button (compact style)', 'smart-cookie-consent-manager' ),
 		'about_text'    => __( 'Text (About tab)', 'smart-cookie-consent-manager' ),
 		'policy_link'   => __( 'Cookie Policy link', 'smart-cookie-consent-manager' ),
 		'privacy_link'  => __( 'Privacy Policy link', 'smart-cookie-consent-manager' ),
@@ -82,6 +83,16 @@ SCCM_Admin::form_open( 'banner' );
 	?>
 	<table class="form-table" role="presentation">
 		<?php
+		SCCM_Admin::select(
+			'banner_layout',
+			__( 'Banner style', 'smart-cookie-consent-manager' ),
+			$settings['banner_layout'],
+			array(
+				'compact' => __( 'Compact: text and three buttons (Allow all, Deny, Customize)', 'smart-cookie-consent-manager' ),
+				'tabs'    => __( 'Detailed: tabs (Consent, Details, About) and category switches at once', 'smart-cookie-consent-manager' ),
+			),
+			__( 'In the compact style, "Customize" opens the detailed window with the category switches and every cookie. Both styles let visitors refuse as easily as they accept.', 'smart-cookie-consent-manager' )
+		);
 		SCCM_Admin::select(
 			'button_order',
 			__( 'Button order', 'smart-cookie-consent-manager' ),

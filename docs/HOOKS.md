@@ -16,6 +16,7 @@
 | `sccm_scan_urls` | `array $urls` | Pages fetched by the server-side scanner. |
 | `sccm_scan_sslverify` | `bool $verify` | Set to `false` for staging with self-signed certificates. |
 | `sccm_async_css` | `bool $async` | Return `false` to load the front-end stylesheet the usual (render-blocking) way. |
+| `sccm_versioned_asset_files` | `bool $copy` | Return `false` to serve CSS/JS from the plugin folder with `?ver=` instead of hashed copies in `uploads/sccm-assets/`. |
 
 Example: add a service.
 
@@ -29,6 +30,8 @@ add_filter( 'sccm_services', function ( $services ) {
 		'cookies'  => array( array( 'mychat_id', '1 year', 'Identifies the chat visitor.' ) ),
 		// A 5th value `true` after the type marks a cookie that is only set in special cases:
 		// array( 'mychat_vip', '1 year', 'Set for returning VIPs.', 'cookie', true ).
+		// A 6th value gives one cookie its own category:
+		// array( 'mychat_lang', '1 year', 'Remembers the language.', 'cookie', false, 'functional' ).
 	);
 	return $services;
 } );

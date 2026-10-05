@@ -110,7 +110,13 @@ const front = await ctx.newPage();
 await front.goto(BASE + '/');
 await front.waitForSelector('#sccm-banner');
 check('B2 front end uses the chosen position', await front.evaluate(() => document.getElementById('sccm-banner').classList.contains('sccm-pos-center')));
-check('B2 front end uses the chosen button order', JSON.stringify(await front.$$eval('#sccm-banner .sccm-actions .sccm-btn', (els) => els.map((e) => e.textContent.trim()))) === JSON.stringify(['Deny', 'Allow selection', 'Allow all']));
+check('B2 front end uses the chosen button order (compact banner)', JSON.stringify(await front.$$eval('#sccm-banner .sccm-actions .sccm-btn', (els) => els.map((e) => e.textContent.trim()))) === JSON.stringify(['Deny', 'Allow all', 'Customize']));
+await page.selectOption('#sccm-banner_layout', 'tabs');
+await Promise.all([page.waitForNavigation(), page.click('p.submit input[type=submit]')]);
+check('B3 banner style "tabs" saved', option().banner_layout === 'tabs');
+await front.reload();
+await front.waitForSelector('#sccm-banner');
+check('B3 tabbed banner shows the tabs and all three buttons in the chosen order', (await front.locator('#sccm-banner .sccm-tab').count()) === 3 && JSON.stringify(await front.$$eval('#sccm-banner .sccm-actions .sccm-btn', (els) => els.map((e) => e.textContent.trim()))) === JSON.stringify(['Deny', 'Allow selection', 'Allow all']));
 await front.close();
 
 // Browser scan: finds cookies set by JavaScript and third-party cookies, from a nearly empty list.

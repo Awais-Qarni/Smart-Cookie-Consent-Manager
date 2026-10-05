@@ -328,7 +328,7 @@ class SCCM_Cookies {
 						array(
 							'name'     => $cookie[0],
 							'type'     => $type,
-							'category' => $service['category'],
+							'category' => SCCM_Services::cookie_category( $service, $cookie ),
 							'provider' => $service['provider'],
 							'purpose'  => isset( $cookie[2] ) ? $cookie[2] : '',
 							'duration' => isset( $cookie[1] ) ? $cookie[1] : '',

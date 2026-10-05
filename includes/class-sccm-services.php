@@ -63,6 +63,17 @@ class SCCM_Services {
 	}
 
 	/**
+	 * Category of one library cookie: its own (6th value) or the service's.
+	 *
+	 * @param array $service Service.
+	 * @param array $cookie  Cookie definition.
+	 * @return string
+	 */
+	public static function cookie_category( array $service, array $cookie ) {
+		return ( isset( $cookie[5] ) && SCCM_Categories::is_valid( $cookie[5] ) ) ? $cookie[5] : $service['category'];
+	}
+
+	/**
 	 * Services whose blocking rules are active.
 	 *
 	 * @return array
@@ -162,7 +173,7 @@ class SCCM_Services {
 						'duration' => isset( $cookie[1] ) ? $cookie[1] : '',
 						'purpose'  => isset( $cookie[2] ) ? $cookie[2] : '',
 						'type'     => isset( $cookie[3] ) ? $cookie[3] : 'cookie',
-						'category' => $service['category'],
+						'category' => self::cookie_category( $service, $cookie ),
 						'provider' => $service['provider'],
 					);
 				}

@@ -35,6 +35,7 @@ class SCCM_Settings {
 			// General.
 			'enabled'              => 1,
 			'position'             => 'bottom',   // bottom | top | bottom-left | bottom-right | center.
+			'banner_layout'        => 'compact',  // compact (text + 3 buttons; Customize opens the full dialog) | tabs (full dialog at once).
 			'button_order'         => 'accept_first', // accept_first | reject_first (all buttons always look the same).
 			'floating_button'      => 1,
 			'floating_position'    => 'bottom-left', // bottom-left | bottom-right | bottom-center | left-center | right-center.
@@ -132,6 +133,7 @@ class SCCM_Settings {
 			'btn_reject'           => __( 'Deny', 'smart-cookie-consent-manager' ),
 			'btn_selection'        => __( 'Allow selection', 'smart-cookie-consent-manager' ),
 			'btn_details'          => __( 'Show details', 'smart-cookie-consent-manager' ),
+			'btn_customize'        => __( 'Customize', 'smart-cookie-consent-manager' ),
 			'about_text'           => __( 'Cookies are small text files that websites store in your browser. The law says we may only store cookies that are strictly necessary for the website to work. For all other types of cookies we need your permission. Some cookies are placed by third-party services that appear on our pages. You can change or withdraw your consent at any time with the cookie settings button.', 'smart-cookie-consent-manager' ),
 			// Details tab: cookie cards.
 			'no_cookies'           => __( 'No cookies in this category.', 'smart-cookie-consent-manager' ),
@@ -261,6 +263,7 @@ class SCCM_Settings {
 			'position'          => array( 'bottom', 'top', 'bottom-left', 'bottom-right', 'center' ),
 			'floating_position' => array( 'bottom-left', 'bottom-right', 'bottom-center', 'left-center', 'right-center' ),
 			'button_order'      => array( 'accept_first', 'reject_first' ),
+			'banner_layout'     => array( 'compact', 'tabs' ),
 			'consent_mode'      => array( 'basic', 'advanced', 'off' ),
 			'gpc_scope'         => array( 'all', 'marketing' ),
 			'scan_schedule'     => array( 'daily', 'weekly', 'off' ),

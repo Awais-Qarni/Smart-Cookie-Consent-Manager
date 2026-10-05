@@ -688,6 +688,38 @@
 	}
 
 	/**
+	 * Compact first layer: title, text, links and three buttons. "Customize" opens the full
+	 * dialog (tabs, switches, every cookie). Allow all and Deny always look the same.
+	 */
+	function buildCompactBanner() {
+		var isModal = C.position === 'center';
+		var buttons = actionButtons().filter(function (button) {
+			return !button.classList.contains('sccm-btn--selection');
+		});
+		buttons.push(el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--customize', 'data-sccm-action': 'customize', text: T.btn_customize }));
+		var root = el('div', {
+			id: 'sccm-banner',
+			'class': 'sccm-root sccm-dialog sccm-compact sccm-pos-' + C.position,
+			role: isModal ? 'dialog' : 'region',
+			'aria-modal': isModal ? 'true' : null,
+			'aria-labelledby': 'sccm-btitle',
+			'aria-describedby': 'sccm-btext'
+		}, [
+			isModal ? el('div', { 'class': 'sccm-overlay' }) : null,
+			el('div', { 'class': 'sccm-dialog__box' }, [
+				el('div', { 'class': 'sccm-compact__content' }, [
+					el('p', { 'class': 'sccm-title', id: 'sccm-btitle', role: 'heading', 'aria-level': '2', text: T.banner_title }),
+					el('div', { 'class': 'sccm-text', id: 'sccm-btext', html: T.banner_text }),
+					linksRow()
+				]),
+				el('div', { 'class': 'sccm-actions sccm-compact__actions' }, buttons)
+			])
+		]);
+		d.body.appendChild(root);
+		return root;
+	}
+
+	/**
 	 * Build a dialog.
 	 *
 	 * @param {string} kind 'banner' (first visit) or 'prefs' (reopened later)
@@ -797,6 +829,7 @@
 	}
 
 	var bannerQueued = false;
+	var bannerAway = false;
 
 	/**
 	 * Show the banner. Nothing is drawn before the stylesheet is applied.
@@ -818,7 +851,7 @@
 		afterStyles(function () {
 			bannerQueued = false;
 			if (state.needsChoice || force === true) {
-				banner = buildDialog('banner');
+				banner = C.layout === 'tabs' ? buildDialog('banner') : buildCompactBanner();
 				if (floating) {
 					floating.hidden = true;
 				}
@@ -886,9 +919,7 @@
 			lastFocus = d.activeElement;
 			modal.hidden = false;
 			d.documentElement.classList.add('sccm-noscroll');
-			var box = modal.querySelector('.sccm-dialog__box');
-			var items = focusables(box);
-			(items[0] || box).focus();
+			modal.querySelector('.sccm-dialog__box').focus();
 		});
 	}
 
@@ -898,6 +929,11 @@
 		}
 		modal.hidden = true;
 		d.documentElement.classList.remove('sccm-noscroll');
+		// Closed without choosing after "Customize": the banner comes back (closing is never consent).
+		if (bannerAway && state.needsChoice && banner) {
+			banner.hidden = false;
+		}
+		bannerAway = false;
 		if (lastFocus && typeof lastFocus.focus === 'function') {
 			lastFocus.focus();
 		}
@@ -1018,6 +1054,11 @@
 				saveSelection(dialog);
 				break;
 			case 'manage':
+				openPreferences();
+				break;
+			case 'customize':
+				hideBanner();
+				bannerAway = true;
 				openPreferences();
 				break;
 			case 'close':

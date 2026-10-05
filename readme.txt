@@ -45,6 +45,9 @@ Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 * Simpler admin: 6 tabs, a Dashboard with a to-do list, and a Help panel explaining everything.
 * Categories renamed to Necessary, Preferences, Statistics, Marketing.
 * Cookiebot-style dialog: Consent / Details / About tabs, equal Allow all / Allow selection / Deny buttons.
+* Compact banner style (default): Allow all, Deny and Customize; the tabbed banner is a setting.
+* Cache-proof asset files (works with NitroPack and CDNs that ignore ?ver=).
+* More services recognised: NitroPack, GTranslate, PHP session, Tidio, LiveChat, Klaviyo, Snapchat, Reddit, WPML.
 * Scan now also scans in your browser, so cookies set by scripts and embedded services are found.
 * Consent ID/date shown to visitors, your choice of consent expiry, button order setting.
 * New cookie settings button positions (bottom centre, left/right edge as a "Cookies" tab).

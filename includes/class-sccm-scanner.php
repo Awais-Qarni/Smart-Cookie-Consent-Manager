@@ -50,7 +50,7 @@ class SCCM_Scanner {
 		);
 		$urls    = self::urls();
 		if ( $manual ) {
-			$urls = array_slice( $urls, 0, 6 );
+			$urls = array_slice( $urls, 0, 10 );
 			if ( function_exists( 'set_time_limit' ) ) {
 				@set_time_limit( 120 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, Squiz.PHP.DiscouragedFunctions.Discouraged
 			}
@@ -207,7 +207,7 @@ class SCCM_Scanner {
 				$service = SCCM_Services::get( $service_key );
 				foreach ( $service['cookies'] as $cookie ) {
 					if ( empty( $cookie[4] ) ) {
-						SCCM_Cookies::queue_alert( $cookie[0], isset( $cookie[3] ) ? $cookie[3] : 'cookie', 'active', $service['category'] );
+						SCCM_Cookies::queue_alert( $cookie[0], isset( $cookie[3] ) ? $cookie[3] : 'cookie', 'active', SCCM_Services::cookie_category( $service, $cookie ) );
 					}
 				}
 			}
@@ -259,14 +259,14 @@ class SCCM_Scanner {
 	}
 
 	/**
-	 * Pages the browser scan opens (same pages as the server scan, at most 6).
+	 * Pages the browser scan opens (the first 10 of the scan pages).
 	 *
 	 * @param string $token Scan-mode token.
 	 * @return array
 	 */
 	public static function browser_scan_urls( $token ) {
 		$urls = array();
-		foreach ( array_slice( self::urls(), 0, 6 ) as $url ) {
+		foreach ( array_slice( self::urls(), 0, 10 ) as $url ) {
 			$urls[] = add_query_arg( 'sccm_scan', $token, $url );
 		}
 		return $urls;
@@ -413,15 +413,25 @@ class SCCM_Scanner {
 	}
 
 	/**
-	 * Pages to scan: home, cookie policy, latest pages and posts.
+	 * Pages to scan: home, cookie policy, the pages in your menus (where contact forms, booking
+	 * widgets and maps usually are), then the latest pages and posts.
 	 *
-	 * @return array
+	 * @return array At most 15 URLs (the browser scan opens the first 10).
 	 */
 	public static function urls() {
 		$urls   = array( home_url( '/' ) );
 		$policy = SCCM_Frontend::policy_url();
 		if ( $policy ) {
 			$urls[] = $policy;
+		}
+		$host = wp_parse_url( home_url(), PHP_URL_HOST );
+		foreach ( get_nav_menu_locations() as $menu_id ) {
+			foreach ( (array) wp_get_nav_menu_items( $menu_id ) as $item ) {
+				$url = isset( $item->url ) ? strtok( (string) $item->url, '#' ) : '';
+				if ( $url && wp_parse_url( $url, PHP_URL_HOST ) === $host ) {
+					$urls[] = $url;
+				}
+			}
 		}
 		$posts = get_posts(
 			array(
@@ -441,7 +451,7 @@ class SCCM_Scanner {
 		 *
 		 * @param array $urls URLs.
 		 */
-		return array_slice( array_unique( array_filter( apply_filters( 'sccm_scan_urls', $urls ) ) ), 0, 15 );
+		return array_slice( array_values( array_unique( array_filter( apply_filters( 'sccm_scan_urls', $urls ) ) ) ), 0, 15 );
 	}
 
 	/**

@@ -12,18 +12,19 @@ MariaDB 10.11 (local, no page cache). They show relative cost; your server will 
 | PHP: HTML blocker (output buffer) | **about 1.2 ms** for a 434 KB page | Three regex passes over the page; measured with the real service patterns. |
 | Whole request, plugin on vs off | 48.1 ms vs 47.6 ms | Difference is within measurement noise. |
 | Inline in `<head>` (boot script + config) | ≈ 8.5–9.5 KB raw, **≈ 3.6 KB gzipped** | Grows about 120 bytes per listed cookie. |
-| `sccm-frontend.js` (deferred) | 33.8 KB raw, **10.2 KB gzipped** | v0.1.0: 23.7 / 7.0 KB. It now draws the tabbed dialog (Consent / Details / About), the edge tabs and supports the browser scan. No jQuery, loaded with `defer`. The Details tab (every cookie card) is built only when a visitor opens it. |
+| `sccm-frontend.js` (deferred) | 35.5 KB raw, **10.5 KB gzipped** | v0.1.0: 23.7 / 7.0 KB. It now draws the compact banner, the tabbed dialog (Consent / Details / About), the edge tabs and supports the browser scan. No jQuery, loaded with `defer`. The Details tab (every cookie card) is built only when a visitor opens it. |
 | `sccm-boot.js` (inline) | 4.0 KB raw, **1.8 KB gzipped** | v0.1.0: 3.1 / 1.5 KB. |
-| `sccm-frontend.css` | 13.4 KB raw, **3.4 KB gzipped** | v0.1.0: 9.3 / 2.4 KB. No longer blocks the first paint (see below). |
+| `sccm-frontend.css` | 14.4 KB raw, **3.6 KB gzipped** | v0.1.0: 9.3 / 2.4 KB. No longer blocks the first paint (see below). |
 | REST calls | none on a normal page view | One POST when the visitor chooses; one low-priority POST at most once per browser session, only if there are unknown cookies, never for logged-in users. |
 
 Everything is the same for every visitor, so full-page caches and CDNs serve it as-is.
 
 ## Changes made in this round
 
-0. **Assets are versioned by file time** (`SCCM_Plugin::asset_version()`), so hosts and browsers
-   never serve an old stylesheet or script after an update (this is what made the admin look
-   broken on a WP Engine staging site).
+0. **Assets are served from hashed copies** (`SCCM_Plugin::asset()` →
+   `uploads/sccm-assets/sccm-frontend.<hash>.js`), so hosts, CDNs and cache plugins that ignore
+   `?ver=` (NitroPack, some WP Engine setups) never serve an old stylesheet or script after an
+   update. The copy is made once per version; a normal page view only checks that it exists.
 
 1. **Stylesheet no longer blocks rendering.** It loads with `media="print" onload=…` (plus a
    `<noscript>` fallback). The script waits for it before drawing anything, so there is no
@@ -39,7 +40,7 @@ Everything is the same for every visitor, so full-page caches and CDNs serve it 
    when nothing is refused. The `known` list sent to the browser is plain names, cookies only.
 5. **Idle-time reporting**: the visitor-side scanner runs in `requestIdleCallback`, only once
    per session for the same set of names, and not at all for logged-in users.
-6. **Scan limits**: "Scan now" fetches at most 6 pages with 10-second timeouts (it used to be
+6. **Scan limits**: "Scan now" fetches at most 10 pages with 10-second timeouts (it used to be
    up to 15 pages × 20 s inside one admin request, which could hit the PHP time limit).
    Scheduled scans keep the larger limits and run in the background (cron).
 7. **Fewer writes**: a known cookie reported by a browser no longer writes `last_seen` to the
@@ -47,7 +48,7 @@ Everything is the same for every visitor, so full-page caches and CDNs serve it 
 
 ## The browser scan
 
-"Scan now" opens up to 6 pages, one after another, in a hidden frame in the administrator's
+"Scan now" opens up to 10 pages (menu pages first), one after another, in a hidden frame in the administrator's
 browser (about 5–10 seconds per page: it waits until the page stops loading files). This costs
 nothing for visitors: it only happens in the admin's browser, the scan-mode pages are never
 cached, and the scheduled (cron) scan stays server-only.

@@ -267,6 +267,43 @@
 	position: fixed;
 }
 
+/* ---------------------------------------------------------------- Compact banner (default first layer) */
+
+.sccm-compact .sccm-dialog__box {
+	gap: 18px;
+	padding: 22px 24px;
+}
+
+.sccm-compact .sccm-title {
+	margin-bottom: 6px !important;
+}
+
+/* "Customize" is a secondary action; Allow all and Deny always share the same style. */
+.sccm-btn--customize {
+	background: transparent;
+	color: var(--sccm-btn-bg);
+}
+
+@media (min-width: 900px) {
+	.sccm-compact.sccm-pos-bottom .sccm-dialog__box,
+	.sccm-compact.sccm-pos-top .sccm-dialog__box {
+		align-items: center;
+		flex-direction: row;
+		gap: 32px;
+	}
+
+	.sccm-compact.sccm-pos-bottom .sccm-compact__content,
+	.sccm-compact.sccm-pos-top .sccm-compact__content {
+		flex: 1 1 auto;
+	}
+
+	.sccm-compact.sccm-pos-bottom .sccm-compact__actions,
+	.sccm-compact.sccm-pos-top .sccm-compact__actions {
+		flex: 0 0 auto;
+		grid-template-columns: repeat(3, minmax(150px, auto));
+	}
+}
+
 /* ---------------------------------------------------------------- Consent tab: category switches */
 
 .sccm-toggles {
@@ -546,7 +583,8 @@
 
 	.sccm-dialog__head,
 	.sccm-dialog__body,
-	.sccm-dialog__foot {
+	.sccm-dialog__foot,
+	.sccm-compact .sccm-dialog__box {
 		padding-left: 16px;
 		padding-right: 16px;
 	}

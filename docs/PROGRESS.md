@@ -10,9 +10,46 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 - **Version:** 0.1.0 (feature-complete for the 12 features, not yet staging-tested on a real site)
 - **Branch:** `feature/v1-build` (pull request to `main`)
 - **Phase:** 5b, pre-staging changes done (see `ROADMAP.md`); staging test is next
-- **Last updated:** 2026-10-05 (session 4)
+- **Last updated:** 2026-10-05 (session 5)
 
 ---
+
+## 2026-10-05 — Session 5 (owner feedback: missing cookies, two different banners, Help button)
+
+**Root causes found**
+- Banner looked different logged in vs in a private window: the private window got an **old
+  cached `sccm-frontend.js`** (NitroPack/CDN serve logged-out visitors from their own cache and
+  ignore `?ver=`). Fixed for good with hashed copies in `uploads/sccm-assets/`
+  (`SCCM_Plugin::asset()`). The owner must purge NitroPack + WP Engine caches once after this
+  update; later updates change the file name by themselves.
+- Missing cookies vs the first manual scan (PDF "Prima_Systems_Cookie_Details_1"): the PDF list
+  was GA4 (`_ga`, `_ga_*`), Google Tag Manager, Google signals/Ads, NitroPack, GTranslate,
+  Google Fonts, Cloudflare. All are now in the library (NitroPack and GTranslate were not).
+  **Calendly was not in that PDF**; it was in the owner's Cookiebot screenshot, and it is found
+  when a scanned page embeds it (Calendly sets its cookies on its own domain inside the embed).
+  Cookies that need an interaction (e.g. `googtrans` after switching language) only appear once
+  really set.
+
+**Done**
+- Banner style setting: **Compact** (default; Allow all / Deny / Customize, like the "incognito"
+  look the owner liked) or **Detailed** (the tabbed banner). Customize opens the full window;
+  closing it without a choice shows the banner again.
+- Library: PHP session, NitroPack, GTranslate, Tidio, LiveChat, Klaviyo, Snapchat, Reddit,
+  WPML; per-cookie category override (6th value); Google Ads audiences pattern.
+- Scanner: menu pages first, 10 pages in the browser scan; scan diagnostics line on the Cookies
+  tab ("Browser part: N pages opened…" or a warning).
+- Help button aligned next to the title.
+- Tests: unit 33/33, WP-CLI 56/56, e2e 76/76 (new compact checks M1–M3), admin e2e 35/35.
+
+**Next**
+1. Update the plugin on staging, **purge NitroPack and WP Engine caches once**, check the banner
+   in a private window, then Cookies → **Scan now** (keep the tab open). The scan line must say
+   "Browser part: N page(s) opened…".
+2. Compare with Cookiebot's report; approve anything under Needs review.
+
+**Notes & blockers**
+- The browser scan cannot click (language switchers, chat buttons), so cookies set only after
+  an interaction appear later via visitor reports or can be added by hand.
 
 ## 2026-10-05 — Session 4 (owner feedback on staging: design + scan)
 

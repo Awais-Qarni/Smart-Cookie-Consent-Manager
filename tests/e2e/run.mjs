@@ -32,8 +32,15 @@ async function launch() {
 	return chromium.launch(opts);
 }
 
-async function newPage(browser, { gpc = false, viewport } = {}) {
+async function newPage(browser, { gpc = false, viewport, layout } = {}) {
 	const context = await browser.newContext({ viewport: viewport || { width: 1280, height: 900 } });
+	if (layout) {
+		// Same page, another banner style (as if chosen under Banner → Banner style).
+		await context.route(BASE + '/', async (route) => {
+			const response = await route.fetch();
+			await route.fulfill({ response, body: (await response.text()).replace(/"layout":"[a-z]+"/, '"layout":"' + layout + '"') });
+		});
+	}
 	if (gpc) {
 		await context.addInitScript(() => {
 			Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true, configurable: true });
@@ -73,9 +80,12 @@ const browser = await launch();
 			const cs = getComputedStyle(document.querySelector('#sccm-banner ' + sel));
 			return [cs.backgroundColor, cs.color, cs.fontSize, cs.fontWeight, cs.borderColor, cs.paddingTop, cs.height].join('|');
 		};
-		return { accept: s('.sccm-btn--accept'), reject: s('.sccm-btn--reject'), selection: s('.sccm-btn--selection') };
+		return { accept: s('.sccm-btn--accept'), reject: s('.sccm-btn--reject') };
 	});
-	check('A1 Allow all, Allow selection and Deny look identical', styles.accept === styles.reject && styles.accept === styles.selection, styles.accept);
+	check('A1 Allow all and Deny look identical', styles.accept === styles.reject, styles.accept);
+	const compactButtons = await page.$$eval('#sccm-banner .sccm-actions .sccm-btn', (els) => els.map((e) => e.textContent.trim()));
+	check('A1 default (compact) banner: Allow all, Deny, Customize', JSON.stringify(compactButtons) === JSON.stringify(['Allow all', 'Deny', 'Customize']), compactButtons.join(','));
+	check('A1 compact banner shows the title, text and policy link', /This website uses cookies/.test(await page.textContent('#sccm-banner .sccm-title')) && (await page.locator('#sccm-banner .sccm-text').count()) === 1);
 	check('A1 stylesheet applied before the banner is drawn', await page.evaluate(() => document.getElementById('sccm-frontend-css').media === 'all'));
 
 	const before = await page.evaluate(() => ({
@@ -143,6 +153,28 @@ const browser = await launch();
 	await context.close();
 }
 
+/* ---------------------------------------------------------------- M: compact banner → Customize */
+{
+	const { context, page, errors } = await newPage(browser);
+	await page.goto(BASE + '/');
+	await page.waitForSelector('#sccm-banner:not([hidden])');
+	await page.click('#sccm-banner .sccm-btn--customize');
+	await page.waitForSelector('#sccm-prefs:not([hidden])');
+	check('M1 Customize opens the full window (Consent, Details, About) and hides the banner', await page.isVisible('#sccm-prefs .sccm-tab >> nth=2') && await page.isHidden('#sccm-banner'));
+	const prefsButtons = await page.$$eval('#sccm-prefs .sccm-actions .sccm-btn', (els) => els.map((e) => e.textContent.trim()));
+	check('M1 the window has Allow all, Allow selection and Deny', JSON.stringify(prefsButtons) === JSON.stringify(['Allow all', 'Allow selection', 'Deny']), prefsButtons.join(','));
+	await page.keyboard.press('Escape');
+	check('M2 closing the window without choosing brings the banner back (no consent stored)', await page.isVisible('#sccm-banner') && !(await consentCookie(context)));
+	await page.click('#sccm-banner .sccm-btn--customize');
+	await page.check('#sccm-cat-functional');
+	await page.click('#sccm-prefs .sccm-btn--selection');
+	await page.waitForTimeout(400);
+	const c = await consentCookie(context);
+	check('M3 a selection made after Customize is stored and the banner stays closed', c && c.m === 'custom' && c.c.functional === 1 && c.c.analytics === 0 && await page.isHidden('#sccm-banner'));
+	check('no JavaScript errors (compact banner)', errors.length === 0, errors.join(' | '));
+	await context.close();
+}
+
 /* ---------------------------------------------------------------- C: Deny */
 {
 	const { context, page, requests } = await newPage(browser);
@@ -157,9 +189,9 @@ const browser = await launch();
 	await context.close();
 }
 
-/* ---------------------------------------------------------------- D: the dialog (tabs, switches, details) */
+/* ---------------------------------------------------------------- D: the tabbed banner style (tabs, switches, details) */
 {
-	const { context, page, requests, errors } = await newPage(browser);
+	const { context, page, requests, errors } = await newPage(browser, { layout: 'tabs' });
 	await page.goto(BASE + '/');
 	await page.waitForSelector('#sccm-banner:not([hidden])');
 	const tabs = await page.$$eval('#sccm-banner .sccm-tab', (els) => els.map((e) => e.textContent.trim()));
@@ -267,7 +299,8 @@ const browser = await launch();
 	const box = await page.locator('#sccm-banner .sccm-dialog__box').boundingBox();
 	check('K3 mobile: dialog fits the screen', box && box.width <= 375 && box.x >= 0 && box.y >= 0);
 	check('K3 mobile: no horizontal scroll from the banner', !overflow);
-	await page.click('#sccm-btab-details');
+	await page.click('#sccm-banner .sccm-btn--customize');
+	await page.click('#sccm-tab-details');
 	await page.screenshot({ path: OUT + 'details-mobile.png' });
 	await context.close();
 }

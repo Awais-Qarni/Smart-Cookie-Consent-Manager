@@ -208,5 +208,17 @@ class SCCM_Install {
 
 		wp_clear_scheduled_hook( 'sccm_scan_event' );
 		wp_clear_scheduled_hook( 'sccm_daily_event' );
+
+		// Versioned copies of the plugin's CSS/JS (see SCCM_Plugin::asset()).
+		$uploads = wp_upload_dir( null, false );
+		if ( empty( $uploads['error'] ) ) {
+			$dir = trailingslashit( $uploads['basedir'] ) . 'sccm-assets';
+			foreach ( (array) glob( $dir . '/*' ) as $file ) {
+				if ( $file ) {
+					wp_delete_file( $file );
+				}
+			}
+			@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
+		}
 	}
 }

@@ -14,7 +14,8 @@ scanner, with no coding and no subscription. All data stays on your own server.
 **What visitors see**
 1. **Accept All**: one button, everything allowed.
 2. **Reject Non-Essential**: one button with the same size and style as Accept.
-3. **Manage Preferences**: one dialog with Consent, Details and About tabs (like Cookiebot):
+3. **Manage Preferences**: a compact banner (Allow all, Deny, Customize) by default, or the
+   detailed tabbed banner; "Customize" opens one dialog with Consent, Details and About tabs (like Cookiebot):
    a switch per category (Necessary, Preferences, Statistics, Marketing), every cookie grouped by
    category and provider, and the visitor's own choice, date and consent ID.
 4. **Change or withdraw anytime**: a cookie settings button in five positions (a round icon in a

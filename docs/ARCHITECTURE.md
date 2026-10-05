@@ -100,6 +100,19 @@ cards; built on first open), About (explanation + the visitor's consent status).
 one category in both tabs stay in sync. Buttons: Allow all / Allow selection / Deny, identical
 style, order from the `button_order` setting.
 
+The first-visit banner has two styles (`banner_layout`): **compact** (default,
+`buildCompactBanner()`: text + Allow all / Deny / Customize; Customize hides the banner and opens
+`#sccm-prefs`; closing that without a choice shows the banner again) and **tabs** (the dialog
+above as the banner).
+
+## Asset files (why they are copied to uploads)
+
+Page-cache/CDN plugins such as NitroPack and some hosts cache plugin files and ignore the
+`?ver=` query string, so an update could leave logged-out visitors on old JS. `SCCM_Plugin::asset()`
+copies each CSS/JS file to `uploads/sccm-assets/<name>.<hash>.<ext>` (hash of version, file
+time and size), serves that URL, and deletes older copies. If uploads is not writable it falls
+back to the plugin URL with `?ver=<version>.<file time>`. Uninstall removes the folder.
+
 ## Admin structure
 
 Six tabs, each one view file in `includes/admin/views/`: `dashboard`, `cookies`, `banner`,

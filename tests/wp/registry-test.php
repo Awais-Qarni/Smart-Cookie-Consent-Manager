@@ -167,6 +167,26 @@ sccm_check( 'browser scan: unknown third-party host goes to the report, not the 
 sccm_check( 'browser scan: summary counts what was added', $summary['active'] >= 5 && 2 === $summary['pending'] );
 wp_set_current_user( 0 );
 
+/* ---------------------------------------------------------------- Library details */
+$m = SCCM_Services::match_cookie( 'gt_autoswitch' );
+sccm_check( 'a cookie can have its own category (GTranslate auto-switch is Preferences)', $m && 'gtranslate' === $m['service'] && 'functional' === $m['category'] );
+$m = SCCM_Services::match_cookie( '__GT_TRANSLATE_LANGS' );
+sccm_check( 'other GTranslate keys keep the service category (Necessary)', $m && 'necessary' === $m['category'] );
+$m = SCCM_Services::match_cookie( 'nitroCachedPage' );
+sccm_check( 'NitroPack cache key is recognised', $m && 'nitropack' === $m['service'] );
+$m = SCCM_Services::match_cookie( 'PHPSESSID' );
+sccm_check( 'PHP session cookie is recognised as necessary', $m && 'necessary' === $m['category'] );
+$urls = SCCM_Scanner::urls();
+sccm_check( 'scan URLs start with the home page and are capped at 15', home_url( '/' ) === $urls[0] && count( $urls ) <= 15 );
+list( $asset_url, $asset_ver ) = SCCM_Plugin::asset( 'assets/js/sccm-frontend.js' );
+sccm_check( 'front-end script is served from a hashed copy (cache-proof)', (bool) preg_match( '#/sccm-assets/sccm-frontend\.[0-9a-f]{10}\.js$#', $asset_url ) && null === $asset_ver );
+$uploads = wp_upload_dir( null, false );
+sccm_check( 'the hashed copy exists and matches the source', file_exists( $uploads['basedir'] . '/sccm-assets/' . basename( $asset_url ) ) && md5_file( SCCM_PATH . 'assets/js/sccm-frontend.js' ) === md5_file( $uploads['basedir'] . '/sccm-assets/' . basename( $asset_url ) ) );
+add_filter( 'sccm_versioned_asset_files', '__return_false' );
+list( $asset_url ) = SCCM_Plugin::asset( 'assets/js/sccm-frontend.js' );
+sccm_check( 'hashed copies can be switched off with a filter', 0 === strpos( $asset_url, SCCM_URL ) );
+remove_filter( 'sccm_versioned_asset_files', '__return_false' );
+
 /* ---------------------------------------------------------------- Settings */
 
 $s = SCCM_Settings::update( array( 'floating_position' => 'left-center', 'consent_expiry_days' => 0 ) );
@@ -178,6 +198,11 @@ sccm_check( 'expiry is capped at 395 days (browser limit)', 395 === $s['consent_
 $s = SCCM_Settings::update( array( 'consent_expiry_days' => 90 ) );
 sccm_check( 'a chosen expiry is stored', 90 === $s['consent_expiry_days'] );
 sccm_check( 'front-end config carries the chosen expiry', 90 === SCCM_Frontend::config()['days'] );
+sccm_check( 'banner style defaults to compact', 'compact' === $s['banner_layout'] && 'compact' === SCCM_Frontend::config()['layout'] );
+$s = SCCM_Settings::update( array( 'banner_layout' => 'tabs' ) );
+sccm_check( 'banner style "tabs" is accepted', 'tabs' === $s['banner_layout'] );
+$s = SCCM_Settings::update( array( 'banner_layout' => 'popup-of-doom' ) );
+sccm_check( 'unknown banner style falls back to compact', 'compact' === $s['banner_layout'] );
 
 $s = SCCM_Settings::update( array( 'alert_email' => "one@example.com, two@example.com\nnot-an-email  one@example.com;three@example.org" ) );
 sccm_check( 'several alert recipients are stored (invalid and duplicate dropped)', 'one@example.com, two@example.com, three@example.org' === $s['alert_email'] );

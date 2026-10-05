@@ -164,6 +164,27 @@ $sccm_sources    = array(
 			);
 			?>
 		</span>
+		<?php
+		// Did the in-browser part run? Without it, cookies set by scripts cannot be found.
+		$sccm_browser = $sccm_scan && ! empty( $sccm_scan['browser'] ) ? $sccm_scan['browser'] : null;
+		if ( $sccm_browser && (int) $sccm_browser['time'] >= (int) $sccm_scan['time'] - HOUR_IN_SECONDS ) {
+			$sccm_opened = max( 0, (int) $sccm_browser['pages'] - (int) $sccm_browser['blocked'] );
+			echo '<p class="sccm-scanstate sccm-scanstate--' . ( $sccm_opened ? 'ok' : 'warn' ) . '">';
+			if ( $sccm_opened ) {
+				printf(
+					/* translators: 1: pages opened, 2: names found */
+					esc_html__( 'Browser part: %1$d page(s) opened with everything allowed; %2$d cookie and storage names seen.', 'smart-cookie-consent-manager' ),
+					(int) $sccm_opened,
+					count( (array) ( $sccm_browser['found'] ?? array() ) )
+				);
+			} else {
+				esc_html_e( 'Browser part: no page could be opened in the hidden frame (the site may forbid being shown in a frame, or a cache served a different page). Only the server part ran, so cookies set by scripts may be missing.', 'smart-cookie-consent-manager' );
+			}
+			echo '</p>';
+		} elseif ( $sccm_scan ) {
+			echo '<p class="sccm-scanstate sccm-scanstate--warn">' . esc_html__( 'The last scan ran on the server only (scheduled scan or an old page). Click Scan now and keep this page open to also find cookies that scripts set.', 'smart-cookie-consent-manager' ) . '</p>';
+		}
+		?>
 	</div>
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" data-sccm-browser-scan>
 		<?php SCCM_Admin::action_fields( 'scan_now' ); ?>
@@ -341,6 +362,14 @@ $sccm_sources    = array(
 				<?php
 				/* translators: %s: cookie names */
 				printf( esc_html__( 'Cookies the server sent: %s', 'smart-cookie-consent-manager' ), esc_html( implode( ', ', $sccm_scan['cookies'] ) ) );
+				?>
+			</p>
+		<?php endif; ?>
+		<?php if ( ! empty( $sccm_scan['browser']['found'] ) ) : ?>
+			<p>
+				<?php
+				/* translators: %s: cookie and storage names */
+				printf( esc_html__( 'Cookies and storage seen in your browser: %s', 'smart-cookie-consent-manager' ), esc_html( implode( ', ', (array) $sccm_scan['browser']['found'] ) ) );
 				?>
 			</p>
 		<?php endif; ?>

@@ -22,11 +22,16 @@
 }
 
 .sccm-header .sccm-help-toggle {
-	margin-inline-start: auto;
+	align-items: center;
+	display: inline-flex;
+	gap: 4px;
+	margin: 0;
 }
 
 .sccm-help-toggle .dashicons {
-	margin-top: 4px;
+	font-size: 18px;
+	height: 18px;
+	width: 18px;
 }
 
 .sccm-pill {
@@ -181,6 +186,19 @@
 
 .sccm-scanstrip form {
 	margin: 0;
+}
+
+.sccm-scanstate {
+	font-size: 13px;
+	margin: 6px 0 0;
+}
+
+.sccm-scanstate--ok {
+	color: #1a6b2a;
+}
+
+.sccm-scanstate--warn {
+	color: #8a5a00;
 }
 
 .sccm-big {

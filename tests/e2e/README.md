@@ -36,9 +36,9 @@ and screenshots go to `tests/e2e/output/` (git-ignored).
 
 | Command | What it covers |
 |---|---|
-| `npm run e2e` | Visitor side: dialog tabs, switches, details, button order, widget, expiry, scan-mode safety, reporting (69 checks). |
-| `SCCM_WP=/path/to/wp-cli-wrapper npm run test:wp` | Cookie list rules, browser-scan rules, settings, email recipients and design, categories (WP-CLI, 45 checks). |
-| `SCCM_WP=… SCCM_E2E_URL=… npm run e2e:admin` | Admin screens as `admin`/`admin`: approve/ignore, expiry, recipients, sample email, positions, button order, a real browser scan, CSRF (33 checks). |
+| `npm run e2e` | Visitor side: compact banner + Customize, dialog tabs, switches, details, button order, widget, expiry, scan-mode safety, reporting (76 checks). |
+| `SCCM_WP=/path/to/wp-cli-wrapper npm run test:wp` | Cookie list rules, browser-scan rules, settings, email recipients and design, categories, library details, hashed asset files (WP-CLI, 56 checks). |
+| `SCCM_WP=… SCCM_E2E_URL=… npm run e2e:admin` | Admin screens as `admin`/`admin`: approve/ignore, expiry, recipients, sample email, positions, button order, banner style, a real browser scan, CSRF (35 checks). |
 | `node tests/e2e/admin-shots.mjs <dir>` | Screenshots of every admin tab, for visual review. |
 
 The last three reset the plugin settings and cookie list of the site they run on: use a

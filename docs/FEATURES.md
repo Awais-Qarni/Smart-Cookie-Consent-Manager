@@ -24,16 +24,19 @@ One button in the banner that grants every category.
 - [ ] Blocked scripts/iframes/fonts load immediately without a page reload.
 
 ### 2. Reject Non-Essential
-One button ("Deny") that grants only `necessary`. The first layer (Consent tab) also shows
-one switch per category and an "Allow selection" button. Button order is a setting (Allow all
-first by default, or Deny first); all three buttons always look the same.
+One button ("Deny") that grants only `necessary`, next to "Allow all" on the first layer.
+Banner style is a setting: **Compact** (default: Allow all, Deny, Customize) or **Detailed**
+(the tabbed dialog with a switch per category and "Allow selection" on the first layer). Button
+order is a setting (Allow all first by default, or Deny first); Allow all and Deny always look
+the same.
 - [ ] Same size, style and prominence as Accept All; visible on the first layer.
 - [ ] Saves consent (cookie + record); nothing non-essential loads.
 
 ### 3. Manage Preferences
 One dialog with three tabs: **Consent** (text + a switch per category), **Details** (an
 accordion per category → per provider → a card per cookie) and **About** (what cookies are +
-the visitor's own consent). The same dialog opens again later, centred, with a close button.
+the visitor's own consent). It opens from "Customize" on the compact banner (closing it without
+a choice brings the banner back), and again later, centred, with a close button.
 - [ ] `necessary` shown as always on (disabled switch).
 - [ ] All other switches OFF by default (never pre-ticked), unless the visitor consented before.
 - [ ] Each category can be expanded to show its cookies (name, provider, purpose, duration).

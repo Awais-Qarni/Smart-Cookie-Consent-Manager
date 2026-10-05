@@ -58,6 +58,9 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - [x] Optional consent expiry (presets, custom days, session); five widget positions incl. edge tabs
 - [x] Round 2 (owner feedback): cache-busted assets, Cookiebot-style tabbed dialog (Consent /
       Details / About), button order, "Cookies" edge tabs, browser scan + third-party cookie library
+- [x] Round 3 (owner feedback): compact banner style (default) + Customize, hashed asset files
+      (cache-proof on NitroPack/CDNs), NitroPack/GTranslate/chat/pixel services, menu pages
+      in the scan, scan diagnostics, Help button alignment
 - [x] HTML alert email, several recipients, sample email
 - [x] Performance review (see `PERFORMANCE.md`)
 - [ ] Review against the live Cookiebot banner and account (not reachable from the build environment)

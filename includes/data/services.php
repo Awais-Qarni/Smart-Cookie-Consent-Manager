@@ -6,10 +6,12 @@
  *  - name, provider, category (necessary|functional|analytics|marketing)
  *  - google:   true if the service honours Google Consent Mode (skipped by the blocker in Advanced mode)
  *  - patterns: substrings matched against script src / iframe src / link href / inline script code
- *  - cookies:  list of array( name (supports * wildcard), duration, purpose, type = cookie|localStorage, only_if_seen = false )
+ *  - cookies:  list of array( name (supports * wildcard), duration, purpose, type = cookie|localStorage,
+ *              only_if_seen = false, category = the service's )
  *              A cookie marked only_if_seen (5th value true) is only set in special cases (e.g. after an ad click).
  *              It is recognised and categorised when a scan or visitor reports it, but not listed just because
- *              the service was found.
+ *              the service was found. A 6th value gives one cookie its own category (e.g. a
+ *              necessary service that also stores an optional preference).
  *
  * Add services with the `sccm_services` filter. Keep this file generic: no site-specific entries.
  *
@@ -109,6 +111,36 @@ return array(
 		),
 	),
 
+	'php-session'        => array(
+		'name'     => __( 'PHP session', 'smart-cookie-consent-manager' ),
+		'provider' => __( 'This website', 'smart-cookie-consent-manager' ),
+		'category' => 'necessary',
+		'patterns' => array(),
+		'cookies'  => array(
+			array( 'PHPSESSID', __( 'Session', 'smart-cookie-consent-manager' ), __( 'Keeps your session on this website (for example forms and logins).', 'smart-cookie-consent-manager' ) ),
+		),
+	),
+	'nitropack'          => array(
+		'name'     => 'NitroPack',
+		'provider' => 'NitroPack',
+		'category' => 'necessary',
+		'patterns' => array( 'nitrocdn.com', 'getnitropack.com', 'nitropack.io' ),
+		'cookies'  => array(
+			array( 'nitroCachedPage', __( 'Session', 'smart-cookie-consent-manager' ), __( 'Shows whether the page was served from the speed-up cache. Contains no personal data.', 'smart-cookie-consent-manager' ) ),
+		),
+	),
+	'gtranslate'         => array(
+		'name'     => 'GTranslate',
+		'provider' => 'GTranslate',
+		'category' => 'necessary',
+		'patterns' => array( 'cdn.gtranslate.net', 'gtranslate.net/widgets', 'translate.google.com/translate_a' ),
+		'cookies'  => array(
+			array( '__GT_TRANSLATE_LANGS', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Stores the languages the website can be translated into.', 'smart-cookie-consent-manager' ), 'localStorage' ),
+			array( 'gt_autoswitch', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Remembers whether the language is chosen automatically from your browser.', 'smart-cookie-consent-manager' ), 'localStorage', false, 'functional' ),
+			array( 'googtrans', __( 'Session', 'smart-cookie-consent-manager' ), __( 'Remembers the language you chose.', 'smart-cookie-consent-manager' ), 'cookie', true, 'functional' ),
+		),
+	),
+
 	/* ---------------------------------------------------------------- Functional */
 
 	'google-fonts'       => array(
@@ -151,6 +183,8 @@ return array(
 		'category' => 'functional',
 		'patterns' => array(),
 		'cookies'  => array(
+			array( '_icl_current_language', __( '1 day', 'smart-cookie-consent-manager' ), __( 'Remembers the selected language.', 'smart-cookie-consent-manager' ) ),
+			array( 'wpml_browser_redirect_test', __( 'Session', 'smart-cookie-consent-manager' ), __( 'Checks whether cookies work, for the language redirect.', 'smart-cookie-consent-manager' ), 'cookie', true ),
 			array( 'wp-wpml_current_language', __( '1 day', 'smart-cookie-consent-manager' ), __( 'Remembers the selected language.', 'smart-cookie-consent-manager' ) ),
 		),
 	),
@@ -181,6 +215,25 @@ return array(
 		'cookies'  => array(
 			array( 'intercom-id-*', __( '9 months', 'smart-cookie-consent-manager' ), __( 'Identifies the chat visitor.', 'smart-cookie-consent-manager' ) ),
 			array( 'intercom-session-*', __( '1 week', 'smart-cookie-consent-manager' ), __( 'Keeps the chat session.', 'smart-cookie-consent-manager' ) ),
+		),
+	),
+	'tidio'              => array(
+		'name'     => 'Tidio',
+		'provider' => 'Tidio LLC',
+		'category' => 'functional',
+		'patterns' => array( 'code.tidio.co' ),
+		'cookies'  => array(
+			array( 'tidio_state_*', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Keeps the live chat conversation.', 'smart-cookie-consent-manager' ), 'localStorage' ),
+		),
+	),
+	'livechat'           => array(
+		'name'     => 'LiveChat',
+		'provider' => 'LiveChat, Inc.',
+		'category' => 'functional',
+		'patterns' => array( 'cdn.livechatinc.com' ),
+		'cookies'  => array(
+			array( '__lc_cid', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Identifies the chat visitor.', 'smart-cookie-consent-manager' ) ),
+			array( '__lc_cst', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Keeps the chat session.', 'smart-cookie-consent-manager' ) ),
 		),
 	),
 	'crisp'              => array(
@@ -285,7 +338,7 @@ return array(
 		'provider' => 'Google LLC',
 		'category' => 'marketing',
 		'google'   => true,
-		'patterns' => array( 'googleadservices.com', 'googlesyndication.com', 'doubleclick.net', 'google.com/pagead' ),
+		'patterns' => array( 'googleadservices.com', 'googlesyndication.com', 'doubleclick.net', 'google.com/pagead', 'google.com/ads/ga-audiences' ),
 		'cookies'  => array(
 			array( '_gcl_*', __( '3 months', 'smart-cookie-consent-manager' ), __( 'Stores ad-click information to measure conversions.', 'smart-cookie-consent-manager' ) ),
 			array( 'IDE', __( '1 year', 'smart-cookie-consent-manager' ), __( 'Used by Google DoubleClick to show and measure ads.', 'smart-cookie-consent-manager' ) ),
@@ -364,6 +417,33 @@ return array(
 			array( 'hubspotutk', __( '6 months', 'smart-cookie-consent-manager' ), __( 'Identifies the visitor for HubSpot forms and marketing.', 'smart-cookie-consent-manager' ) ),
 			array( '__hssc', __( '30 minutes', 'smart-cookie-consent-manager' ), __( 'Tracks sessions.', 'smart-cookie-consent-manager' ) ),
 			array( '__hssrc', __( 'Session', 'smart-cookie-consent-manager' ), __( 'Detects a new browser session.', 'smart-cookie-consent-manager' ) ),
+		),
+	),
+	'klaviyo'            => array(
+		'name'     => 'Klaviyo',
+		'provider' => 'Klaviyo, Inc.',
+		'category' => 'marketing',
+		'patterns' => array( 'static.klaviyo.com' ),
+		'cookies'  => array(
+			array( '__kla_id', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Identifies the visitor for email marketing.', 'smart-cookie-consent-manager' ) ),
+		),
+	),
+	'snapchat-pixel'     => array(
+		'name'     => 'Snap Pixel',
+		'provider' => 'Snap Inc.',
+		'category' => 'marketing',
+		'patterns' => array( 'sc-static.net/scevent', 'snaptr(' ),
+		'cookies'  => array(
+			array( '_scid', __( '13 months', 'smart-cookie-consent-manager' ), __( 'Measures Snapchat ad performance.', 'smart-cookie-consent-manager' ) ),
+		),
+	),
+	'reddit-pixel'       => array(
+		'name'     => 'Reddit Pixel',
+		'provider' => 'Reddit, Inc.',
+		'category' => 'marketing',
+		'patterns' => array( 'redditstatic.com/ads', "rdt('init'", 'rdt("init"' ),
+		'cookies'  => array(
+			array( '_rdt_uuid', __( '3 months', 'smart-cookie-consent-manager' ), __( 'Measures Reddit ad performance.', 'smart-cookie-consent-manager' ) ),
 		),
 	),
 	'youtube'            => array(

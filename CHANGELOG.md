@@ -4,6 +4,20 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 ### Changed
+- **New default banner style "Compact"**: title, text, policy links and three buttons
+  (**Allow all**, **Deny**, **Customize**). Customize opens the full Consent / Details / About
+  window with the category switches and **Allow selection**; closing it without choosing brings
+  the banner back. The tabbed banner is still available under Banner → **Banner style →
+  Detailed**. Allow all and Deny always look the same.
+- **More services recognised**: PHP session (`PHPSESSID`), NitroPack, GTranslate (including the
+  `googtrans` language cookie when it is really set), Tidio, LiveChat, Klaviyo, Snapchat Pixel,
+  Reddit Pixel and WPML. A cookie can now have its own category inside a service (e.g.
+  GTranslate's auto-switch key is Preferences while the widget itself is Necessary).
+- **Scan covers more pages**: the pages in your menus are scanned first (that is where contact
+  forms, booking widgets and maps usually are); "Scan now" opens up to 10 pages in your browser.
+- The Cookies tab shows what the browser part of the last scan did (pages opened, names seen),
+  or a warning when it could not run, so a short list can be explained.
+- The Help button sits next to the page title.
 - **Admin simplified: 9 tabs became 6** (Dashboard, Cookies, Banner, Settings, Consent Records,
   Tools). The Dashboard shows whether the banner is live, a plain "Needs your attention" to-do
   list, three key numbers and a how-it-works strip. Old tab links keep working.
@@ -36,6 +50,11 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   where a category must be chosen before Approve; "Ignore all" button.
 
 ### Fixed
+- **Logged-in and private windows showed different banners**: page-cache/CDN plugins (e.g.
+  NitroPack) and some hosts serve plugin files from their own cache and ignore the `?ver=`
+  number, so logged-out visitors kept an old script. Front-end and admin CSS/JS are now served
+  from copies with the content hash in the file name (`wp-content/uploads/sccm-assets/`), so
+  every update gets a new address. Turn off with the `sccm_versioned_asset_files` filter.
 - **Admin screens looked broken / Help and expiry did nothing after updating**: the plugin's CSS
   and JS kept the same version number, so browsers and hosts (e.g. WP Engine) served the old
   cached files. Every asset is now versioned by its file time.
