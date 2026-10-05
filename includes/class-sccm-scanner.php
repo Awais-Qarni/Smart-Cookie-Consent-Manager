@@ -62,18 +62,7 @@ class SCCM_Scanner {
 			function () use ( &$results, $urls, $manual ) {
 				self::scan_pages( $urls, $manual ? 10 : 20, $results );
 
-				// Detected services: make sure their known cookies are in the registry.
-				foreach ( array_keys( $results['services'] ) as $service_key ) {
-					$added = SCCM_Cookies::add_service( $service_key, 'scanner' );
-					if ( $added ) {
-						$service = SCCM_Services::get( $service_key );
-						foreach ( $service['cookies'] as $cookie ) {
-							if ( empty( $cookie[4] ) ) {
-								SCCM_Cookies::queue_alert( $cookie[0], isset( $cookie[3] ) ? $cookie[3] : 'cookie', 'active', $service['category'] );
-							}
-						}
-					}
-				}
+				self::add_detected_services( $results );
 			},
 			! $first
 		);
@@ -140,8 +129,6 @@ class SCCM_Scanner {
 		if ( '' === $html ) {
 			return;
 		}
-		$custom = (array) SCCM_Settings::get( 'rules' );
-
 		// External resources: scripts, iframes, stylesheets (incl. already-blocked ones).
 		preg_match_all( '#<(script|iframe|link)\b([^>]*)>#i', $html, $tags, PREG_SET_ORDER );
 		foreach ( $tags as $tag ) {
@@ -154,30 +141,7 @@ class SCCM_Scanner {
 				if ( 'link' === strtolower( $tag[1] ) && ! preg_match( '/rel\s*=\s*["\']?[^"\'>]*(stylesheet|preconnect|dns-prefetch|preload)/i', $attrs ) ) {
 					continue;
 				}
-				$url  = html_entity_decode( $url, ENT_QUOTES );
-				$host = wp_parse_url( ( 0 === strpos( $url, '//' ) ? 'https:' : '' ) . $url, PHP_URL_HOST );
-				if ( ! $host || $host === $site_host ) {
-					continue;
-				}
-				$service = SCCM_Services::match_resource( $url );
-				if ( $service ) {
-					self::add_service_hit( $results, $service, $url );
-					continue;
-				}
-				$covered = false;
-				foreach ( $custom as $rule ) {
-					if ( false !== stripos( $url, $rule['pattern'] ) ) {
-						$covered = true;
-						break;
-					}
-				}
-				if ( ! $covered && ! isset( $results['unclassified'][ $host ] ) ) {
-					$results['unclassified'][ $host ] = array(
-						'host' => $host,
-						'url'  => substr( $url, 0, 300 ),
-						'tag'  => strtolower( $tag[1] ),
-					);
-				}
+				self::classify_url( html_entity_decode( $url, ENT_QUOTES ), $site_host, strtolower( $tag[1] ), $results );
 			}
 		}
 
@@ -197,6 +161,223 @@ class SCCM_Scanner {
 		if ( preg_match( '#@import\s+url\(\s*["\']?https?://fonts\.googleapis\.com#i', $html ) || preg_match( '#fonts\.gstatic\.com#i', self::inline_css( $html ) ) ) {
 			$results['notes']['css_fonts'] = __( 'Google Fonts are loaded from inside CSS (e.g. an @import or a combined stylesheet). These requests cannot be blocked by the plugin. Host the fonts on your own server to avoid them.', 'smart-cookie-consent-manager' );
 		}
+	}
+
+	/**
+	 * Sort one third-party URL: a known service, a resource covered by a custom rule, or an
+	 * "other third-party resource" for the report.
+	 *
+	 * @param string $url       URL.
+	 * @param string $site_host Own host.
+	 * @param string $tag       Where it was found (script, iframe, link, browser).
+	 * @param array  $results   Results (by reference).
+	 */
+	private static function classify_url( $url, $site_host, $tag, array &$results ) {
+		$host = wp_parse_url( ( 0 === strpos( $url, '//' ) ? 'https:' : '' ) . $url, PHP_URL_HOST );
+		if ( ! $host || $host === $site_host ) {
+			return;
+		}
+		$service = SCCM_Services::match_resource( $url );
+		if ( $service ) {
+			self::add_service_hit( $results, $service, $url );
+			return;
+		}
+		foreach ( (array) SCCM_Settings::get( 'rules' ) as $rule ) {
+			if ( false !== stripos( $url, $rule['pattern'] ) ) {
+				return;
+			}
+		}
+		if ( ! isset( $results['unclassified'][ $host ] ) ) {
+			$results['unclassified'][ $host ] = array(
+				'host' => $host,
+				'url'  => substr( $url, 0, 300 ),
+				'tag'  => $tag,
+			);
+		}
+	}
+
+	/**
+	 * Make sure the cookies of every detected service are in the registry.
+	 *
+	 * @param array $results Results.
+	 */
+	private static function add_detected_services( array $results ) {
+		foreach ( array_keys( $results['services'] ) as $service_key ) {
+			if ( SCCM_Cookies::add_service( $service_key, 'scanner' ) ) {
+				$service = SCCM_Services::get( $service_key );
+				foreach ( $service['cookies'] as $cookie ) {
+					if ( empty( $cookie[4] ) ) {
+						SCCM_Cookies::queue_alert( $cookie[0], isset( $cookie[3] ) ? $cookie[3] : 'cookie', 'active', $service['category'] );
+					}
+				}
+			}
+		}
+	}
+
+	/* ------------------------------------------------------------------ Browser scan
+	 *
+	 * The server cannot run JavaScript, so it never sees the cookies that scripts set (Google
+	 * Analytics, HubSpot, chat widgets…). "Scan now" therefore also opens the pages in a hidden
+	 * frame in the administrator's own browser, in scan mode (every category allowed, nothing
+	 * stored or logged, see SCCM_Frontend::is_scan_mode()). The admin page collects the cookie
+	 * and storage names and the third-party addresses the pages used, and sends them here.
+	 */
+
+	/**
+	 * Create a one-time scan-mode token for the current administrator (15 minutes).
+	 *
+	 * @param bool  $first  Whether this is the first scan ever (then it never asks visitors again).
+	 * @param array $counts Registry counts before the scan started (for the summary).
+	 * @return string
+	 */
+	public static function scan_token( $first = false, array $counts = array() ) {
+		$token = strtolower( wp_generate_password( 24, false, false ) );
+		set_transient(
+			'sccm_scan_' . $token,
+			array(
+				'user'   => get_current_user_id(),
+				'first'  => (bool) $first,
+				'counts' => $counts,
+			),
+			15 * MINUTE_IN_SECONDS
+		);
+		return $token;
+	}
+
+	/**
+	 * Whether a scan-mode token is valid for the current user.
+	 *
+	 * @param string $token Token.
+	 * @return array|false Token data.
+	 */
+	public static function valid_scan_token( $token ) {
+		if ( ! preg_match( '/^[a-z0-9]{24}$/', (string) $token ) || ! get_current_user_id() ) {
+			return false;
+		}
+		$data = get_transient( 'sccm_scan_' . $token );
+		return ( is_array( $data ) && (int) $data['user'] === get_current_user_id() ) ? $data : false;
+	}
+
+	/**
+	 * Pages the browser scan opens (same pages as the server scan, at most 6).
+	 *
+	 * @param string $token Scan-mode token.
+	 * @return array
+	 */
+	public static function browser_scan_urls( $token ) {
+		$urls = array();
+		foreach ( array_slice( self::urls(), 0, 6 ) as $url ) {
+			$urls[] = add_query_arg( 'sccm_scan', $token, $url );
+		}
+		return $urls;
+	}
+
+	/**
+	 * Cookies that only exist because an administrator is logged in. Never listed.
+	 *
+	 * @param string $name Cookie name.
+	 * @return bool
+	 */
+	public static function is_admin_cookie( $name ) {
+		foreach ( array( 'wordpress_*', 'wp-settings-*', 'wp-saving-*', 'wp_lang', 'wp-postpass_*' ) as $pattern ) {
+			if ( SCCM_Cookies::name_matches( $pattern, $name ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Record what the browser scan found.
+	 *
+	 * @param array $data  cookies: [names]; storage: [{n, t, new}]; resources: [urls]; pages, blocked: ints.
+	 * @param array $token Token data from valid_scan_token().
+	 * @return array Summary: active, pending (added since the scan started), unclassified.
+	 */
+	public static function record_browser_scan( array $data, array $token ) {
+		$results = get_option( self::RESULT_OPTION );
+		if ( ! is_array( $results ) ) {
+			$results = array(
+				'time'         => time(),
+				'pages'        => array(),
+				'services'     => array(),
+				'unclassified' => array(),
+				'cookies'      => array(),
+				'notes'        => array(),
+			);
+		}
+		$results['unclassified'] = self::keyed_by_host( (array) $results['unclassified'] );
+		$site_host               = wp_parse_url( home_url(), PHP_URL_HOST );
+		$seen                    = array();
+
+		SCCM_Cookies::bulk(
+			function () use ( $data, $site_host, &$results, &$seen ) {
+				foreach ( array_slice( (array) ( $data['cookies'] ?? array() ), 0, 200 ) as $name ) {
+					$name = (string) $name;
+					if ( ! SCCM_REST::valid_name( $name ) || self::is_admin_cookie( $name ) ) {
+						continue;
+					}
+					$seen[ $name ] = true;
+					SCCM_Cookies::record_seen( $name, 'cookie', 'scanner' );
+				}
+				foreach ( array_slice( (array) ( $data['storage'] ?? array() ), 0, 200 ) as $item ) {
+					$name = isset( $item['n'] ) ? (string) $item['n'] : '';
+					$type = isset( $item['t'] ) ? (string) $item['t'] : '';
+					if ( ! SCCM_REST::valid_name( $name ) || ! in_array( $type, array( 'localStorage', 'sessionStorage' ), true ) ) {
+						continue;
+					}
+					// Storage keys the admin's browser already had before the scan may come from the
+					// dashboard or an extension; those count only when the library knows them.
+					$known = SCCM_Services::match_cookie( $name );
+					if ( empty( $item['new'] ) && ! ( $known && $known['type'] === $type ) ) {
+						continue;
+					}
+					$seen[ $name ] = true;
+					SCCM_Cookies::record_seen( $name, $type, 'scanner' );
+				}
+				foreach ( array_slice( (array) ( $data['resources'] ?? array() ), 0, 500 ) as $url ) {
+					$url = esc_url_raw( (string) $url );
+					if ( $url ) {
+						self::classify_url( $url, $site_host, 'browser', $results );
+					}
+				}
+				self::add_detected_services( $results );
+			},
+			empty( $token['first'] )
+		);
+
+		$results['unclassified'] = array_values( $results['unclassified'] );
+		$results['browser']      = array(
+			'time'    => time(),
+			'pages'   => absint( $data['pages'] ?? 0 ),
+			'blocked' => absint( $data['blocked'] ?? 0 ),
+			'found'   => array_keys( $seen ),
+		);
+		update_option( self::RESULT_OPTION, $results, false );
+
+		$now    = SCCM_Cookies::counts();
+		$before = isset( $token['counts'] ) ? (array) $token['counts'] : array();
+		return array(
+			'active'       => max( 0, $now['active'] - (int) ( $before['active'] ?? $now['active'] ) ),
+			'pending'      => max( 0, $now['pending'] - (int) ( $before['pending'] ?? $now['pending'] ) ),
+			'unclassified' => count( $results['unclassified'] ),
+		);
+	}
+
+	/**
+	 * Unclassified resources keyed by host (they are stored as a list).
+	 *
+	 * @param array $list Items with a 'host'.
+	 * @return array
+	 */
+	private static function keyed_by_host( array $list ) {
+		$out = array();
+		foreach ( $list as $item ) {
+			if ( isset( $item['host'] ) ) {
+				$out[ $item['host'] ] = $item;
+			}
+		}
+		return $out;
 	}
 
 	/**

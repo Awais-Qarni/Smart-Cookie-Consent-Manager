@@ -44,8 +44,10 @@ Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 = Unreleased =
 * Simpler admin: 6 tabs, a Dashboard with a to-do list, and a Help panel explaining everything.
 * Categories renamed to Necessary, Preferences, Statistics, Marketing.
-* Category switches in the banner, consent ID/date shown to visitors, your choice of consent expiry.
-* New floating button positions (bottom centre, left/right edge as a half-circle).
+* Cookiebot-style dialog: Consent / Details / About tabs, equal Allow all / Allow selection / Deny buttons.
+* Scan now also scans in your browser, so cookies set by scripts and embedded services are found.
+* Consent ID/date shown to visitors, your choice of consent expiry, button order setting.
+* New cookie settings button positions (bottom centre, left/right edge as a "Cookies" tab).
 * Much shorter, more accurate cookie list; readable HTML alert emails to several recipients.
 
 = 0.1.0 =

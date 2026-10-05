@@ -11,45 +11,50 @@ defined( 'ABSPATH' ) || exit;
 $sccm_pages     = get_pages( array( 'post_status' => 'publish' ) );
 $sccm_defaults  = SCCM_Settings::default_texts();
 $sccm_cat_defs  = SCCM_Categories::defaults();
-$sccm_long      = array( 'banner_text', 'prefs_text', 'gpc_notice', 'placeholder_text' );
+$sccm_long        = array( 'banner_text', 'about_text', 'gpc_notice', 'placeholder_text' );
 $sccm_text_groups = array(
-	__( 'Words on the banner', 'smart-cookie-consent-manager' )     => array(
+	__( 'Words in the banner', 'smart-cookie-consent-manager' )   => array(
 		'banner_title'  => __( 'Title', 'smart-cookie-consent-manager' ),
-		'banner_text'   => __( 'Text', 'smart-cookie-consent-manager' ),
-		'btn_reject'    => __( 'Reject button', 'smart-cookie-consent-manager' ),
+		'banner_text'   => __( 'Text (Consent tab)', 'smart-cookie-consent-manager' ),
+		'tab_consent'   => __( 'Tab: Consent', 'smart-cookie-consent-manager' ),
+		'tab_details'   => __( 'Tab: Details', 'smart-cookie-consent-manager' ),
+		'tab_about'     => __( 'Tab: About', 'smart-cookie-consent-manager' ),
 		'btn_accept'    => __( 'Accept button', 'smart-cookie-consent-manager' ),
 		'btn_selection' => __( '"Allow selection" button', 'smart-cookie-consent-manager' ),
+		'btn_reject'    => __( 'Reject button', 'smart-cookie-consent-manager' ),
 		'btn_details'   => __( '"Show details" link', 'smart-cookie-consent-manager' ),
-		'btn_manage'    => __( '"Manage preferences" button (banner without switches)', 'smart-cookie-consent-manager' ),
+		'about_text'    => __( 'Text (About tab)', 'smart-cookie-consent-manager' ),
 		'policy_link'   => __( 'Cookie Policy link', 'smart-cookie-consent-manager' ),
 		'privacy_link'  => __( 'Privacy Policy link', 'smart-cookie-consent-manager' ),
+		'close'         => __( 'Close label', 'smart-cookie-consent-manager' ),
 	),
-	__( 'Words in the preferences window', 'smart-cookie-consent-manager' ) => array(
-		'prefs_title'       => __( 'Title', 'smart-cookie-consent-manager' ),
-		'prefs_text'        => __( 'Intro text', 'smart-cookie-consent-manager' ),
-		'btn_save'          => __( 'Save button', 'smart-cookie-consent-manager' ),
-		'always_on'         => __( '"Always active" label', 'smart-cookie-consent-manager' ),
-		'show_cookies'      => __( '"Show cookies" label', 'smart-cookie-consent-manager' ),
-		'no_cookies'        => __( 'Empty category text', 'smart-cookie-consent-manager' ),
-		'col_name'          => __( 'Column: name', 'smart-cookie-consent-manager' ),
-		'col_provider'      => __( 'Column: provider', 'smart-cookie-consent-manager' ),
-		'col_purpose'       => __( 'Column: purpose', 'smart-cookie-consent-manager' ),
-		'col_duration'      => __( 'Column: duration', 'smart-cookie-consent-manager' ),
+	__( 'Words in the cookie details', 'smart-cookie-consent-manager' ) => array(
+		'no_cookies'          => __( 'Empty category text', 'smart-cookie-consent-manager' ),
+		'provider_site'       => __( 'Provider name for your own cookies', 'smart-cookie-consent-manager' ),
+		'col_duration'        => __( '"Maximum storage duration" label', 'smart-cookie-consent-manager' ),
+		'col_type'            => __( '"Type" label', 'smart-cookie-consent-manager' ),
+		'type_cookie'         => __( 'Type: cookie', 'smart-cookie-consent-manager' ),
+		'type_localStorage'   => __( 'Type: local storage', 'smart-cookie-consent-manager' ),
+		'type_sessionStorage' => __( 'Type: session storage', 'smart-cookie-consent-manager' ),
+		'col_name'            => __( 'Cookie Policy table: name', 'smart-cookie-consent-manager' ),
+		'col_provider'        => __( 'Cookie Policy table: provider', 'smart-cookie-consent-manager' ),
+		'col_purpose'         => __( 'Cookie Policy table: purpose', 'smart-cookie-consent-manager' ),
+	),
+	__( 'Words about the visitor\'s consent', 'smart-cookie-consent-manager' ) => array(
 		'consent_status'    => __( '"Your current choice" label', 'smart-cookie-consent-manager' ),
 		'consent_date'      => __( '"Date" label', 'smart-cookie-consent-manager' ),
 		'consent_id'        => __( '"Your consent ID" label', 'smart-cookie-consent-manager' ),
 		'no_choice'         => __( 'No choice made yet', 'smart-cookie-consent-manager' ),
 		'copy'              => __( 'Copy button', 'smart-cookie-consent-manager' ),
 		'copied'            => __( 'Copied message', 'smart-cookie-consent-manager' ),
-		'choice_accept_all' => __( 'Status: accepted all', 'smart-cookie-consent-manager' ),
-		'choice_reject_all' => __( 'Status: rejected', 'smart-cookie-consent-manager' ),
-		'choice_custom'     => __( 'Status: custom choice', 'smart-cookie-consent-manager' ),
+		'choice_accept_all' => __( 'Status: allowed all', 'smart-cookie-consent-manager' ),
+		'choice_reject_all' => __( 'Status: denied', 'smart-cookie-consent-manager' ),
+		'choice_custom'     => __( 'Status: selection', 'smart-cookie-consent-manager' ),
 		'choice_gpc'        => __( 'Status: GPC honoured', 'smart-cookie-consent-manager' ),
-		'close'             => __( 'Close label', 'smart-cookie-consent-manager' ),
-		'settings_button'   => __( 'Cookie settings widget label', 'smart-cookie-consent-manager' ),
-		'saved'             => __( 'Saved message', 'smart-cookie-consent-manager' ),
 	),
-	__( 'Other messages', 'smart-cookie-consent-manager' )            => array(
+	__( 'Other messages', 'smart-cookie-consent-manager' )          => array(
+		'settings_button'  => __( 'Cookie settings button: accessible name', 'smart-cookie-consent-manager' ),
+		'widget_label'     => __( 'Cookie settings button: text on the edge tab', 'smart-cookie-consent-manager' ),
 		'gpc_notice'       => __( 'Privacy signal (GPC) notice (%s = categories)', 'smart-cookie-consent-manager' ),
 		'placeholder_text' => __( 'Blocked video/map text (%s = category)', 'smart-cookie-consent-manager' ),
 		'placeholder_btn'  => __( 'Blocked video/map button', 'smart-cookie-consent-manager' ),
@@ -77,7 +82,16 @@ SCCM_Admin::form_open( 'banner' );
 	?>
 	<table class="form-table" role="presentation">
 		<?php
-		SCCM_Admin::checkbox( 'banner_categories', __( 'Show the category switches', 'smart-cookie-consent-manager' ), $settings['banner_categories'], __( 'Visitors see Necessary, Preferences, Statistics and Marketing right in the banner and can choose without opening anything else. Switch this off for a simpler banner with three buttons.', 'smart-cookie-consent-manager' ) );
+		SCCM_Admin::select(
+			'button_order',
+			__( 'Button order', 'smart-cookie-consent-manager' ),
+			$settings['button_order'],
+			array(
+				'accept_first' => __( 'Allow all · Allow selection · Deny', 'smart-cookie-consent-manager' ),
+				'reject_first' => __( 'Deny · Allow selection · Allow all', 'smart-cookie-consent-manager' ),
+			),
+			__( 'All three buttons always have the same size, colour and style, which is what the law asks for. With equal buttons either order is fine; "Deny first" is the more cautious choice that some regulators prefer.', 'smart-cookie-consent-manager' )
+		);
 		?>
 	</table>
 	<p><a href="<?php echo esc_url( home_url( '/#sccm-banner' ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Preview the banner on your website (save first)', 'smart-cookie-consent-manager' ); ?> &rarr;</a></p>
@@ -85,7 +99,7 @@ SCCM_Admin::form_open( 'banner' );
 
 <div class="sccm-panel">
 	<h2><?php esc_html_e( 'Cookie settings button', 'smart-cookie-consent-manager' ); ?></h2>
-	<p class="description"><?php esc_html_e( 'After a visitor has chosen, this small button lets them change their mind at any time. In a corner it is a round button. In the middle of a side or the bottom it is a small half-circle that peeks out from the edge of the screen and slides out when hovered.', 'smart-cookie-consent-manager' ); ?></p>
+	<p class="description"><?php esc_html_e( 'After a visitor has chosen, this small button lets them change their mind at any time. In a corner it is a round icon. At the bottom centre or on the left or right edge it is a slim tab with the word "Cookies" (change the word under "Other messages").', 'smart-cookie-consent-manager' ); ?></p>
 	<table class="form-table" role="presentation">
 		<?php SCCM_Admin::checkbox( 'floating_button', __( 'Show the button', 'smart-cookie-consent-manager' ), $settings['floating_button'], __( 'You can also add the shortcode <code>[sccm_cookie_settings]</code> or a menu link to <code>#sccm-preferences</code>.', 'smart-cookie-consent-manager' ) ); ?>
 	</table>
@@ -107,7 +121,7 @@ SCCM_Admin::form_open( 'banner' );
 
 <div class="sccm-panel">
 	<h2><?php esc_html_e( 'Colours', 'smart-cookie-consent-manager' ); ?></h2>
-	<p class="description"><?php esc_html_e( 'Accept and Reject always look the same, so neither choice is pushed on the visitor. This is required for valid consent.', 'smart-cookie-consent-manager' ); ?></p>
+	<p class="description"><?php esc_html_e( 'Allow all, Allow selection and Deny always look the same, so no choice is pushed on the visitor. This is required for valid consent.', 'smart-cookie-consent-manager' ); ?></p>
 	<table class="form-table" role="presentation">
 		<?php
 		SCCM_Admin::input( 'color_background', __( 'Background', 'smart-cookie-consent-manager' ), $settings['color_background'], 'color' );

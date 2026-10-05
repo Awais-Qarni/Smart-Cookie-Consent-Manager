@@ -24,26 +24,29 @@ One button in the banner that grants every category.
 - [ ] Blocked scripts/iframes/fonts load immediately without a page reload.
 
 ### 2. Reject Non-Essential
-One button that grants only `necessary`. Optionally (setting, on by default) the banner also
-shows the four category switches and an "Allow selection" button on its first layer.
+One button ("Deny") that grants only `necessary`. The first layer (Consent tab) also shows
+one switch per category and an "Allow selection" button. Button order is a setting (Allow all
+first by default, or Deny first); all three buttons always look the same.
 - [ ] Same size, style and prominence as Accept All; visible on the first layer.
 - [ ] Saves consent (cookie + record); nothing non-essential loads.
 
 ### 3. Manage Preferences
-A settings window (modal) with an on/off switch per category.
+One dialog with three tabs: **Consent** (text + a switch per category), **Details** (an
+accordion per category → per provider → a card per cookie) and **About** (what cookies are +
+the visitor's own consent). The same dialog opens again later, centred, with a close button.
 - [ ] `necessary` shown as always on (disabled switch).
 - [ ] All other switches OFF by default (never pre-ticked), unless the visitor consented before.
 - [ ] Each category can be expanded to show its cookies (name, provider, purpose, duration).
-- [ ] Buttons: Save preferences, Accept all, Reject non-essential.
+- [ ] Buttons: Allow all, Allow selection, Deny (identical style).
 - [ ] Keyboard accessible (focus trap, Esc closes without saving, ARIA labels).
 
 ### 4. Change or withdraw anytime
 - [ ] Optional floating "Cookie settings" button (on by default) in five positions: bottom
-      left/right (round button) and bottom centre, left edge, right edge (a half-circle that
-      peeks out from the screen edge and slides out on hover or focus).
+      left/right (round icon) and bottom centre, left edge, right edge (a slim tab with a text
+      label, "Cookies" by default, attached to the screen edge).
 - [ ] Shortcode `[sccm_cookie_settings]` renders a link/button.
 - [ ] Any element with class `sccm-open-preferences` or a link to `#sccm-preferences`
-      (e.g. a menu item) opens the preferences window.
+      (e.g. a menu item) opens the cookie settings dialog.
 - [ ] Withdrawing a category deletes its known cookies and reloads the page so already-loaded
       scripts stop; the change is recorded.
 
@@ -84,7 +87,7 @@ A settings window (modal) with an on/off switch per category.
 - [ ] Admin list with search by consent ID and date filter; CSV export; retention period
       with automatic purge.
 - [ ] Visitor can see their current choice, its date and their Consent ID (with a Copy button)
-      in the preferences window (for evidence requests). The ID is also in the `dataLayer`
+      in the About tab (for evidence requests). The ID is also in the `dataLayer`
       event and available as `SCCM.getConsentId()`.
 
 ### 9. Cookie scanner
@@ -94,6 +97,10 @@ A settings window (modal) with an on/off switch per category.
       reported it; at most 50 items wait for review.
 - [ ] Server-side scan (scheduled + "Scan now"): fetches key pages, reads `Set-Cookie`
       headers and third-party scripts/iframes/fonts, matches the service library.
+- [ ] Browser scan ("Scan now"): the same pages open in a hidden, sandboxed frame in the
+      admin's browser in scan mode (all categories allowed; admin-only one-time token; never
+      cached, stored or logged). Cookie and storage names set by scripts, and the third-party
+      services the pages load, are recorded; third-party cookies come from the service library.
 - [ ] Known cookies are added automatically as Active in the right category; only cookies the
       service always sets are added (conditional ones are categorised when actually seen).
 - [ ] Unknown cookies appear under **Needs review** in the Cookies tab; the admin must choose a
@@ -109,7 +116,7 @@ A settings window (modal) with an on/off switch per category.
 ### 11. Privacy signal (GPC)
 - [ ] If `navigator.globalPrivacyControl === true`, non-essential categories are treated as
       rejected (scope setting: all non-essential [default] or advertising only).
-- [ ] Recorded in the consent log as `gpc`; preferences window shows
+- [ ] Recorded in the consent log as `gpc`; the Details tab shows
       "Your Global Privacy Control signal has been honoured."
 - [ ] GPC overrides a stored "accept" for the affected categories.
 

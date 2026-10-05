@@ -30,6 +30,8 @@ class SCCM_Admin {
 		foreach ( $actions as $action ) {
 			add_action( 'admin_post_sccm_' . $action, array( __CLASS__, 'handle_' . $action ) );
 		}
+		add_action( 'wp_ajax_sccm_browser_scan_start', array( __CLASS__, 'ajax_scan_start' ) );
+		add_action( 'wp_ajax_sccm_browser_scan_report', array( __CLASS__, 'ajax_scan_report' ) );
 	}
 
 	/**
@@ -92,13 +94,21 @@ class SCCM_Admin {
 			return;
 		}
 		wp_enqueue_style( 'wp-color-picker' );
-		wp_enqueue_style( 'sccm-admin', SCCM_URL . 'assets/css/sccm-admin.css', array(), SCCM_VERSION );
-		wp_enqueue_script( 'sccm-admin', SCCM_URL . 'assets/js/sccm-admin.js', array( 'jquery', 'wp-color-picker' ), SCCM_VERSION, true );
+		wp_enqueue_style( 'sccm-admin', SCCM_URL . 'assets/css/sccm-admin.css', array(), SCCM_Plugin::asset_version( 'assets/css/sccm-admin.css' ) );
+		wp_enqueue_script( 'sccm-admin', SCCM_URL . 'assets/js/sccm-admin.js', array( 'jquery', 'wp-color-picker' ), SCCM_Plugin::asset_version( 'assets/js/sccm-admin.js' ), true );
 		wp_localize_script(
 			'sccm-admin',
 			'SCCM_ADMIN',
 			array(
-				'confirm' => __( 'Are you sure?', 'smart-cookie-consent-manager' ),
+				'confirm'    => __( 'Are you sure?', 'smart-cookie-consent-manager' ),
+				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'scanNonce'  => wp_create_nonce( 'sccm_browser_scan' ),
+				'scanServer' => __( 'Step 1 of 2: checking your pages on the server…', 'smart-cookie-consent-manager' ),
+				/* translators: 1: page number, 2: number of pages */
+				'scanPage'   => __( 'Step 2 of 2: opening page %1$d of %2$d in your browser to see the cookies its scripts set…', 'smart-cookie-consent-manager' ),
+				'scanSaving' => __( 'Saving what was found…', 'smart-cookie-consent-manager' ),
+				/* translators: %s: error message */
+				'scanFailed' => __( 'The scan could not finish: %s', 'smart-cookie-consent-manager' ),
 			)
 		);
 	}
@@ -162,7 +172,7 @@ class SCCM_Admin {
 		echo '<h1>' . esc_html__( 'Cookie Consent', 'smart-cookie-consent-manager' ) . '</h1>';
 		echo '<span class="sccm-pill sccm-pill--' . ( $settings['enabled'] ? 'on' : 'off' ) . '">' . ( $settings['enabled'] ? esc_html__( 'Banner on', 'smart-cookie-consent-manager' ) : esc_html__( 'Banner off', 'smart-cookie-consent-manager' ) ) . '</span>';
 		echo '<button type="button" class="button sccm-help-toggle" id="sccm-help-toggle" aria-expanded="false" aria-controls="sccm-help"><span class="dashicons dashicons-editor-help" aria-hidden="true"></span> ' . esc_html__( 'Help: how it works', 'smart-cookie-consent-manager' ) . '</button>';
-		echo '</div>';
+		echo '</div><hr class="wp-header-end">';
 
 		include SCCM_PATH . 'includes/admin/views/help.php';
 
@@ -496,6 +506,57 @@ class SCCM_Admin {
 		$results = SCCM_Scanner::run( true );
 		/* translators: 1: pages, 2: services */
 		self::back( 'cookies', sprintf( __( 'Scan finished: %1$d page(s) checked, %2$d service(s) detected.', 'smart-cookie-consent-manager' ), count( $results['pages'] ), count( $results['services'] ) ) );
+	}
+
+	/**
+	 * Browser scan, step 1: run the server scan and hand out a scan-mode token and the pages.
+	 */
+	public static function ajax_scan_start() {
+		if ( ! current_user_can( self::CAP ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to do this.', 'smart-cookie-consent-manager' ) ), 403 );
+		}
+		check_ajax_referer( 'sccm_browser_scan' );
+		$first   = false === get_option( SCCM_Scanner::RESULT_OPTION );
+		$counts  = SCCM_Cookies::counts();
+		$results = SCCM_Scanner::run( true );
+		$token   = SCCM_Scanner::scan_token( $first, $counts );
+		wp_send_json_success(
+			array(
+				'token' => $token,
+				'urls'  => SCCM_Scanner::browser_scan_urls( $token ),
+				'pages' => count( $results['pages'] ),
+			)
+		);
+	}
+
+	/**
+	 * Browser scan, step 2: record what the hidden frame found.
+	 */
+	public static function ajax_scan_report() {
+		if ( ! current_user_can( self::CAP ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to do this.', 'smart-cookie-consent-manager' ) ), 403 );
+		}
+		check_ajax_referer( 'sccm_browser_scan' );
+		$token = isset( $_POST['token'] ) ? sanitize_key( wp_unslash( $_POST['token'] ) ) : '';
+		$valid = SCCM_Scanner::valid_scan_token( $token );
+		if ( ! $valid ) {
+			wp_send_json_error( array( 'message' => __( 'The scan took too long. Please start it again.', 'smart-cookie-consent-manager' ) ), 400 );
+		}
+		$data = isset( $_POST['data'] ) ? json_decode( wp_unslash( $_POST['data'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- every value is validated in record_browser_scan().
+		$sum  = SCCM_Scanner::record_browser_scan( is_array( $data ) ? $data : array(), $valid );
+		delete_transient( 'sccm_scan_' . $token );
+
+		$message = sprintf(
+			/* translators: 1: pages, 2: cookies added automatically, 3: cookies waiting for review */
+			__( 'Scan finished: %1$d page(s) opened in your browser. %2$d new cookie(s) were recognised and added automatically, %3$d need your review.', 'smart-cookie-consent-manager' ),
+			absint( $data['pages'] ?? 0 ),
+			$sum['active'],
+			$sum['pending']
+		);
+		if ( ! empty( $data['blocked'] ) && absint( $data['blocked'] ) >= absint( $data['pages'] ?? 0 ) ) {
+			$message .= ' ' . __( 'Your website did not allow itself to be opened in a frame (a security header), so only the server scan ran. Cookies set by scripts may be missing.', 'smart-cookie-consent-manager' );
+		}
+		wp_send_json_success( array( 'redirect' => self::url( 'cookies', array( 'sccm_msg' => rawurlencode( $message ) ) ) ) );
 	}
 
 	/**

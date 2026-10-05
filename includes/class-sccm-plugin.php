@@ -66,6 +66,20 @@ final class SCCM_Plugin {
 	}
 
 	/**
+	 * Version string for an asset: plugin version + file modification time.
+	 *
+	 * Browsers, CDNs and hosts (e.g. WP Engine) cache files by URL. Without this, an updated
+	 * stylesheet or script keeps being served from the cache until the plugin version changes.
+	 *
+	 * @param string $relative Path relative to the plugin root, e.g. 'assets/css/sccm-admin.css'.
+	 * @return string
+	 */
+	public static function asset_version( $relative ) {
+		$time = @filemtime( SCCM_PATH . $relative ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		return SCCM_VERSION . ( $time ? '.' . $time : '' );
+	}
+
+	/**
 	 * Load translations.
 	 */
 	public function load_textdomain() {

@@ -45,8 +45,8 @@ SCCM_Admin::form_open( 'settings' );
 					<?php endforeach; ?>
 					<option value="custom" <?php selected( ! isset( $sccm_expiry_presets[ $sccm_expiry ] ), true ); ?>><?php esc_html_e( 'Another number of days…', 'smart-cookie-consent-manager' ); ?></option>
 				</select>
-				<span class="sccm-expiry-days">
-					= <input type="number" id="sccm-consent_expiry_days" class="small-text" name="sccm[consent_expiry_days]" min="0" max="395" value="<?php echo (int) $sccm_expiry; ?>"> <?php esc_html_e( 'days', 'smart-cookie-consent-manager' ); ?>
+				<span class="sccm-expiry-days" <?php echo isset( $sccm_expiry_presets[ $sccm_expiry ] ) ? 'hidden' : ''; ?>>
+					<input type="number" id="sccm-consent_expiry_days" class="small-text" name="sccm[consent_expiry_days]" min="0" max="395" value="<?php echo (int) $sccm_expiry; ?>"> <?php esc_html_e( 'days', 'smart-cookie-consent-manager' ); ?>
 				</span>
 				<p class="description"><?php esc_html_e( 'After this time the banner is shown again. Regulators often suggest 6 to 12 months. 395 days (13 months) is the maximum, because browsers do not keep a cookie longer. 0 means the choice is forgotten when the browser is closed.', 'smart-cookie-consent-manager' ); ?></p>
 			</td>

@@ -165,7 +165,7 @@ $sccm_sources    = array(
 			?>
 		</span>
 	</div>
-	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" data-sccm-browser-scan>
 		<?php SCCM_Admin::action_fields( 'scan_now' ); ?>
 		<button class="button button-primary"><?php esc_html_e( 'Scan now', 'smart-cookie-consent-manager' ); ?></button>
 	</form>
@@ -178,7 +178,7 @@ $sccm_sources    = array(
 		printf( esc_html__( 'Your cookie list (%d)', 'smart-cookie-consent-manager' ), (int) $sccm_counts['active'] );
 		?>
 	</h2>
-	<p class="description"><?php esc_html_e( 'This is what visitors see in the preferences window and on your Cookie Policy page.', 'smart-cookie-consent-manager' ); ?></p>
+	<p class="description"><?php esc_html_e( 'This is what visitors see in the cookie banner (Details tab) and on your Cookie Policy page.', 'smart-cookie-consent-manager' ); ?></p>
 </div>
 
 <?php foreach ( SCCM_Categories::all() as $sccm_key => $sccm_cat ) : ?>

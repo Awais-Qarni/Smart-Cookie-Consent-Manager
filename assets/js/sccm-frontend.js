@@ -1,7 +1,7 @@
 /*!
  * Smart Cookie Consent Manager — front end.
  *
- * Banner, preferences window, releasing blocked content, cookie clean-up, GPC,
+ * Consent dialog (banner + reopened window), releasing blocked content, cookie clean-up, GPC,
  * consent records and the visitor-side cookie scanner.
  *
  * Public API: window.SCCM (see docs/HOOKS.md).
@@ -365,12 +365,7 @@
 		}
 		frame.setAttribute('data-sccm-ph', '1');
 		var category = String(frame.getAttribute('data-sccm-category')).split(/[\s,]+/)[0];
-		var label = category;
-		C.categories.forEach(function (cat) {
-			if (cat.key === category) {
-				label = cat.label;
-			}
-		});
+		var label = categoryLabel(category);
 		var width = frame.getAttribute('width');
 		var height = frame.getAttribute('height');
 		var style = [];
@@ -424,6 +419,9 @@
 	 * @param {Object} input  category => boolean
 	 */
 	function save(method, input) {
+		if (C.scanMode) {
+			return;
+		}
 		var previous = state.consent;
 		var grants = cleanGrants(input);
 		var consent = {
@@ -485,15 +483,34 @@
 		save('reject_all', {});
 	}
 
-	function saveFromModal() {
+	/** "Allow selection": whatever is switched on in the dialog the button belongs to. */
+	function saveSelection(dialog) {
 		var input = {};
-		modal.querySelectorAll('input[data-sccm-cat]').forEach(function (box) {
+		dialog.querySelectorAll('input[data-sccm-cat]').forEach(function (box) {
 			input[box.getAttribute('data-sccm-cat')] = box.checked;
 		});
 		save('custom', input);
 	}
 
-	/* ------------------------------------------------------------------ UI: banner */
+	/* ------------------------------------------------------------------ UI: the consent dialog
+	 *
+	 * One dialog, modelled on the common CMP layout: a header, three tabs (Consent, Details,
+	 * About) and three equal buttons. It is used twice:
+	 *   - #sccm-banner: first visit, in the position chosen by the site owner;
+	 *   - #sccm-prefs:  reopened later (widget, link, shortcode), always centred with a close button.
+	 * Details are built only when the Details tab is first opened, so first-time visitors who
+	 * click Allow/Deny right away never pay for building the cookie list.
+	 */
+
+	function categoryLabel(key) {
+		var label = key;
+		C.categories.forEach(function (cat) {
+			if (cat.key === key) {
+				label = cat.label;
+			}
+		});
+		return label;
+	}
 
 	function linksRow() {
 		var links = [];
@@ -506,50 +523,277 @@
 		return links.length ? el('p', { 'class': 'sccm-links' }, links) : null;
 	}
 
-	/**
-	 * Reject and Accept always come first and always look the same (fair consent UI).
-	 *
-	 * @param {string} extra '' | 'save' (preferences window) | 'selection' (banner with switches)
-	 */
-	function actionButtons(extra) {
-		var buttons = [
-			el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--reject', 'data-sccm-action': 'reject', text: T.btn_reject }),
-			el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--accept', 'data-sccm-action': 'accept', text: T.btn_accept })
-		];
-		if (extra === 'save') {
-			buttons.push(el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--save', 'data-sccm-action': 'save', text: T.btn_save }));
-		} else if (extra === 'selection') {
-			buttons.push(el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--selection', 'data-sccm-action': 'selection', text: T.btn_selection }));
-		}
-		return buttons;
-	}
-
-	/** One category as a compact switch for the first layer of the banner. */
-	function categoryPill(cat) {
-		var id = 'sccm-bcat-' + cat.key;
+	/** On/off switch for one category. Several switches for the same category stay in sync. */
+	function categorySwitch(cat, id, labelled) {
 		var locked = cat.locked || isGpcBlocked(cat.key);
-		return el('label', { 'class': 'sccm-pill', 'for': id }, [
-			el('span', { 'class': 'sccm-switch sccm-switch--sm' }, [
-				el('input', {
-					type: 'checkbox',
-					role: 'switch',
-					id: id,
-					'data-sccm-bcat': cat.locked ? null : cat.key,
-					checked: cat.locked || (!isGpcBlocked(cat.key) && state.grants[cat.key] === true),
-					disabled: locked
-				}),
-				el('span', { 'class': 'sccm-slider', 'aria-hidden': 'true' })
-			]),
-			el('span', { 'class': 'sccm-pill__label', text: cat.label })
+		return el('span', { 'class': 'sccm-switch' }, [
+			el('input', {
+				type: 'checkbox',
+				role: 'switch',
+				id: id,
+				'data-sccm-cat': cat.locked ? null : cat.key,
+				checked: cat.locked || (!isGpcBlocked(cat.key) && state.grants[cat.key] === true),
+				disabled: locked,
+				'aria-label': labelled ? null : cat.label
+			}),
+			el('span', { 'class': 'sccm-slider', 'aria-hidden': 'true' })
 		]);
 	}
 
-	function saveFromBanner() {
-		var input = {};
-		banner.querySelectorAll('input[data-sccm-bcat]').forEach(function (box) {
-			input[box.getAttribute('data-sccm-bcat')] = box.checked;
+	/**
+	 * Reject, selection and accept always share one style. Their order is a setting:
+	 * "Allow all" first, or "Deny" first; "Allow selection" stays in the middle.
+	 */
+	function actionButtons() {
+		var reject = el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--reject', 'data-sccm-action': 'reject', text: T.btn_reject });
+		var selection = el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--selection', 'data-sccm-action': 'selection', text: T.btn_selection });
+		var accept = el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--accept', 'data-sccm-action': 'accept', text: T.btn_accept });
+		return C.order === 'reject_first' ? [reject, selection, accept] : [accept, selection, reject];
+	}
+
+	/** Consent tab: the text, then one switch per category across the full width. */
+	function consentPanel(prefix) {
+		var toggles = el('div', { 'class': 'sccm-toggles', style: '--sccm-n:' + C.categories.length }, C.categories.map(function (cat) {
+			var id = prefix + 'cat-' + cat.key;
+			return el('label', { 'class': 'sccm-toggle', 'for': id }, [
+				el('span', { 'class': 'sccm-toggle__label', text: cat.label }),
+				categorySwitch(cat, id, true)
+			]);
+		}));
+		return [
+			el('div', { 'class': 'sccm-text', id: prefix + 'text', html: T.banner_text }),
+			linksRow(),
+			toggles,
+			el('p', { 'class': 'sccm-more' }, [
+				el('button', { type: 'button', 'class': 'sccm-linkbtn', 'data-sccm-tab': 'details', text: T.btn_details + ' ›' })
+			])
+		];
+	}
+
+	/** Accordion header + panel. */
+	function accordion(className, headChildren, panelChildren, extra) {
+		var panel = el('div', { 'class': className + '__panel', hidden: true }, panelChildren);
+		var toggle = el('button', { type: 'button', 'class': className + '__toggle', 'aria-expanded': 'false', 'data-sccm-acc': '' }, headChildren);
+		return el('div', { 'class': className }, [el('div', { 'class': className + '__head' }, [toggle, extra || null]), panel]);
+	}
+
+	/** One cookie, as a card: name, purpose, maximum storage duration, type. */
+	function cookieCard(c) {
+		return el('div', { 'class': 'sccm-ck' }, [
+			el('p', { 'class': 'sccm-ck__name', text: c.n }),
+			c.u ? el('p', { 'class': 'sccm-ck__purpose', text: c.u }) : null,
+			el('p', { 'class': 'sccm-ck__meta' }, [
+				el('span', null, [el('strong', { text: T.col_duration + ': ' }), c.d || '—']),
+				el('span', null, [el('strong', { text: T.col_type + ': ' }), T['type_' + (c.t || 'cookie')] || c.t])
+			])
+		]);
+	}
+
+	/** Details tab: category accordions; inside each, one accordion per provider with cookie cards. */
+	function detailsPanel(prefix) {
+		var nodes = [];
+		if (state.gpc && state.gpcBlocked.length) {
+			nodes.push(el('p', { 'class': 'sccm-notice', role: 'status', text: String(T.gpc_notice || '').replace('%s', state.gpcBlocked.filter(categoryEnabled).map(categoryLabel).join(', ')) }));
+		}
+		C.categories.forEach(function (cat) {
+			var providers = {};
+			var order = [];
+			cat.cookies.forEach(function (c) {
+				var name = c.p || T.provider_site;
+				if (!providers[name]) {
+					providers[name] = [];
+					order.push(name);
+				}
+				providers[name].push(c);
+			});
+			var inner = [el('p', { 'class': 'sccm-acc__desc', text: cat.description })];
+			if (!order.length) {
+				inner.push(el('p', { 'class': 'sccm-muted', text: T.no_cookies }));
+			}
+			order.forEach(function (name) {
+				inner.push(accordion('sccm-prov', [
+					el('span', { 'class': 'sccm-chev', 'aria-hidden': 'true' }),
+					el('span', { 'class': 'sccm-prov__name', text: name }),
+					el('span', { 'class': 'sccm-count', text: String(providers[name].length) })
+				], providers[name].map(cookieCard)));
+			});
+			nodes.push(accordion('sccm-acc', [
+				el('span', { 'class': 'sccm-chev', 'aria-hidden': 'true' }),
+				el('span', { 'class': 'sccm-acc__name', text: cat.label }),
+				el('span', { 'class': 'sccm-count', text: String(cat.cookies.length) })
+			], inner, categorySwitch(cat, prefix + 'dcat-' + cat.key, false)));
 		});
-		save('custom', input);
+		return nodes;
+	}
+
+	/** About tab: what cookies are, links, and the visitor's own consent (choice, date, ID). */
+	function aboutPanel() {
+		return [
+			el('div', { 'class': 'sccm-text', html: T.about_text }),
+			el('div', { 'class': 'sccm-status', 'aria-live': 'polite' }),
+			linksRow()
+		];
+	}
+
+	function renderStatus(dialog) {
+		var box = dialog.querySelector('.sccm-status');
+		if (!box) {
+			return;
+		}
+		box.textContent = '';
+		var consent = state.consent;
+		if (!consent) {
+			box.appendChild(el('p', { 'class': 'sccm-muted', text: T.no_choice }));
+			return;
+		}
+		var when = new Date(consent.t * 1000);
+		var whenText;
+		try {
+			whenText = when.toLocaleString();
+		} catch (e) {
+			whenText = when.toISOString();
+		}
+		var copy = el('button', { type: 'button', 'class': 'sccm-copy', text: T.copy });
+		copy.addEventListener('click', function () {
+			copyText(consent.id, function () {
+				copy.textContent = T.copied;
+				setTimeout(function () {
+					copy.textContent = T.copy;
+				}, 1600);
+			});
+		});
+		box.appendChild(el('p', { 'class': 'sccm-status__row' }, [el('strong', { text: T.consent_status + ': ' }), T['choice_' + consent.m] || '']));
+		box.appendChild(el('p', { 'class': 'sccm-status__row' }, [el('strong', { text: T.consent_date + ': ' }), whenText]));
+		box.appendChild(el('p', { 'class': 'sccm-status__row sccm-consent-id' }, [el('strong', { text: T.consent_id + ': ' }), el('code', { text: consent.id }), copy]));
+	}
+
+	function copyText(text, done) {
+		function fallback() {
+			var area = el('textarea', { readonly: true, style: 'position:fixed;opacity:0;top:0;left:0' });
+			area.value = text;
+			d.body.appendChild(area);
+			area.select();
+			try {
+				if (d.execCommand('copy')) {
+					done();
+				}
+			} catch (e) { /* ignore */ }
+			d.body.removeChild(area);
+		}
+		if (w.navigator.clipboard && w.navigator.clipboard.writeText) {
+			w.navigator.clipboard.writeText(text).then(done, fallback);
+		} else {
+			fallback();
+		}
+	}
+
+	/**
+	 * Build a dialog.
+	 *
+	 * @param {string} kind 'banner' (first visit) or 'prefs' (reopened later)
+	 */
+	function buildDialog(kind) {
+		var prefix = kind === 'banner' ? 'sccm-b' : 'sccm-';
+		var position = kind === 'banner' ? C.position : 'center';
+		var isModal = position === 'center';
+		var tabs = ['consent', 'details', 'about'];
+		var panels = {
+			consent: consentPanel(prefix),
+			details: [],
+			about: aboutPanel()
+		};
+		var tabList = el('div', { 'class': 'sccm-tabs', role: 'tablist' }, tabs.map(function (tab, i) {
+			return el('button', {
+				type: 'button',
+				role: 'tab',
+				'class': 'sccm-tab',
+				id: prefix + 'tab-' + tab,
+				'data-sccm-tab': tab,
+				'aria-selected': i === 0 ? 'true' : 'false',
+				'aria-controls': prefix + 'panel-' + tab,
+				tabindex: i === 0 ? '0' : '-1',
+				text: T['tab_' + tab]
+			});
+		}));
+		var body = el('div', { 'class': 'sccm-dialog__body' }, tabs.map(function (tab, i) {
+			return el('div', {
+				'class': 'sccm-panel sccm-panel--' + tab,
+				role: 'tabpanel',
+				id: prefix + 'panel-' + tab,
+				'aria-labelledby': prefix + 'tab-' + tab,
+				hidden: i !== 0
+			}, panels[tab]);
+		}));
+		var head = el('div', { 'class': 'sccm-dialog__head' }, [
+			el('p', { 'class': 'sccm-title', id: prefix + 'title', role: 'heading', 'aria-level': '2', text: T.banner_title }),
+			kind === 'prefs' ? el('button', { type: 'button', 'class': 'sccm-close', 'data-sccm-action': 'close', 'aria-label': T.close, html: '&times;' }) : null
+		]);
+		var root = el('div', {
+			id: kind === 'banner' ? 'sccm-banner' : 'sccm-prefs',
+			'class': 'sccm-root sccm-dialog sccm-pos-' + position,
+			role: isModal ? 'dialog' : 'region',
+			'aria-modal': isModal ? 'true' : null,
+			'aria-labelledby': prefix + 'title',
+			'aria-describedby': prefix + 'text',
+			hidden: kind === 'prefs'
+		}, [
+			isModal ? el('div', { 'class': 'sccm-overlay', 'data-sccm-action': kind === 'prefs' ? 'close' : null }) : null,
+			el('div', { 'class': 'sccm-dialog__box', tabindex: '-1' }, [
+				head,
+				tabList,
+				body,
+				el('div', { 'class': 'sccm-dialog__foot sccm-actions' }, actionButtons())
+			])
+		]);
+		root.setAttribute('data-sccm-prefix', prefix);
+		root.addEventListener('change', syncSwitches);
+		root.addEventListener('keydown', onDialogKey);
+		d.body.appendChild(root);
+		return root;
+	}
+
+	/** Keep the Consent-tab and Details-tab switches of one category in step. */
+	function syncSwitches(event) {
+		var box = event.target;
+		var key = box && box.getAttribute && box.getAttribute('data-sccm-cat');
+		if (!key) {
+			return;
+		}
+		event.currentTarget.querySelectorAll('input[data-sccm-cat="' + key + '"]').forEach(function (other) {
+			other.checked = box.checked;
+		});
+	}
+
+	function showTab(dialog, tab) {
+		var prefix = dialog.getAttribute('data-sccm-prefix');
+		if (tab === 'details') {
+			var panel = dialog.querySelector('.sccm-panel--details');
+			if (!panel.hasChildNodes()) {
+				detailsPanel(prefix).forEach(function (node) {
+					panel.appendChild(node);
+				});
+			}
+		}
+		if (tab === 'about') {
+			renderStatus(dialog);
+		}
+		dialog.querySelectorAll('.sccm-tab').forEach(function (button) {
+			var on = button.getAttribute('data-sccm-tab') === tab;
+			button.setAttribute('aria-selected', on ? 'true' : 'false');
+			button.setAttribute('tabindex', on ? '0' : '-1');
+		});
+		dialog.querySelectorAll('.sccm-panel').forEach(function (panel) {
+			panel.hidden = !panel.classList.contains('sccm-panel--' + tab);
+		});
+		dialog.querySelector('.sccm-dialog__body').scrollTop = 0;
+	}
+
+	function syncDialog(dialog) {
+		dialog.querySelectorAll('input[data-sccm-cat]').forEach(function (box) {
+			var key = box.getAttribute('data-sccm-cat');
+			box.checked = !isGpcBlocked(key) && state.grants[key] === true;
+		});
+		renderStatus(dialog);
 	}
 
 	var bannerQueued = false;
@@ -574,48 +818,12 @@
 		afterStyles(function () {
 			bannerQueued = false;
 			if (state.needsChoice || force === true) {
-				buildBanner();
+				banner = buildDialog('banner');
+				if (floating) {
+					floating.hidden = true;
+				}
 			}
 		});
-	}
-
-	function buildBanner() {
-		var isModal = C.position === 'center';
-		var withCats = !!C.bannerCats;
-		var content = [
-			el('p', { 'class': 'sccm-title', id: 'sccm-banner-title', role: 'heading', 'aria-level': '2', text: T.banner_title }),
-			el('div', { 'class': 'sccm-text', id: 'sccm-banner-text', html: T.banner_text }),
-			linksRow()
-		];
-		var actions;
-		if (withCats) {
-			content.push(el('div', { 'class': 'sccm-cats' }, C.categories.map(categoryPill).concat([
-				el('button', { type: 'button', 'class': 'sccm-btn--manage sccm-linkbtn', 'data-sccm-action': 'manage', text: T.btn_details })
-			])));
-			actions = actionButtons('selection');
-		} else {
-			actions = actionButtons('').concat([
-				el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--manage', 'data-sccm-action': 'manage', text: T.btn_manage })
-			]);
-		}
-		banner = el('div', {
-			id: 'sccm-banner',
-			'class': 'sccm-root sccm-banner sccm-pos-' + C.position + (withCats ? ' sccm-banner--cats' : ''),
-			role: isModal ? 'dialog' : 'region',
-			'aria-modal': isModal ? 'true' : null,
-			'aria-labelledby': 'sccm-banner-title',
-			'aria-describedby': 'sccm-banner-text'
-		}, [
-			isModal ? el('div', { 'class': 'sccm-overlay' }) : null,
-			el('div', { 'class': 'sccm-banner__inner' }, [
-				el('div', { 'class': 'sccm-banner__content' }, content),
-				el('div', { 'class': 'sccm-actions' }, actions)
-			])
-		]);
-		d.body.appendChild(banner);
-		if (floating) {
-			floating.hidden = true;
-		}
 	}
 
 	function hideBanner() {
@@ -624,180 +832,27 @@
 		}
 	}
 
-	/* ------------------------------------------------------------------ UI: preferences */
-
-	function cookieTable(cookies) {
-		if (!cookies.length) {
-			return el('p', { 'class': 'sccm-muted', text: T.no_cookies });
-		}
-		var rows = cookies.map(function (c) {
-			return el('tr', null, [
-				el('td', { 'data-label': T.col_name, text: c.n }),
-				el('td', { 'data-label': T.col_provider, text: c.p || '' }),
-				el('td', { 'data-label': T.col_purpose, text: c.u || '' }),
-				el('td', { 'data-label': T.col_duration, text: c.d || '' })
-			]);
-		});
-		return el('table', { 'class': 'sccm-table' }, [
-			el('thead', null, [el('tr', null, [
-				el('th', { scope: 'col', text: T.col_name }),
-				el('th', { scope: 'col', text: T.col_provider }),
-				el('th', { scope: 'col', text: T.col_purpose }),
-				el('th', { scope: 'col', text: T.col_duration })
-			])]),
-			el('tbody', null, rows)
-		]);
-	}
-
-	function buildModal() {
-		var body = el('div', { 'class': 'sccm-modal__body' }, [
-			el('div', { 'class': 'sccm-text', html: T.prefs_text }),
-			el('div', { 'class': 'sccm-status', 'aria-live': 'polite' })
-		]);
-
-		if (state.gpc && state.gpcBlocked.length) {
-			var names = state.gpcBlocked.filter(categoryEnabled).map(function (key) {
-				var found = key;
-				C.categories.forEach(function (cat) {
-					if (cat.key === key) {
-						found = cat.label;
-					}
-				});
-				return found;
-			}).join(', ');
-			body.appendChild(el('p', { 'class': 'sccm-notice', role: 'status', text: String(T.gpc_notice || '').replace('%s', names) }));
-		}
-
-		C.categories.forEach(function (cat) {
-			var id = 'sccm-cat-' + cat.key;
-			var locked = cat.locked || isGpcBlocked(cat.key);
-			var control = el('label', { 'class': 'sccm-switch', 'for': id }, [
-				el('input', {
-					type: 'checkbox',
-					role: 'switch',
-					id: id,
-					'data-sccm-cat': cat.locked ? null : cat.key,
-					checked: cat.locked || (!isGpcBlocked(cat.key) && state.grants[cat.key] === true),
-					disabled: locked,
-					'aria-describedby': id + '-desc'
-				}),
-				el('span', { 'class': 'sccm-slider', 'aria-hidden': 'true' }),
-				el('span', { 'class': 'sccm-sr', text: cat.label })
-			]);
-			var head = el('div', { 'class': 'sccm-cat__head' }, [
-				el('div', { 'class': 'sccm-cat__title' }, [
-					el('p', { 'class': 'sccm-cat__label', role: 'heading', 'aria-level': '3', text: cat.label }),
-					el('span', { 'class': 'sccm-count', text: String(cat.cookies.length) }),
-					cat.locked ? el('span', { 'class': 'sccm-badge', text: T.always_on }) : null
-				]),
-				control
-			]);
-			var details = el('details', { 'class': 'sccm-cookies' }, [
-				el('summary', { text: T.show_cookies + ' (' + cat.cookies.length + ')' }),
-				cookieTable(cat.cookies)
-			]);
-			body.appendChild(el('div', { 'class': 'sccm-cat' }, [
-				head,
-				el('p', { 'class': 'sccm-cat__desc', id: id + '-desc', text: cat.description }),
-				details
-			]));
-		});
-
-		var links = linksRow();
-		if (links) {
-			body.appendChild(links);
-		}
-
-		modal = el('div', { id: 'sccm-prefs', 'class': 'sccm-root sccm-modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'sccm-prefs-title', hidden: true }, [
-			el('div', { 'class': 'sccm-overlay', 'data-sccm-action': 'close' }),
-			el('div', { 'class': 'sccm-modal__dialog', tabindex: '-1' }, [
-				el('div', { 'class': 'sccm-modal__header' }, [
-					el('p', { 'class': 'sccm-title', id: 'sccm-prefs-title', role: 'heading', 'aria-level': '2', text: T.prefs_title }),
-					el('button', { type: 'button', 'class': 'sccm-close', 'data-sccm-action': 'close', 'aria-label': T.close, html: '&times;' })
-				]),
-				body,
-				el('div', { 'class': 'sccm-modal__footer sccm-actions' }, actionButtons('save'))
-			])
-		]);
-		modal.addEventListener('keydown', trapFocus);
-		d.body.appendChild(modal);
-	}
-
-	/** "Accepted all cookies · date", and the consent ID the visitor can quote as evidence. */
-	function renderStatus() {
-		var box = modal.querySelector('.sccm-status');
-		box.textContent = '';
-		var consent = state.consent;
-		if (!consent) {
-			box.appendChild(el('p', { 'class': 'sccm-muted', text: T.no_choice }));
-			return;
-		}
-		var when = new Date(consent.t * 1000);
-		var whenText;
-		try {
-			whenText = when.toLocaleString();
-		} catch (e) {
-			whenText = when.toISOString();
-		}
-		var copy = el('button', { type: 'button', 'class': 'sccm-copy', text: T.copy });
-		copy.addEventListener('click', function () {
-			copyText(consent.id, function () {
-				copy.textContent = T.copied;
-				setTimeout(function () {
-					copy.textContent = T.copy;
-				}, 1600);
-			});
-		});
-		box.appendChild(el('p', { 'class': 'sccm-status__row' }, [
-			el('strong', { text: T.consent_status + ': ' }),
-			T['choice_' + consent.m] || ''
-		]));
-		box.appendChild(el('p', { 'class': 'sccm-status__row' }, [
-			el('strong', { text: T.consent_date + ': ' }),
-			whenText
-		]));
-		box.appendChild(el('p', { 'class': 'sccm-status__row sccm-consent-id' }, [
-			T.consent_id + ': ',
-			el('code', { text: consent.id }),
-			copy
-		]));
-	}
-
-	function copyText(text, done) {
-		function fallback() {
-			var area = el('textarea', { readonly: true, style: 'position:fixed;opacity:0;top:0;left:0' });
-			area.value = text;
-			d.body.appendChild(area);
-			area.select();
-			try {
-				if (d.execCommand('copy')) {
-					done();
-				}
-			} catch (e) { /* ignore */ }
-			d.body.removeChild(area);
-		}
-		if (w.navigator.clipboard && w.navigator.clipboard.writeText) {
-			w.navigator.clipboard.writeText(text).then(done, fallback);
-		} else {
-			fallback();
-		}
-	}
-
-	function syncModal() {
-		modal.querySelectorAll('input[data-sccm-cat]').forEach(function (box) {
-			var key = box.getAttribute('data-sccm-cat');
-			box.checked = !isGpcBlocked(key) && state.grants[key] === true;
-		});
-		renderStatus();
-	}
-
 	function focusables(root) {
-		return Array.prototype.filter.call(root.querySelectorAll('button, [href], input:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'), function (node) {
+		return Array.prototype.filter.call(root.querySelectorAll('button, [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])'), function (node) {
 			return node.offsetParent !== null;
 		});
 	}
 
-	function trapFocus(event) {
+	/** Keyboard: arrows move between tabs; in the reopened window, Tab stays inside and Esc closes. */
+	function onDialogKey(event) {
+		var dialog = event.currentTarget;
+		var tab = event.target.closest && event.target.closest('.sccm-tab');
+		if (tab && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+			var list = Array.prototype.slice.call(dialog.querySelectorAll('.sccm-tab'));
+			var next = list[(list.indexOf(tab) + (event.key === 'ArrowRight' ? 1 : list.length - 1)) % list.length];
+			showTab(dialog, next.getAttribute('data-sccm-tab'));
+			next.focus();
+			event.preventDefault();
+			return;
+		}
+		if (dialog !== modal) {
+			return;
+		}
 		if (event.key === 'Escape') {
 			event.preventDefault();
 			closePreferences();
@@ -806,7 +861,7 @@
 		if (event.key !== 'Tab') {
 			return;
 		}
-		var items = focusables(modal);
+		var items = focusables(dialog);
 		if (!items.length) {
 			return;
 		}
@@ -821,18 +876,19 @@
 		}
 	}
 
-	function openPreferences() {
+	function openPreferences(tab) {
 		afterStyles(function () {
 			if (!modal) {
-				buildModal();
+				modal = buildDialog('prefs');
 			}
-			syncModal();
+			syncDialog(modal);
+			showTab(modal, typeof tab === 'string' ? tab : 'consent');
 			lastFocus = d.activeElement;
 			modal.hidden = false;
 			d.documentElement.classList.add('sccm-noscroll');
-			var dialog = modal.querySelector('.sccm-modal__dialog');
-			var items = focusables(dialog);
-			(items[0] || dialog).focus();
+			var box = modal.querySelector('.sccm-dialog__box');
+			var items = focusables(box);
+			(items[0] || box).focus();
 		});
 	}
 
@@ -850,24 +906,27 @@
 	/* ------------------------------------------------------------------ UI: floating button */
 
 	/**
-	 * The "Cookie settings" widget. Corners get a round button; the three centred positions
-	 * (bottom centre, left centre, right centre) get a small half-circle that peeks out from the
-	 * edge of the screen and slides out when hovered or focused (see the CSS).
+	 * The "Cookie settings" widget, shown after a choice. In a corner it is a round icon button;
+	 * at the bottom centre or the middle of a side it is a slim tab with a text label attached to
+	 * the edge of the screen (see the CSS).
 	 */
 	function renderFloating() {
-		if (!C.floating) {
+		if (!C.floating || C.scanMode) {
 			return;
 		}
 		afterStyles(function () {
 			if (!floating) {
+				var tab = /center/.test(C.floatingPos);
 				floating = el('button', {
 					type: 'button',
-					'class': 'sccm-root sccm-floating sccm-floating--' + C.floatingPos,
+					'class': 'sccm-root sccm-floating sccm-floating--' + C.floatingPos + (tab ? ' sccm-floating--tab' : ''),
 					'data-sccm-action': 'manage',
 					'aria-label': T.settings_button,
-					title: T.settings_button,
-					html: '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5zm-4.5 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm2 5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>'
-				});
+					title: T.settings_button
+				}, [
+					el('span', { 'class': 'sccm-floating__icon', 'aria-hidden': 'true', html: '<svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5zm-4.5 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm2 5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>' }),
+					tab ? el('span', { 'class': 'sccm-floating__label', text: T.widget_label }) : null
+				]);
 				d.body.appendChild(floating);
 			}
 			floating.hidden = !!(banner && !banner.hidden);
@@ -931,6 +990,19 @@
 			openPreferences();
 			return;
 		}
+		var dialog = target.closest('.sccm-dialog');
+		var tab = target.closest('[data-sccm-tab]');
+		if (tab && dialog) {
+			showTab(dialog, tab.getAttribute('data-sccm-tab'));
+			return;
+		}
+		var acc = target.closest('[data-sccm-acc]');
+		if (acc) {
+			var open = acc.getAttribute('aria-expanded') !== 'true';
+			acc.setAttribute('aria-expanded', open ? 'true' : 'false');
+			acc.parentNode.nextElementSibling.hidden = !open;
+			return;
+		}
 		var action = target.closest('[data-sccm-action]');
 		if (!action) {
 			return;
@@ -942,11 +1014,8 @@
 			case 'reject':
 				rejectAll();
 				break;
-			case 'save':
-				saveFromModal();
-				break;
 			case 'selection':
-				saveFromBanner();
+				saveSelection(dialog);
 				break;
 			case 'manage':
 				openPreferences();
@@ -961,6 +1030,12 @@
 		d.addEventListener('click', onClick);
 		cleanup();
 		release();
+
+		if (C.scanMode) {
+			// Admin cookie scan: everything is released, nothing is shown, stored or reported.
+			emit('sccm:ready', { grants: state.grants, consent: null });
+			return;
+		}
 
 		var gpcCoversAll = state.gpc && OPTIONAL.filter(categoryEnabled).every(isGpcBlocked);
 		if (state.needsChoice && gpcCoversAll) {
@@ -1007,8 +1082,7 @@
 			save('custom', grants || {});
 		},
 		openPreferences: openPreferences,
-		showBanner: showBanner,
-		_test: { nameMatches: nameMatches, cleanGrants: cleanGrants, granted: granted, state: state }
+		showBanner: showBanner
 	};
 
 	if (d.readyState === 'loading') {

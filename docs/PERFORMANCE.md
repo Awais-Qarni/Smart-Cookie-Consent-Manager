@@ -8,17 +8,22 @@ MariaDB 10.11 (local, no page cache). They show relative cost; your server will 
 
 | Part | Cost | Notes |
 |---|---|---|
-| PHP: build config + JSON | **0.8 ms**, 1–2 DB queries | One query reads the cookie table; the settings are autoloaded with the other options. |
+| PHP: build config + JSON | **0.7–0.8 ms**, 1–2 DB queries | One query reads the cookie table; the settings are autoloaded with the other options. |
 | PHP: HTML blocker (output buffer) | **about 1.2 ms** for a 434 KB page | Three regex passes over the page; measured with the real service patterns. |
 | Whole request, plugin on vs off | 48.1 ms vs 47.6 ms | Difference is within measurement noise. |
-| Inline in `<head>` (boot script + config) | 9.5 KB raw, **3.7 KB gzipped** | Was 10.2 KB raw / 3.6 KB gzipped before; the new visitor texts offset the savings. |
-| `sccm-frontend.js` (deferred) | 30.3 KB raw, **8.9 KB gzipped** | Was 23.7 / 7.0 KB: it now also draws the category switches, the consent status and the edge widget. No jQuery, loaded with `defer`. |
-| `sccm-frontend.css` | 12.5 KB raw, **3.2 KB gzipped** | Was 9.3 / 2.5 KB. No longer blocks the first paint (see below). |
+| Inline in `<head>` (boot script + config) | ≈ 8.5–9.5 KB raw, **≈ 3.6 KB gzipped** | Grows about 120 bytes per listed cookie. |
+| `sccm-frontend.js` (deferred) | 33.8 KB raw, **10.2 KB gzipped** | v0.1.0: 23.7 / 7.0 KB. It now draws the tabbed dialog (Consent / Details / About), the edge tabs and supports the browser scan. No jQuery, loaded with `defer`. The Details tab (every cookie card) is built only when a visitor opens it. |
+| `sccm-boot.js` (inline) | 4.0 KB raw, **1.8 KB gzipped** | v0.1.0: 3.1 / 1.5 KB. |
+| `sccm-frontend.css` | 13.4 KB raw, **3.4 KB gzipped** | v0.1.0: 9.3 / 2.4 KB. No longer blocks the first paint (see below). |
 | REST calls | none on a normal page view | One POST when the visitor chooses; one low-priority POST at most once per browser session, only if there are unknown cookies, never for logged-in users. |
 
 Everything is the same for every visitor, so full-page caches and CDNs serve it as-is.
 
 ## Changes made in this round
+
+0. **Assets are versioned by file time** (`SCCM_Plugin::asset_version()`), so hosts and browsers
+   never serve an old stylesheet or script after an update (this is what made the admin look
+   broken on a WP Engine staging site).
 
 1. **Stylesheet no longer blocks rendering.** It loads with `media="print" onload=…` (plus a
    `<noscript>` fallback). The script waits for it before drawing anything, so there is no
@@ -39,6 +44,13 @@ Everything is the same for every visitor, so full-page caches and CDNs serve it 
    Scheduled scans keep the larger limits and run in the background (cron).
 7. **Fewer writes**: a known cookie reported by a browser no longer writes `last_seen` to the
    database; flooding is capped (50 waiting items, 100 candidates).
+
+## The browser scan
+
+"Scan now" opens up to 6 pages, one after another, in a hidden frame in the administrator's
+browser (about 5–10 seconds per page: it waits until the page stops loading files). This costs
+nothing for visitors: it only happens in the admin's browser, the scan-mode pages are never
+cached, and the scheduled (cron) scan stays server-only.
 
 ## Tried and reverted
 

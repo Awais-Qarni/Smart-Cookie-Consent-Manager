@@ -29,6 +29,37 @@ class SCCM_Frontend {
 		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
 		add_filter( 'script_loader_tag', array( __CLASS__, 'script_tag' ), 10, 2 );
 		add_filter( 'style_loader_tag', array( __CLASS__, 'style_tag' ), 10, 2 );
+		add_action( 'template_redirect', array( __CLASS__, 'scan_mode_headers' ), 0 );
+	}
+
+	/**
+	 * Scan mode: the admin's own browser loads a page in a hidden frame (Cookies → Scan now) with
+	 * every category allowed, so all scripts run and set their cookies, which the admin page then
+	 * reads. Needs a fresh one-time token (SCCM_Scanner::scan_token()) AND an administrator.
+	 * Visitors never see it, and nothing is recorded or stored.
+	 *
+	 * @return bool
+	 */
+	public static function is_scan_mode() {
+		static $mode = null;
+		if ( null === $mode ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- checked against a stored one-time token.
+			$token = isset( $_GET['sccm_scan'] ) ? sanitize_key( wp_unslash( $_GET['sccm_scan'] ) ) : '';
+			$mode  = '' !== $token && current_user_can( 'manage_options' ) && SCCM_Scanner::valid_scan_token( $token );
+		}
+		return $mode;
+	}
+
+	/**
+	 * Never cache a scan-mode page.
+	 */
+	public static function scan_mode_headers() {
+		if ( self::is_scan_mode() ) {
+			if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+				define( 'DONOTCACHEPAGE', true );
+			}
+			nocache_headers();
+		}
 	}
 
 	/**
@@ -118,11 +149,11 @@ class SCCM_Frontend {
 		if ( ! self::is_active() ) {
 			return;
 		}
-		wp_enqueue_style( 'sccm-frontend', SCCM_URL . 'assets/css/sccm-frontend.css', array(), SCCM_VERSION );
+		wp_enqueue_style( 'sccm-frontend', SCCM_URL . 'assets/css/sccm-frontend.css', array(), SCCM_Plugin::asset_version( 'assets/css/sccm-frontend.css' ) );
 		wp_add_inline_style( 'sccm-frontend', self::inline_css() );
 
 		$args = array( 'strategy' => 'defer' );
-		wp_enqueue_script( 'sccm-frontend', SCCM_URL . 'assets/js/sccm-frontend.js', array(), SCCM_VERSION, version_compare( get_bloginfo( 'version' ), '6.3', '>=' ) ? $args : false );
+		wp_enqueue_script( 'sccm-frontend', SCCM_URL . 'assets/js/sccm-frontend.js', array(), SCCM_Plugin::asset_version( 'assets/js/sccm-frontend.js' ), version_compare( get_bloginfo( 'version' ), '6.3', '>=' ) ? $args : false );
 	}
 
 	/**
@@ -197,6 +228,7 @@ class SCCM_Frontend {
 					'p' => $row['provider'],
 					'u' => $row['purpose'],
 					'd' => $row['duration'],
+					't' => $row['type'],
 				);
 			}
 			$categories[] = array(
@@ -251,7 +283,8 @@ class SCCM_Frontend {
 			'graceDays'   => (int) $settings['reject_grace_days'],
 			'reload'      => (bool) $settings['reload_on_withdraw'],
 			'position'    => $settings['position'],
-			'bannerCats'  => (bool) $settings['banner_categories'],
+			'order'       => $settings['button_order'],
+			'scanMode'    => self::is_scan_mode(),
 			'floating'    => (bool) $settings['floating_button'],
 			'floatingPos' => $settings['floating_position'],
 			'placeholder' => (bool) $settings['iframe_placeholder'],

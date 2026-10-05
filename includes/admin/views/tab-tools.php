@@ -55,8 +55,8 @@ defined( 'ABSPATH' ) || exit;
 	<h2><?php esc_html_e( 'Developer reference', 'smart-cookie-consent-manager' ); ?></h2>
 	<ul class="sccm-list">
 		<li><code>[sccm_cookie_policy]</code> — <?php esc_html_e( 'cookie list grouped by category', 'smart-cookie-consent-manager' ); ?></li>
-		<li><code>[sccm_cookie_settings text="Cookie settings" style="link|button"]</code> — <?php esc_html_e( 'opens the preferences window', 'smart-cookie-consent-manager' ); ?></li>
-		<li><code>&lt;a href="#sccm-preferences"&gt;</code> — <?php esc_html_e( 'any link (e.g. a menu item) that opens the preferences window', 'smart-cookie-consent-manager' ); ?></li>
+		<li><code>[sccm_cookie_settings text="Cookie settings" style="link|button"]</code> — <?php esc_html_e( 'opens the cookie settings window', 'smart-cookie-consent-manager' ); ?></li>
+		<li><code>&lt;a href="#sccm-preferences"&gt;</code> — <?php esc_html_e( 'any link (e.g. a menu item) that opens the cookie settings window', 'smart-cookie-consent-manager' ); ?></li>
 		<li><code>&lt;script type="text/plain" data-sccm-category="analytics"&gt;</code> — <?php esc_html_e( 'run a script only after consent', 'smart-cookie-consent-manager' ); ?></li>
 		<li><code>window.SCCM.hasConsent('analytics')</code>, <code>document.addEventListener('sccm:consent', …)</code></li>
 	</ul>

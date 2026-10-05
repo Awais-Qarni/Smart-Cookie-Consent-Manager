@@ -7,9 +7,9 @@ npm install          # first time only (dev dependency: Playwright)
 npm test             # php -l on every PHP file, node --check on JS, PHP unit tests (tests/php/run.php)
 
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
-SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 65 browser checks (visitor side)
-SCCM_WP=/path/to/wp npm run test:wp                              # 31 checks of the cookie list, settings and email (WP-CLI)
-SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 23 checks of the admin screens
+SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 69 browser checks (visitor side)
+SCCM_WP=/path/to/wp npm run test:wp                              # 45 checks: cookie list, browser-scan rules, settings, email (WP-CLI)
+SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 33 checks of the admin screens, incl. a real browser scan
 ```
 
 `test:wp` and `e2e:admin` reset the cookie list and settings of the site they run on: dev sites only.
@@ -37,17 +37,19 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 ### D. Manage Preferences (features 3, 10)
 - [ ] D1 Necessary switch on + disabled; all others off (in the banner and in the window).
 - [ ] D2 Expanding a category lists its cookies.
-- [ ] D5 Banner shows Necessary / Preferences / Statistics / Marketing switches; "Allow
-      selection" releases only the ticked ones; Reject and Accept look identical.
-- [ ] D6 After choosing, the preferences window shows the choice, date and consent ID; Copy works.
+- [ ] D5 Banner has Consent / Details / About tabs; Consent shows Necessary / Preferences /
+      Statistics / Marketing switches; "Allow selection" releases only the ticked ones; the three
+      buttons look identical; Banner tab → Button order changes the order.
+- [ ] D6 Details tab: each category opens to providers, each provider to cookie cards (name,
+      purpose, maximum storage duration, type). About tab: choice, date and consent ID; Copy works.
 - [ ] D3 Enable Analytics only → only analytics tags load; log row `custom` with `analytics`.
 - [ ] D4 Tab/Shift+Tab stay inside the modal; Esc closes without saving.
 
 ### E. Change / withdraw (feature 4)
 - [ ] E1 Floating button, `[sccm_cookie_settings]` and a menu link to `#sccm-preferences`
-      all open the preferences window.
-- [ ] E3 Banner tab → cookie settings button: try all five positions. Bottom centre / left edge /
-      right edge show a half-circle peeking from the screen edge that slides out on hover; no
+      all open the cookie settings dialog.
+- [ ] E3 Banner tab → cookie settings button: try all five positions. Corners show a round icon;
+      bottom centre / left edge / right edge show a "Cookies" tab attached to the edge; no
       horizontal scrolling on mobile.
 - [ ] E2 After Accept All, switch Analytics off and save → `_ga*` cookies deleted, page
       reloads, analytics no longer loads, new log row.
@@ -68,7 +70,7 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
       `consent update` after a choice.
 
 ### H. Consent records (feature 8)
-- [ ] H1 Visitor's Consent ID (preferences window) matches the log row.
+- [ ] H1 Visitor's Consent ID (About tab) matches the log row.
 - [ ] H2 CSV export contains consent ID, choice, categories, date/time, GPC, version, URL.
 - [ ] H3 IP shown as anonymised/hashed according to the setting.
 
@@ -76,11 +78,15 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 - [ ] I1 Add a test script that sets `test_unknown_cookie`; browse the site with two different
       browsers/devices (logged out) → after both, it appears under **Needs review**. A single
       browser, or a logged-in admin, never adds it.
-- [ ] I2 Cookies tab → "Scan now": detected services' cookies are added automatically in the
-      right category; the list stays short (about as many cookies as your real services set).
+- [ ] I2 Cookies tab → "Scan now": the progress shows step 1 (server) and step 2 (each page in
+      your browser). Afterwards cookies set by scripts (e.g. `_ga`, HubSpot) and third-party
+      cookies of embedded services (e.g. YouTube, Calendly) are listed in the right category.
+      Compare the totals with Cookiebot's report for the same site.
 - [ ] I3 Settings → Cookie scan and email alerts → add two addresses → "Send me a sample email":
       both receive a readable HTML email (check spam folder and a mail-logging plugin).
 - [ ] I4 Approving a cookie needs a category choice; "Ignore all" empties the review list.
+- [ ] I5 After updating the plugin, the admin screens look right without clearing any cache
+      (assets are versioned by file time).
 
 ### J. GPC (feature 11)
 - [ ] J1 Enable GPC in the browser (Firefox: Settings → Privacy → "Tell websites not to sell

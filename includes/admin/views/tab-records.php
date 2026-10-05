@@ -14,13 +14,13 @@ $sccm_result  = SCCM_Consent_Log::query( array_merge( $sccm_filters, array( 'pag
 $sccm_pages   = max( 1, (int) ceil( $sccm_result['total'] / 50 ) );
 $sccm_choices = array(
 	''           => __( 'All choices', 'smart-cookie-consent-manager' ),
-	'accept_all' => __( 'Accept all', 'smart-cookie-consent-manager' ),
-	'reject_all' => __( 'Reject non-essential', 'smart-cookie-consent-manager' ),
-	'custom'     => __( 'Custom', 'smart-cookie-consent-manager' ),
+	'accept_all' => __( 'Allowed all', 'smart-cookie-consent-manager' ),
+	'reject_all' => __( 'Denied', 'smart-cookie-consent-manager' ),
+	'custom'     => __( 'Allowed a selection', 'smart-cookie-consent-manager' ),
 	'gpc'        => __( 'GPC signal', 'smart-cookie-consent-manager' ),
 );
 ?>
-<p><?php esc_html_e( 'Every time a visitor chooses, a record is saved here: their consent ID, the date and time (UTC), what they chose, which categories they allowed and on which page. A visitor can read their consent ID in the cookie preferences window, so you can find their record by pasting it in the search box.', 'smart-cookie-consent-manager' ); ?></p>
+<p><?php esc_html_e( 'Every time a visitor chooses, a record is saved here: their consent ID, the date and time (UTC), what they chose, which categories they allowed and on which page. A visitor can read their consent ID in the About tab of the cookie banner, so you can find their record by pasting it in the search box.', 'smart-cookie-consent-manager' ); ?></p>
 
 <form method="get" class="sccm-filters">
 	<input type="hidden" name="page" value="<?php echo esc_attr( SCCM_Admin::SLUG ); ?>">

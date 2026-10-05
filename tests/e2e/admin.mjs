@@ -30,6 +30,8 @@ wp('eval', `global $wpdb; $wpdb->query("DELETE FROM " . SCCM_Cookies::table() . 
 
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' }).catch(() => chromium.launch());
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+// Third-party hosts are unreachable in CI; answer them locally so the scanned pages "load" them.
+await ctx.route(/googletagmanager\.com|facebook\.net|youtube\.com|fonts\.googleapis\.com|fonts\.gstatic\.com/, (r) => r.fulfill({ status: 200, contentType: r.request().url().includes('youtube') ? 'text/html' : 'application/javascript', body: '' }));
 const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
@@ -75,10 +77,11 @@ check('L1 old tab link (tab=scanner) still opens the Cookies tab', (await page.l
 
 // Settings: expiry preset, recipients, sample email
 await page.goto(admin('settings'));
+check('S1 the days field is hidden while a preset is chosen', !(await page.isVisible('#sccm-consent_expiry_days')));
 await page.selectOption('#sccm-expiry-preset', '90');
-check('S1 choosing "3 months" fills 90 days', (await page.inputValue('#sccm-consent_expiry_days')) === '90');
-await page.fill('#sccm-consent_expiry_days', '120');
-check('S1 typing days picks "Another number of days"', (await page.inputValue('#sccm-expiry-preset')) === 'custom');
+check('S1 choosing "3 months" sets 90 days, field stays hidden', (await page.inputValue('#sccm-consent_expiry_days')) === '90' && !(await page.isVisible('#sccm-consent_expiry_days')));
+await page.selectOption('#sccm-expiry-preset', 'custom');
+check('S1 "Another number of days" shows the days field', await page.isVisible('#sccm-consent_expiry_days'));
 await page.selectOption('#sccm-expiry-preset', '0');
 check('S1 "Until the browser is closed" sets 0', (await page.inputValue('#sccm-consent_expiry_days')) === '0');
 await page.selectOption('#sccm-expiry-preset', '180');
@@ -99,14 +102,33 @@ check('E1 sample email subject is marked as a sample', /^Sample: /.test(mail.sub
 await page.goto(admin('banner'));
 await page.click('.sccm-picker--banner .sccm-pos:has(input[value=center])');
 await page.click('.sccm-picker--widget .sccm-pos:has(input[value=right-center])');
+await page.selectOption('#sccm-button_order', 'reject_first');
 await Promise.all([page.waitForNavigation(), page.click('p.submit input[type=submit]')]);
 const b = option();
-check('B1 banner and widget positions saved', b.position === 'center' && b.floating_position === 'right-center');
+check('B1 banner position, widget position and button order saved', b.position === 'center' && b.floating_position === 'right-center' && b.button_order === 'reject_first');
 const front = await ctx.newPage();
 await front.goto(BASE + '/');
 await front.waitForSelector('#sccm-banner');
 check('B2 front end uses the chosen position', await front.evaluate(() => document.getElementById('sccm-banner').classList.contains('sccm-pos-center')));
+check('B2 front end uses the chosen button order', JSON.stringify(await front.$$eval('#sccm-banner .sccm-actions .sccm-btn', (els) => els.map((e) => e.textContent.trim()))) === JSON.stringify(['Deny', 'Allow selection', 'Allow all']));
 await front.close();
+
+// Browser scan: finds cookies set by JavaScript and third-party cookies, from a nearly empty list.
+wp('eval', `global $wpdb; $wpdb->query("DELETE FROM " . SCCM_Cookies::table() . " WHERE service <> 'sccm'"); delete_option('sccm_last_scan');`);
+await page.goto(admin('cookies'));
+await page.click('.sccm-scanstrip button');
+await page.waitForSelector('.sccm-scan-status');
+check('BS1 the scan shows its progress', /Step 1 of 2|Step 2 of 2/.test(await page.textContent('.sccm-scan-status')));
+await page.waitForURL(/sccm_msg/, { timeout: 150000 });
+const listed = JSON.parse(wp('eval', `echo wp_json_encode( array_map( function ( $r ) { return $r['name'] . '|' . $r['status'] . '|' . $r['category']; }, SCCM_Cookies::all_rows() ) );`));
+check('BS2 a cookie set by JavaScript (_ga) is found and sorted as Statistics', listed.includes('_ga|active|analytics'), listed.join(', '));
+check('BS2 third-party cookies of an embedded service (YouTube YSC) are listed', listed.includes('YSC|active|marketing'));
+check('BS2 an unknown cookie set by a script waits for review', listed.includes('test_unknown_cookie|pending|necessary'));
+check('BS2 an unknown local storage key set by a script waits for review', listed.includes('test_unknown_storage|pending|necessary'));
+check('BS2 no admin-only cookies are listed', !listed.some((x) => /^wordpress_|^wp-settings/.test(x)));
+check('BS3 the result message counts what was found', /Scan finished: \d+ page\(s\) opened in your browser\. [1-9]\d* new cookie/.test(await page.textContent('.notice')), (await page.textContent('.notice')).trim().slice(0, 140));
+const leftover = await page.evaluate(() => document.querySelectorAll('iframe[sandbox]').length);
+check('BS3 the hidden frames are removed afterwards', leftover === 0);
 
 // Dashboard switch off / on
 await page.goto(admin('dashboard'));

@@ -55,7 +55,9 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - [x] Simpler admin: Dashboard (status, to-do, key numbers), 6 tabs, Help panel
 - [x] Cookiebot-style category names; category switches in the banner; consent status/ID/date
 - [x] Quiet scanner: short accurate cookie list, Needs review inbox, upgrade clean-up
-- [x] Optional consent expiry (presets, custom days, session); five widget positions incl. half-circle edge tabs
+- [x] Optional consent expiry (presets, custom days, session); five widget positions incl. edge tabs
+- [x] Round 2 (owner feedback): cache-busted assets, Cookiebot-style tabbed dialog (Consent /
+      Details / About), button order, "Cookies" edge tabs, browser scan + third-party cookie library
 - [x] HTML alert email, several recipients, sample email
 - [x] Performance review (see `PERFORMANCE.md`)
 - [ ] Review against the live Cookiebot banner and account (not reachable from the build environment)

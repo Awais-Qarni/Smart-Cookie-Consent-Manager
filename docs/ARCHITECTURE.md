@@ -65,6 +65,41 @@ Guards: pending items are capped (`MAX_PENDING` = 50), ignored cookies are never
 scan bumps the consent version at most once (never on the first scan), and approving needs an
 explicit category. See `tests/wp/registry-test.php`.
 
+## Browser scan (why "Scan now" opens your pages in a hidden frame)
+
+A server request cannot run JavaScript, so it only sees `Set-Cookie` headers. Most tracking
+cookies (`_ga`, HubSpot, chat widgets) are set by scripts, and third-party cookies (YouTube,
+Calendly…) live on other domains. Hosted CMPs such as Cookiebot use a crawler with a real
+browser. To stay self-hosted, the plugin borrows the administrator's browser:
+
+```
+Admin clicks "Scan now"  (assets/js/sccm-admin.js → browserScan)
+  1. AJAX sccm_browser_scan_start: server scan (SCCM_Scanner::run) + one-time token (15 min,
+     bound to the admin user) + up to 6 page URLs with ?sccm_scan=<token>
+  2. Each page opens in a hidden <iframe sandbox="allow-scripts allow-same-origin">.
+     SCCM_Frontend::is_scan_mode() = valid token AND manage_options → config.scanMode = true:
+       boot: every category granted, Storage.setItem is watched; front end: everything released,
+       nothing shown, stored, logged or reported; page sent with no-cache headers.
+     The admin page waits until the frame stops loading files (2–9 s, scrolling for lazy
+     content), then reads cookie names, storage keys and performance resource URLs.
+  3. AJAX sccm_browser_scan_report → SCCM_Scanner::record_browser_scan():
+       cookies (minus admin-only ones) → record_seen; storage keys written by the page (or
+       known to the library) → record_seen; resource URLs → services (their third-party cookies
+       come from includes/data/services.php) or "other third-party resources".
+```
+
+If a security header forbids framing the site, the scan reports it and the server scan result
+stands.
+
+## Consent dialog
+
+`assets/js/sccm-frontend.js → buildDialog()` builds one dialog used twice: `#sccm-banner` (first
+visit, in the chosen position) and `#sccm-prefs` (reopened, centred, with a close button). Tabs:
+Consent (text + category switches), Details (category accordion → provider accordion → cookie
+cards; built on first open), About (explanation + the visitor's consent status). Switches of
+one category in both tabs stay in sync. Buttons: Allow all / Allow selection / Deny, identical
+style, order from the `button_order` setting.
+
 ## Admin structure
 
 Six tabs, each one view file in `includes/admin/views/`: `dashboard`, `cookies`, `banner`,

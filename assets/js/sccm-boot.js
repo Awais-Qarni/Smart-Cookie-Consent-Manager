@@ -40,6 +40,21 @@
 		}
 	}
 
+	// Scan mode (admin's cookie scan): note every storage key the page's scripts write, so the
+	// scan can tell the site's own keys from ones the admin's browser already had.
+	if (C.scanMode) {
+		var written = w.__sccmScanKeys = { localStorage: {}, sessionStorage: {} };
+		try {
+			var setItem = w.Storage.prototype.setItem;
+			w.Storage.prototype.setItem = function (key) {
+				try {
+					written[this === w.sessionStorage ? 'sessionStorage' : 'localStorage'][String(key)] = true;
+				} catch (e) { /* ignore */ }
+				return setItem.apply(this, arguments);
+			};
+		} catch (e) { /* ignore */ }
+	}
+
 	var now = Math.floor(Date.now() / 1000);
 	var stored = parseConsent();
 	// C.days = 0 means "session only": the cookie itself disappears when the browser closes.
@@ -61,8 +76,9 @@
 	var optional = ['functional', 'analytics', 'marketing'];
 	for (var j = 0; j < optional.length; j++) {
 		var k = optional[j];
-		grants[k] = !!(valid && stored.c[k] && keys.indexOf(k) !== -1);
-		if (gpc && (C.gpc.scope === 'all' || k === 'marketing')) {
+		// Scan mode (admin's cookie scan): everything runs so every cookie can be found.
+		grants[k] = !!(C.scanMode || (valid && stored.c[k] && keys.indexOf(k) !== -1));
+		if (gpc && !C.scanMode && (C.gpc.scope === 'all' || k === 'marketing')) {
 			grants[k] = false;
 			gpcBlocked.push(k);
 		}
@@ -73,7 +89,7 @@
 		grants: grants,
 		gpc: gpc,
 		gpcBlocked: gpcBlocked,
-		needsChoice: !valid
+		needsChoice: !valid && !C.scanMode
 	};
 
 	if (C.cm && C.cm.mode !== 'off') {
@@ -101,7 +117,7 @@
 		if (C.cm.passthrough) {
 			w.gtag('set', 'url_passthrough', true);
 		}
-		if (valid || gpc) {
+		if (valid || gpc || C.scanMode) {
 			w.gtag('consent', 'update', update);
 		}
 	}

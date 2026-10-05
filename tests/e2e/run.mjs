@@ -61,7 +61,7 @@ async function consentCookie(context) {
 
 const browser = await launch();
 
-/* ---------------------------------------------------------------- A/B: first visit + Accept all */
+/* ---------------------------------------------------------------- A/B: first visit + Allow all */
 {
 	const { context, page, requests, errors } = await newPage(browser);
 	await page.goto(BASE + '/');
@@ -70,12 +70,13 @@ const browser = await launch();
 
 	const styles = await page.evaluate(() => {
 		const s = (sel) => {
-			const cs = getComputedStyle(document.querySelector(sel));
-			return [cs.backgroundColor, cs.color, cs.fontSize, cs.fontWeight, cs.borderColor, cs.paddingTop].join('|');
+			const cs = getComputedStyle(document.querySelector('#sccm-banner ' + sel));
+			return [cs.backgroundColor, cs.color, cs.fontSize, cs.fontWeight, cs.borderColor, cs.paddingTop, cs.height].join('|');
 		};
-		return { accept: s('.sccm-btn--accept'), reject: s('.sccm-btn--reject') };
+		return { accept: s('.sccm-btn--accept'), reject: s('.sccm-btn--reject'), selection: s('.sccm-btn--selection') };
 	});
-	check('A1 Accept and Reject buttons have identical styling', styles.accept === styles.reject, styles.accept);
+	check('A1 Allow all, Allow selection and Deny look identical', styles.accept === styles.reject && styles.accept === styles.selection, styles.accept);
+	check('A1 stylesheet applied before the banner is drawn', await page.evaluate(() => document.getElementById('sccm-frontend-css').media === 'all'));
 
 	const before = await page.evaluate(() => ({
 		ga: !!window.__gaRan, fb: !!window.__fbRan, manual: !!window.__manualFunctionalRan, necessary: !!window.__necessaryRan,
@@ -97,7 +98,7 @@ const browser = await launch();
 	await page.reload();
 	check('A4 banner still shown after reload without a choice', await page.isVisible('#sccm-banner'));
 
-	await page.click('.sccm-btn--accept');
+	await page.click('#sccm-banner .sccm-btn--accept');
 	await page.waitForFunction(() => window.__gaRan && window.__fbRan && window.__manualFunctionalRan, null, { timeout: 5000 }).catch(() => {});
 	const after = await page.evaluate(() => ({
 		ga: !!window.__gaRan, fb: !!window.__fbRan, manual: !!window.__manualFunctionalRan,
@@ -106,10 +107,11 @@ const browser = await launch();
 		font: document.getElementById('test-fonts').getAttribute('href'),
 		update: (window.dataLayer || []).filter((e) => e && e[0] === 'consent' && e[1] === 'update').pop()
 	}));
-	check('B1 Accept all: banner closes', after.banner);
-	check('B1 Accept all: scripts released without reload', after.ga && after.fb && after.manual);
-	check('B1 Accept all: iframe and fonts released', !!after.iframe && !!after.font);
+	check('B1 Allow all: banner closes', after.banner);
+	check('B1 Allow all: scripts released without reload', after.ga && after.fb && after.manual);
+	check('B1 Allow all: iframe and fonts released', !!after.iframe && !!after.font);
 	check('G4 Consent Mode update sent (granted)', after.update && after.update[2].analytics_storage === 'granted' && after.update[2].ad_storage === 'granted');
+	check('H1 dataLayer event carries the consent ID', await page.evaluate(() => (window.dataLayer || []).some((e) => e && e.event === 'sccm_consent_update' && e.sccm_consent_id)));
 	const c1 = await consentCookie(context);
 	check('B1 consent cookie stored (accept_all)', c1 && c1.m === 'accept_all' && c1.c.analytics === 1 && c1.c.marketing === 1);
 
@@ -117,17 +119,22 @@ const browser = await launch();
 	const returning = await page.evaluate(() => ({ banner: !!document.querySelector('#sccm-banner:not([hidden])'), ga: !!window.__gaRan }));
 	check('F1 returning visitor: no banner, choice applied', !returning.banner && returning.ga);
 
-	// E: withdraw analytics via the floating button.
+	// E/H: reopen with the cookie settings button, read the consent ID, withdraw Statistics.
 	await page.click('.sccm-floating');
 	await page.waitForSelector('#sccm-prefs:not([hidden])');
-	const idText = await page.textContent('.sccm-consent-id');
-	check('H1 consent ID shown in preferences', idText.includes(c1.id), idText);
+	check('E1 reopened window has a close button and starts on the Consent tab', await page.isVisible('#sccm-prefs .sccm-close') && (await page.getAttribute('#sccm-tab-consent', 'aria-selected')) === 'true');
+	await page.click('#sccm-tab-about');
+	const status = await page.textContent('#sccm-prefs .sccm-status');
+	check('H1 About tab shows the consent ID, choice and date', status.includes(c1.id) && /Allowed all cookies/.test(status) && /Date:/.test(status), status.trim().slice(0, 90));
+	check('H1 consent ID can be copied', await page.isVisible('#sccm-prefs .sccm-copy'));
+	check('H1 consent ID exposed to developers (SCCM.getConsentId)', (await page.evaluate(() => window.SCCM.getConsentId())) === c1.id);
+	await page.click('#sccm-tab-consent');
 	await page.uncheck('#sccm-cat-analytics');
-	await Promise.all([page.waitForNavigation(), page.click('#sccm-prefs .sccm-btn--save')]);
+	await Promise.all([page.waitForNavigation(), page.click('#sccm-prefs .sccm-btn--selection')]);
 	await page.waitForLoadState('load');
 	const withdrawn = await page.evaluate(() => ({ ga: !!window.__gaRan, fb: !!window.__fbRan }));
 	const names = (await context.cookies()).map((c) => c.name);
-	check('E2 withdraw: page reloaded, analytics stopped, marketing kept', !withdrawn.ga && withdrawn.fb);
+	check('E2 withdraw: page reloaded, statistics stopped, marketing kept', !withdrawn.ga && withdrawn.fb);
 	check('E2 withdraw: _ga cookie deleted', !names.includes('_ga'), names.join(','));
 	const c2 = await consentCookie(context);
 	check('E2 withdraw: same consent ID kept, choice custom', c2.id === c1.id && c2.m === 'custom' && c2.c.analytics === 0);
@@ -136,49 +143,79 @@ const browser = await launch();
 	await context.close();
 }
 
-/* ---------------------------------------------------------------- C: Reject */
+/* ---------------------------------------------------------------- C: Deny */
 {
 	const { context, page, requests } = await newPage(browser);
 	await page.goto(BASE + '/');
-	await page.click('.sccm-btn--reject');
+	await page.click('#sccm-banner .sccm-btn--reject');
 	await page.waitForTimeout(500);
 	const state = await page.evaluate(() => ({ ga: !!window.__gaRan, fb: !!window.__fbRan, banner: document.getElementById('sccm-banner').hidden }));
-	check('C1 Reject: banner closes, nothing non-essential runs', state.banner && !state.ga && !state.fb);
-	check('C1 Reject: no third-party requests', requests.length === 0, requests.join(', '));
+	check('C1 Deny: banner closes, nothing non-essential runs', state.banner && !state.ga && !state.fb);
+	check('C1 Deny: no third-party requests', requests.length === 0, requests.join(', '));
 	const c = await consentCookie(context);
-	check('C2 Reject: consent cookie reject_all', c && c.m === 'reject_all' && !c.c.analytics && !c.c.marketing && !c.c.functional);
+	check('C2 Deny: consent cookie reject_all', c && c.m === 'reject_all' && !c.c.analytics && !c.c.marketing && !c.c.functional);
 	await context.close();
 }
 
-/* ---------------------------------------------------------------- D: Manage preferences + keyboard */
+/* ---------------------------------------------------------------- D: the dialog (tabs, switches, details) */
 {
-	const { context, page } = await newPage(browser);
+	const { context, page, requests, errors } = await newPage(browser);
 	await page.goto(BASE + '/');
-	await page.click('.sccm-btn--manage');
-	await page.waitForSelector('#sccm-prefs:not([hidden])');
-	const toggles = await page.evaluate(() => ({
-		necessary: [document.getElementById('sccm-cat-necessary').checked, document.getElementById('sccm-cat-necessary').disabled],
-		others: ['functional', 'analytics', 'marketing'].map((k) => document.getElementById('sccm-cat-' + k).checked)
+	await page.waitForSelector('#sccm-banner:not([hidden])');
+	const tabs = await page.$$eval('#sccm-banner .sccm-tab', (els) => els.map((e) => e.textContent.trim()));
+	check('D0 dialog has Consent, Details and About tabs', JSON.stringify(tabs) === JSON.stringify(['Consent', 'Details', 'About']), tabs.join(','));
+	const labels = await page.$$eval('#sccm-banner .sccm-toggle__label', (els) => els.map((e) => e.textContent.trim()));
+	check('D1 Consent tab shows the four categories (Cookiebot names)', JSON.stringify(labels) === JSON.stringify(['Necessary', 'Preferences', 'Statistics', 'Marketing']), labels.join(','));
+	const first = await page.evaluate(() => ({
+		necessary: [document.getElementById('sccm-bcat-necessary').checked, document.getElementById('sccm-bcat-necessary').disabled],
+		others: ['functional', 'analytics', 'marketing'].map((k) => document.getElementById('sccm-bcat-' + k).checked)
 	}));
-	check('D1 necessary on + locked', toggles.necessary[0] && toggles.necessary[1]);
-	check('D1 other categories off by default', toggles.others.every((v) => v === false));
-	const listed = await page.evaluate(() => document.querySelectorAll('#sccm-prefs .sccm-table tbody tr').length);
-	check('D2 cookie lists shown per category', listed > 0, listed + ' rows');
-	await page.keyboard.press('Escape');
-	check('D4 Escape closes without saving', await page.isHidden('#sccm-prefs') && !(await consentCookie(context)));
-	await page.click('.sccm-btn--manage');
-	await page.check('#sccm-cat-analytics');
-	await page.click('#sccm-prefs .sccm-btn--save');
-	await page.waitForTimeout(500);
-	const s = await page.evaluate(() => ({ ga: !!window.__gaRan, fb: !!window.__fbRan, manual: !!window.__manualFunctionalRan }));
-	check('D3 only analytics released', s.ga && !s.fb && !s.manual);
+	check('D1 Necessary locked on, nothing else pre-ticked', first.necessary[0] && first.necessary[1] && first.others.every((v) => v === false));
+	const order = await page.$$eval('#sccm-banner .sccm-actions .sccm-btn', (els) => els.map((e) => e.textContent.trim()));
+	check('D1 default button order: Allow all, Allow selection, Deny', JSON.stringify(order) === JSON.stringify(['Allow all', 'Allow selection', 'Deny']), order.join(','));
+	const toggles = await page.evaluate(() => {
+		const row = document.querySelector('#sccm-banner .sccm-toggles').getBoundingClientRect();
+		const text = document.querySelector('#sccm-banner .sccm-text').getBoundingClientRect();
+		return Math.abs(row.width - text.width) < 2;
+	});
+	check('D1 category switches span the full width', toggles);
 
+	// Details tab: built on demand; category accordion → provider accordion → cookie cards.
+	check('D2 details are not built until the Details tab is opened', (await page.locator('#sccm-banner .sccm-acc').count()) === 0);
+	await page.click('#sccm-banner .sccm-more .sccm-linkbtn');
+	check('D2 "Show details" opens the Details tab', (await page.getAttribute('#sccm-btab-details', 'aria-selected')) === 'true');
+	const accs = await page.$$eval('#sccm-banner .sccm-acc__name', (els) => els.map((e) => e.textContent.trim()));
+	check('D2 Details tab lists one accordion per category', accs.length === 4, accs.join(','));
+	check('D2 accordions start closed', (await page.locator('#sccm-banner .sccm-acc__panel:not([hidden])').count()) === 0);
+	await page.click('#sccm-banner .sccm-acc__toggle >> nth=0');
+	await page.click('#sccm-banner .sccm-acc__panel:not([hidden]) .sccm-prov__toggle >> nth=0');
+	const card = await page.textContent('#sccm-banner .sccm-prov__panel:not([hidden]) .sccm-ck');
+	check('D2 cookie card shows name, purpose, maximum storage duration and type', /sccm_consent/.test(card) && /Maximum storage duration/.test(card) && /HTTP Cookie/.test(card), card.trim().slice(0, 100));
+	await page.screenshot({ path: OUT + 'banner-details.png' });
+
+	// Switches in both tabs stay in sync, and "Allow selection" uses them.
+	await page.check('#sccm-bdcat-analytics');
+	await page.click('#sccm-btab-consent');
+	check('D3 Details and Consent switches stay in sync', await page.isChecked('#sccm-bcat-analytics'));
+	await page.click('#sccm-banner .sccm-btn--selection');
+	await page.waitForTimeout(500);
+	const s = await page.evaluate(() => ({ ga: !!window.__gaRan, fb: !!window.__fbRan, manual: !!window.__manualFunctionalRan, hidden: document.getElementById('sccm-banner').hidden }));
+	check('D3 Allow selection: only Statistics is released', s.hidden && s.ga && !s.fb && !s.manual);
+	const c = await consentCookie(context);
+	check('D3 stored as custom with statistics only', c && c.m === 'custom' && c.c.analytics === 1 && c.c.marketing === 0 && c.c.functional === 0);
+	check('D3 no requests for refused categories', !requests.some((u) => /facebook\.net|youtube\.com/.test(u)), requests.join(', '));
+
+	await page.click('.sccm-floating');
+	await page.waitForSelector('#sccm-prefs:not([hidden])');
+	await page.keyboard.press('Escape');
+	check('D4 Escape closes the reopened window without changes', await page.isHidden('#sccm-prefs') && (await consentCookie(context)).m === 'custom');
 	await page.evaluate(() => { document.getElementById('menu-cookie-link').scrollIntoView(); });
 	await page.click('#menu-cookie-link');
-	check('E1 menu link #sccm-preferences opens preferences', await page.isVisible('#sccm-prefs'));
+	check('E1 menu link #sccm-preferences opens the window', await page.isVisible('#sccm-prefs'));
 	await page.keyboard.press('Escape');
 	await page.click('a.sccm-open-preferences[data-sccm-open]:not(#menu-cookie-link)');
-	check('E1 [sccm_cookie_settings] shortcode opens preferences', await page.isVisible('#sccm-prefs'));
+	check('E1 [sccm_cookie_settings] shortcode opens the window', await page.isVisible('#sccm-prefs'));
+	check('no JavaScript errors (dialog)', errors.length === 0, errors.join(' | '));
 	await context.close();
 }
 
@@ -208,14 +245,15 @@ const browser = await launch();
 	check('J2 GPC (scope all): no banner, nothing loads', s.gpc === true && !s.banner && !s.ga && requests.length === 0);
 	check('J2 GPC recorded as choice "gpc"', c && c.m === 'gpc' && c.g === 1);
 	await page.click('.sccm-floating');
+	await page.click('#sccm-tab-details');
 	const notice = await page.textContent('#sccm-prefs .sccm-notice').catch(() => '');
-	check('J2 GPC notice shown in preferences', /Global Privacy Control/.test(notice), notice);
-	const locked = await page.evaluate(() => ['analytics', 'marketing'].every((k) => document.getElementById('sccm-cat-' + k).disabled));
+	check('J2 GPC notice shown in the Details tab', /Global Privacy Control/.test(notice), notice);
+	const locked = await page.evaluate(() => ['analytics', 'marketing'].every((k) => document.getElementById('sccm-cat-' + k).disabled && document.getElementById('sccm-dcat-' + k).disabled));
 	check('J3 GPC-covered switches cannot be enabled', locked);
 	await page.click('#sccm-prefs .sccm-btn--accept');
 	await page.waitForTimeout(300);
 	const c2 = await consentCookie(context);
-	check('J3 Accept all with GPC keeps covered categories off', c2.c.analytics === 0 && c2.c.marketing === 0);
+	check('J3 Allow all with GPC keeps covered categories off', c2.c.analytics === 0 && c2.c.marketing === 0);
 	await context.close();
 }
 
@@ -226,11 +264,11 @@ const browser = await launch();
 	await page.waitForSelector('#sccm-banner:not([hidden])');
 	const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
 	await page.screenshot({ path: OUT + 'banner-mobile.png' });
-	await page.click('.sccm-btn--manage');
-	await page.screenshot({ path: OUT + 'preferences-mobile.png' });
-	const box = await page.locator('.sccm-modal__dialog').boundingBox();
-	check('K3 mobile: modal fits the screen', box && box.width <= 375 && box.x >= 0);
+	const box = await page.locator('#sccm-banner .sccm-dialog__box').boundingBox();
+	check('K3 mobile: dialog fits the screen', box && box.width <= 375 && box.x >= 0 && box.y >= 0);
 	check('K3 mobile: no horizontal scroll from the banner', !overflow);
+	await page.click('#sccm-btab-details');
+	await page.screenshot({ path: OUT + 'details-mobile.png' });
 	await context.close();
 }
 
@@ -240,82 +278,51 @@ const browser = await launch();
 	await page.goto(BASE + '/cookie-policy/');
 	const rows = await page.locator('.sccm-policy .sccm-table tbody tr').count();
 	check('10 Cookie Policy page lists cookies', rows > 0, rows + ' rows');
-	await page.click('.sccm-btn--manage');
-	await page.screenshot({ path: OUT + 'preferences-desktop.png' });
 	await context.close();
 }
 
-/* ---------------------------------------------------------------- Banner with category switches (Cookiebot-style first layer) */
-{
-	const { context, page, requests, errors } = await newPage(browser);
-	await page.goto(BASE + '/');
-	await page.waitForSelector('#sccm-banner:not([hidden])');
-	const pills = await page.$$eval('#sccm-banner .sccm-pill', (els) => els.map((e) => e.textContent.trim()));
-	check('N1 banner shows the four categories with Cookiebot-style names', JSON.stringify(pills) === JSON.stringify(['Necessary', 'Preferences', 'Statistics', 'Marketing']), pills.join(','));
-	const first = await page.evaluate(() => ({
-		necessary: [document.getElementById('sccm-bcat-necessary').checked, document.getElementById('sccm-bcat-necessary').disabled],
-		others: ['functional', 'analytics', 'marketing'].map((k) => document.getElementById('sccm-bcat-' + k).checked)
-	}));
-	check('N1 banner switches: Necessary locked on, nothing else pre-ticked', first.necessary[0] && first.necessary[1] && first.others.every((v) => v === false));
-	check('N2 order of buttons: Reject, Accept, Allow selection', JSON.stringify(await page.$$eval('#sccm-banner .sccm-actions .sccm-btn', (els) => els.map((e) => e.textContent.trim()))) === JSON.stringify(['Reject non-essential', 'Accept all', 'Allow selection']));
-	check('N2 stylesheet applied before the banner is drawn', await page.evaluate(() => document.getElementById('sccm-frontend-css').media === 'all'));
-
-	await page.check('#sccm-bcat-analytics');
-	await page.click('#sccm-banner .sccm-btn--selection');
-	await page.waitForTimeout(500);
-	const s = await page.evaluate(() => ({ ga: !!window.__gaRan, fb: !!window.__fbRan, manual: !!window.__manualFunctionalRan, hidden: document.getElementById('sccm-banner').hidden }));
-	check('N3 Allow selection: only the ticked category (Statistics) is released', s.hidden && s.ga && !s.fb && !s.manual);
-	const c = await consentCookie(context);
-	check('N3 Allow selection stored as custom with analytics only', c && c.m === 'custom' && c.c.analytics === 1 && c.c.marketing === 0 && c.c.functional === 0);
-	check('N3 no third-party requests for categories that were not allowed', !requests.some((u) => /facebook\.net|youtube\.com/.test(u)), requests.join(', '));
-
-	// Consent status, date and ID in the preferences window (Cookiebot-style "your consent")
-	await page.click('.sccm-floating');
-	await page.waitForSelector('#sccm-prefs:not([hidden])');
-	const status = await page.textContent('#sccm-prefs .sccm-status');
-	check('H2 preferences show the current choice', /Chose which cookies to allow/.test(status), status.trim().slice(0, 80));
-	check('H2 preferences show the date', /Date:/.test(status));
-	check('H2 preferences show the consent ID with a copy button', status.includes(c.id) && (await page.isVisible('#sccm-prefs .sccm-copy')));
-	check('H2 consent ID exposed to developers (SCCM.getConsentId)', (await page.evaluate(() => window.SCCM.getConsentId())) === c.id);
-	const pushed = await page.evaluate(() => (window.dataLayer || []).some((e) => e && e.event === 'sccm_consent_update' && e.sccm_consent_id));
-	check('H2 dataLayer event carries the consent ID', pushed);
-	check('no JavaScript errors (banner with switches)', errors.length === 0, errors.join(' | '));
-	await context.close();
-}
-
-/* ---------------------------------------------------------------- Floating widget: corners vs peeking half-circles */
+/* ---------------------------------------------------------------- Floating widget: round in corners, text tab on edges */
 {
 	const { context, page } = await newPage(browser, { viewport: { width: 1000, height: 640 } });
 	await page.goto(BASE + '/');
-	await page.click('.sccm-btn--reject');
+	await page.click('#sccm-banner .sccm-btn--reject');
 	await page.waitForSelector('.sccm-floating:not([hidden])');
-	await page.mouse.move(500, 5); // keep the pointer away so nothing is hovered
+	await page.mouse.move(500, 5);
 	const measure = async (position) => {
-		await page.evaluate((pos) => { document.querySelector('.sccm-floating').className = 'sccm-root sccm-floating sccm-floating--' + pos; }, position);
+		await page.evaluate((pos) => {
+			const f = document.querySelector('.sccm-floating');
+			f.className = 'sccm-root sccm-floating sccm-floating--' + pos + (/center/.test(pos) ? ' sccm-floating--tab' : '');
+		}, position);
 		await page.waitForTimeout(300);
 		return page.evaluate(() => {
 			const r = document.querySelector('.sccm-floating').getBoundingClientRect();
-			const vw = window.innerWidth, vh = window.innerHeight;
-			const visibleW = Math.min(r.right, vw) - Math.max(r.left, 0);
-			const visibleH = Math.min(r.bottom, vh) - Math.max(r.top, 0);
-			return { visible: (visibleW * visibleH) / (r.width * r.height), hscroll: document.documentElement.scrollWidth > vw };
+			return { left: r.left, right: innerWidth - r.right, bottom: innerHeight - r.bottom, w: r.width, h: r.height, hscroll: document.documentElement.scrollWidth > innerWidth };
 		});
 	};
 	for (const corner of ['bottom-left', 'bottom-right']) {
 		const m = await measure(corner);
-		check(`W1 ${corner}: round button fully visible`, m.visible > 0.99 && !m.hscroll, JSON.stringify(m));
+		check(`W1 ${corner}: round button inside the window`, m.left >= 0 && m.right >= 0 && m.bottom > 0 && m.w === m.h && !m.hscroll, JSON.stringify(m));
 	}
-	for (const edge of ['bottom-center', 'left-center', 'right-center']) {
+	const edges = { 'bottom-center': (m) => m.bottom <= 0 && m.w > m.h, 'left-center': (m) => m.left <= 1 && m.h > m.w, 'right-center': (m) => m.right <= 1 && m.h > m.w };
+	for (const [edge, ok] of Object.entries(edges)) {
 		const m = await measure(edge);
-		check(`W2 ${edge}: half-circle peeks from the edge (about half visible)`, m.visible > 0.45 && m.visible < 0.55 && !m.hscroll, JSON.stringify(m));
+		check(`W2 ${edge}: text tab attached to the edge`, ok(m) && !m.hscroll, JSON.stringify(m));
 	}
-	await page.evaluate(() => { document.querySelector('.sccm-floating').className = 'sccm-root sccm-floating sccm-floating--left-center'; });
-	await page.hover('.sccm-floating');
-	await page.waitForTimeout(300);
-	const hovered = await page.evaluate(() => { const r = document.querySelector('.sccm-floating').getBoundingClientRect(); return (Math.min(r.right, innerWidth) - Math.max(r.left, 0)) / r.width; });
-	check('W2 hovering slides the half-circle out (mostly visible)', hovered > 0.75, hovered.toFixed(2));
+	await context.close();
+}
+{
+	// A site configured with an edge position gets a text tab.
+	const { context, page } = await newPage(browser);
+	await page.route(BASE + '/', async (route) => {
+		const response = await route.fetch();
+		await route.fulfill({ response, body: (await response.text()).replace(/"floatingPos":"[a-z-]+"/, '"floatingPos":"left-center"') });
+	});
+	await page.goto(BASE + '/');
+	await page.click('#sccm-banner .sccm-btn--reject');
+	await page.waitForSelector('.sccm-floating:not([hidden])');
+	check('W2 the edge tab shows a text label', (await page.textContent('.sccm-floating .sccm-floating__label')).trim() === 'Cookies');
 	await page.click('.sccm-floating');
-	check('W3 the half-circle still opens the preferences window', await page.isVisible('#sccm-prefs'));
+	check('W3 the tab opens the cookie settings', await page.isVisible('#sccm-prefs'));
 	await context.close();
 }
 
@@ -328,7 +335,7 @@ const browser = await launch();
 		await route.fulfill({ response, body });
 	});
 	await page.goto(BASE + '/');
-	await page.click('.sccm-btn--accept');
+	await page.click('#sccm-banner .sccm-btn--accept');
 	await page.waitForTimeout(400);
 	const cookie = (await context.cookies()).find((x) => x.name === 'sccm_consent');
 	check('X1 session-only expiry: consent cookie has no expiry date', cookie && cookie.expires === -1, cookie && String(cookie.expires));
@@ -337,9 +344,18 @@ const browser = await launch();
 	await context.close();
 }
 
+/* ---------------------------------------------------------------- Scan mode cannot be triggered by visitors */
+{
+	const { context, page } = await newPage(browser);
+	await page.goto(BASE + '/?sccm_scan=abcdefghijklmnopqrstuvwx');
+	await page.waitForTimeout(500);
+	const s = await page.evaluate(() => ({ scan: window.SCCM_CONFIG.scanMode, ga: !!window.__gaRan, banner: !!document.querySelector('#sccm-banner:not([hidden])') }));
+	check('S1 a made-up scan token does nothing for visitors', s.scan === false && !s.ga && s.banner);
+	await context.close();
+}
+
 /* ---------------------------------------------------------------- Scanner reporting: quiet by design */
 {
-	const reports = [];
 	const run = async (loggedIn) => {
 		const { context, page } = await newPage(browser);
 		await context.addCookies([{ name: 'some_unknown_cookie', value: '1', url: BASE }]);

@@ -14,12 +14,12 @@ scanner, with no coding and no subscription. All data stays on your own server.
 **What visitors see**
 1. **Accept All**: one button, everything allowed.
 2. **Reject Non-Essential**: one button with the same size and style as Accept.
-3. **Manage Preferences**: an on/off switch per category (Necessary, Preferences, Statistics,
-   Marketing), right in the banner and in a details window with the cookie list for each
-   category, plus the visitor's current choice, date and consent ID.
-4. **Change or withdraw anytime**: a floating button in five positions (corners, or a minimal
-   half-circle peeking from the bottom or side edge), the `[sccm_cookie_settings]` shortcode,
-   or any link to `#sccm-preferences` (e.g. a menu item).
+3. **Manage Preferences**: one dialog with Consent, Details and About tabs (like Cookiebot):
+   a switch per category (Necessary, Preferences, Statistics, Marketing), every cookie grouped by
+   category and provider, and the visitor's own choice, date and consent ID.
+4. **Change or withdraw anytime**: a cookie settings button in five positions (a round icon in a
+   corner, or a "Cookies" tab on the bottom or side edge), the `[sccm_cookie_settings]`
+   shortcode, or any link to `#sccm-preferences` (e.g. a menu item).
 5. **Fair buttons**: nothing is pre-ticked, and closing or ignoring the banner is never consent.
 6. **Remember and re-ask**: the choice is remembered for the time you choose (12 months by
    default; from "until the browser closes" to 13 months); the banner asks again when the
@@ -31,10 +31,11 @@ scanner, with no coding and no subscription. All data stays on your own server.
    HTML until their category is allowed. Google Consent Mode v2 is built in.
 8. **Consent records**: each choice is stored with a consent ID, date/time, categories, GPC flag,
    version and page. The IP is anonymised or hashed. Filter and export to CSV.
-9. **Cookie scanner**: finds cookies by scanning your pages (and from several visitors'
-   browsers), sorts known services into the right category automatically and emails you a
-   readable summary about unknown ones, which wait for your approval.
-10. **Cookie list for visitors**: shown in the preferences window and on your Cookie Policy page
+9. **Cookie scanner**: scans your pages on the server and in your own browser (so cookies set by
+   scripts and by embedded services are found, like Cookiebot's crawler), sorts known services
+   into the right category automatically and emails you a readable summary about unknown ones,
+   which wait for your approval.
+10. **Cookie list for visitors**: shown in the banner's Details tab and on your Cookie Policy page
     via `[sccm_cookie_policy]`, and updated automatically.
 11. **Global Privacy Control (GPC)**: honours the browser privacy signal and records it.
 12. **Works with any setup**: cache-safe, works with optimisation plugins and page translators,
@@ -62,7 +63,7 @@ blocked automatically until consent.
 |---|---|
 | Cookie list on a page | `[sccm_cookie_policy]` |
 | "Cookie settings" link or button | `[sccm_cookie_settings text="Cookie settings" style="link"]` (or `style="button"`) |
-| Menu item that opens the preferences window | Custom link with URL `#sccm-preferences` |
+| Menu item that opens the cookie settings | Custom link with URL `#sccm-preferences` |
 | Run your own script only after consent | `<script type="text/plain" data-sccm-category="analytics">…</script>` |
 | Block another third-party service | Settings → Blocking and Google → Your own blocking rules |
 | Same settings on another website | Tools → Export settings, then Import on the other site |

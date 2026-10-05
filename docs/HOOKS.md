@@ -48,7 +48,7 @@ add_filter( 'sccm_services', function ( $services ) {
 window.SCCM.hasConsent('analytics');   // true | false
 window.SCCM.getConsent();              // { id, v, t, c: {functional, analytics, marketing}, m, g } | null
 window.SCCM.getConsentId();            // the visitor's consent ID, or null before a choice
-window.SCCM.openPreferences();
+window.SCCM.openPreferences();          // optional tab: openPreferences('details') or 'about'
 window.SCCM.showBanner();
 window.SCCM.acceptAll();
 window.SCCM.rejectAll();
@@ -69,4 +69,4 @@ document.addEventListener('sccm:consent', (e) => console.log(e.detail.method, e.
 | `<script type="text/plain" data-sccm-category="marketing" data-sccm-src="https://…">` | External script loaded after consent. |
 | `<iframe data-sccm-category="marketing" data-sccm-src="https://…">` | Frame loaded after consent (placeholder shown before). |
 | `data-sccm-skip` on any tag | The blocker leaves this tag alone. |
-| `class="sccm-open-preferences"`, `data-sccm-open`, or `href="#sccm-preferences"` | Click opens the preferences window. |
+| `class="sccm-open-preferences"`, `data-sccm-open`, or `href="#sccm-preferences"` | Click opens the cookie settings dialog. |

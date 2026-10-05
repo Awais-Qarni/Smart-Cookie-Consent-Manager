@@ -10,9 +10,50 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 - **Version:** 0.1.0 (feature-complete for the 12 features, not yet staging-tested on a real site)
 - **Branch:** `feature/v1-build` (pull request to `main`)
 - **Phase:** 5b, pre-staging changes done (see `ROADMAP.md`); staging test is next
-- **Last updated:** 2026-10-05
+- **Last updated:** 2026-10-05 (session 4)
 
 ---
+
+## 2026-10-05 — Session 4 (owner feedback on staging: design + scan)
+
+**Root causes found**
+- Admin "broken" layout, Help button and expiry dropdown not working: **stale cached CSS/JS**.
+  Assets were versioned with `SCCM_VERSION` (unchanged 0.1.0), so WP Engine / the browser kept
+  the old files. Fixed: `SCCM_Plugin::asset_version()` = version + file time.
+- Scan listed only `__cf_bm` + `sccm_consent` while Cookiebot listed ~30: the server scan cannot
+  run JavaScript, so it never saw script-set or third-party cookies.
+
+**Done**
+- Cookiebot-style dialog: Consent / Details / About tabs; Details = category accordion →
+  provider accordion → cookie cards (name, purpose, maximum storage duration, type); About =
+  explanation + choice/date/consent ID. Same dialog when reopened. Full-width category switches
+  (2 × 2 in corner boxes and on phones). Default texts now "Allow all / Allow selection / Deny".
+- Button order setting (Allow all first by default; Deny first available). Answer to the owner:
+  with identical buttons either order is lawful; regulators judge equal prominence, and some
+  prefer Deny first, hence the setting.
+- Cookie settings button: corners = round icon; bottom centre / edges = "Cookies" text tab.
+- Expiry: the days field only shows for "Another number of days".
+- **Browser scan** in "Scan now" (see ARCHITECTURE.md → Browser scan); service library +
+  third-party cookies (YouTube, Maps, Vimeo, Meta `fr`, LinkedIn, DoubleClick, Clarity,
+  Cloudflare, reCAPTCHA) and new services (Calendly, Stripe, Elementor, WooCommerce order
+  attribution).
+- Cleanup: removed `banner_categories` setting, unused texts (`btn_manage`, `btn_save`,
+  `prefs_*`, `always_on`, `show_cookies`, `saved`), the old modal code/CSS, the `_test` JS hook
+  and `tests/e2e/widget-shots.mjs`.
+- Tests: unit 33/33, e2e 69/69, WP-CLI 45/45, admin e2e 33/33 (includes a real browser scan that
+  finds `_ga`, YouTube `YSC`, and an unknown script cookie + storage key).
+
+**Next**
+1. Update the plugin on staging (`primasystemstg`), open Cookie Consent once (no cache clearing
+   needed now), click **Scan now** and keep the tab open until it finishes. Compare with
+   Cookiebot's report on `primasystemmov`: expect the same services; names Cookiebot calls
+   "unclassified" will be under **Needs review**.
+2. If a service is missing from the library (e.g. a site-specific plugin), approve its cookies
+   once or add it with the `sccm_services` filter.
+
+**Notes & blockers**
+- Still no access from the build environment to either site, Cookiebot, or the owner's browser
+  extension, so the comparison with Cookiebot is from the owner's screenshots.
 
 ## 2026-10-05 — Session 3 (pre-staging changes, 10 requests)
 

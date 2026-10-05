@@ -11,20 +11,37 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   explained in plain language.
 - **Categories renamed** to Cookiebot's names: Necessary, Preferences, Statistics, Marketing
   (keys and Google Consent Mode mapping are unchanged; custom names you saved are kept).
-- Banner now shows the four **category switches on the first layer** (turn off for the old
-  three-button banner) with "Reject", "Accept" and "Allow selection".
+- **New consent dialog modelled on Cookiebot**: three tabs (**Consent**, **Details**, **About**)
+  and three equal buttons (**Allow all**, **Allow selection**, **Deny**). Consent shows a switch
+  per category across the full width (2 × 2 in corner boxes and on phones). Details is an
+  accordion per category → per provider → a card per cookie (name, purpose, maximum storage
+  duration, type). About explains cookies and shows the visitor's choice, date and consent ID
+  (with Copy). The same dialog opens again from the cookie settings button.
+- **Button order** setting: Allow all first (default) or Deny first. All buttons always look the
+  same.
 - **Consent expiry is your choice**: presets (until the browser closes, 1 week, 1/3/6/12/13
   months) or any number of days up to 395 (browsers do not keep a cookie longer).
 - Cookie settings button has two more positions, **bottom centre** and **left/right edge**,
-  drawn as a minimal half-circle that peeks out from the screen edge and slides out on hover.
-- Preferences window shows the visitor's **current choice, date and consent ID** with a Copy
-  button; the consent ID is also in the `dataLayer` event and `SCCM.getConsentId()`.
+  shown as a slim tab with the word "Cookies" attached to the screen edge (corners keep a round
+  icon). The consent ID is also in the `dataLayer` event and `SCCM.getConsentId()`.
+- **"Scan now" also scans in your browser**: the pages open in a hidden frame in the admin's own
+  browser with everything allowed, so cookies set by scripts (Google Analytics, HubSpot, chat
+  widgets…) and third-party cookies of embedded services (YouTube, Calendly, Meta, LinkedIn…)
+  are found, like Cookiebot's crawler. The service library now knows those third-party cookies
+  and Calendly, Stripe, Elementor and WooCommerce order attribution.
+- "Remember the choice for": the number of days only appears for "Another number of days".
 - Scanner alert email redesigned (HTML, clear sections, one button, plain-text version) and
   can go to **several recipients**; "Send me a sample email" button.
 - Cookie list is shown **grouped by category**; unknown cookies wait in a "Needs review" inbox
   where a category must be chosen before Approve; "Ignore all" button.
 
 ### Fixed
+- **Admin screens looked broken / Help and expiry did nothing after updating**: the plugin's CSS
+  and JS kept the same version number, so browsers and hosts (e.g. WP Engine) served the old
+  cached files. Every asset is now versioned by its file time.
+- **Scan found only 2–3 cookies** (e.g. `__cf_bm`, `sccm_consent`): it only read the server's
+  `Set-Cookie` headers. Cookies set by JavaScript and third-party cookies are now found by the
+  browser scan (above).
 - **Cookie list was far too long** (e.g. 36 entries, 6 auto-active). Causes and fixes:
   WordPress login cookies (only logged-in users have them) are no longer listed; visitor
   browsers no longer report local storage; logged-in users never report; an unknown cookie is
@@ -41,7 +58,8 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
 - Stylesheet no longer blocks the first paint (the banner waits for it, so nothing flashes
   unstyled); wildcard matching is cached; the cookie clean-up and the idle-time reporter do
   less work; "Scan now" is limited to 6 pages and shorter timeouts so it cannot hit the PHP
-  time limit. See `docs/PERFORMANCE.md`.
+  time limit. The cookie details are only built when a visitor opens the Details tab.
+  See `docs/PERFORMANCE.md`.
 
 ## [0.1.0] - 2026-09-28
 ### Added

@@ -64,9 +64,9 @@ if ( 'off' === $settings['consent_mode'] ) {
 }
 
 $sccm_choice_labels = array(
-	'accept_all' => __( 'Accepted all', 'smart-cookie-consent-manager' ),
-	'reject_all' => __( 'Rejected non-essential', 'smart-cookie-consent-manager' ),
-	'custom'     => __( 'Chose which cookies', 'smart-cookie-consent-manager' ),
+	'accept_all' => __( 'Allowed all', 'smart-cookie-consent-manager' ),
+	'reject_all' => __( 'Denied', 'smart-cookie-consent-manager' ),
+	'custom'     => __( 'Allowed a selection', 'smart-cookie-consent-manager' ),
 	'gpc'        => __( 'Privacy signal (GPC)', 'smart-cookie-consent-manager' ),
 );
 ?>
@@ -104,7 +104,7 @@ $sccm_choice_labels = array(
 					<span class="dashicons <?php echo 'warn' === $sccm_item['type'] ? 'dashicons-flag' : 'dashicons-lightbulb'; ?>" aria-hidden="true"></span>
 					<span class="sccm-todo__text"><?php echo esc_html( $sccm_item['text'] ); ?></span>
 					<?php if ( $sccm_item['action'] ) : ?>
-						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" <?php echo 'scan_now' === $sccm_item['action'] ? 'data-sccm-browser-scan' : ''; ?>>
 							<?php SCCM_Admin::action_fields( $sccm_item['action'] ); ?>
 							<button class="button <?php echo 'warn' === $sccm_item['type'] ? 'button-primary' : ''; ?>"><?php echo esc_html( $sccm_item['label'] ); ?></button>
 						</form>
@@ -165,7 +165,7 @@ $sccm_choice_labels = array(
 		<?php else : ?>
 			<p class="description"><?php esc_html_e( 'No scan yet.', 'smart-cookie-consent-manager' ); ?></p>
 		<?php endif; ?>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" data-sccm-browser-scan>
 			<?php SCCM_Admin::action_fields( 'scan_now' ); ?>
 			<button class="button"><?php esc_html_e( 'Scan now', 'smart-cookie-consent-manager' ); ?></button>
 		</form>

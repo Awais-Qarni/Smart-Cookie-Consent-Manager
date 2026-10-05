@@ -121,6 +121,52 @@ SCCM_Cookies::bulk(
 );
 sccm_check( 'a bulk change can skip the bump (first scan)', 6 === (int) get_option( 'sccm_consent_version' ) );
 
+/* ---------------------------------------------------------------- Browser scan */
+
+$wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE service <> 'sccm'" );
+SCCM_Cookies::all_rows();
+wp_set_current_user( 0 );
+$token = SCCM_Scanner::scan_token();
+sccm_check( 'a scan token is useless without a logged-in user', false === SCCM_Scanner::valid_scan_token( $token ) );
+$admins = get_users( array( 'role' => 'administrator', 'number' => 1, 'fields' => 'ID' ) );
+wp_set_current_user( (int) $admins[0] );
+$token = SCCM_Scanner::scan_token( false, SCCM_Cookies::counts() );
+$data  = SCCM_Scanner::valid_scan_token( $token );
+sccm_check( 'a scan token is valid for the admin who created it', is_array( $data ) );
+sccm_check( 'a made-up scan token is refused', false === SCCM_Scanner::valid_scan_token( 'abcdefghijklmnopqrstuvwx' ) );
+$summary = SCCM_Scanner::record_browser_scan(
+	array(
+		'pages'     => 2,
+		'cookies'   => array( '_ga', 'wordpress_logged_in_abc', 'wp-settings-1', 'site_js_cookie', '<bad>' ),
+		'storage'   => array(
+			array( 'n' => 'elementor', 't' => 'localStorage', 'new' => false ),
+			array( 'n' => 'old_dashboard_key', 't' => 'localStorage', 'new' => false ),
+			array( 'n' => 'site_written_key', 't' => 'localStorage', 'new' => true ),
+		),
+		'resources' => array( 'https://www.youtube.com/embed/abc', 'https://assets.calendly.com/assets/external/widget.js', 'https://cdn.example.net/lib.js', home_url( '/wp-includes/js/x.js' ) ),
+	),
+	$data
+);
+$names = array_map(
+	function ( $r ) {
+		return $r['name'] . '|' . $r['status'];
+	},
+	SCCM_Cookies::all_rows()
+);
+sccm_check( 'browser scan: known JS cookie is listed', in_array( '_ga|active', $names, true ) );
+sccm_check( 'browser scan: admin-only cookies are never listed', ! preg_grep( '/^(wordpress_|wp-settings)/', $names ) );
+sccm_check( 'browser scan: unknown site cookie waits for review', in_array( 'site_js_cookie|pending', $names, true ) );
+sccm_check( 'browser scan: invalid names are dropped', ! preg_grep( '/bad/', $names ) );
+sccm_check( 'browser scan: known storage key is listed even if the browser had it before', in_array( 'elementor|active', $names, true ) );
+sccm_check( 'browser scan: unknown storage key the browser already had is skipped', ! preg_grep( '/old_dashboard_key/', $names ) );
+sccm_check( 'browser scan: unknown storage key written by the page waits for review', in_array( 'site_written_key|pending', $names, true ) );
+sccm_check( 'browser scan: embedded YouTube adds its third-party cookies', in_array( 'YSC|active', $names, true ) );
+sccm_check( 'browser scan: Calendly is recognised (its cookies are necessary)', in_array( '_calendly_session|active', $names, true ) );
+$scan = get_option( SCCM_Scanner::RESULT_OPTION );
+sccm_check( 'browser scan: unknown third-party host goes to the report, not the cookie list', in_array( 'cdn.example.net', array_column( $scan['unclassified'], 'host' ), true ) );
+sccm_check( 'browser scan: summary counts what was added', $summary['active'] >= 5 && 2 === $summary['pending'] );
+wp_set_current_user( 0 );
+
 /* ---------------------------------------------------------------- Settings */
 
 $s = SCCM_Settings::update( array( 'floating_position' => 'left-center', 'consent_expiry_days' => 0 ) );

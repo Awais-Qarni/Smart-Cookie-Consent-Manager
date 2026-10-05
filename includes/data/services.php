@@ -59,19 +59,53 @@ return array(
 		'name'     => 'Cloudflare',
 		'provider' => 'Cloudflare, Inc.',
 		'category' => 'necessary',
-		'patterns' => array(),
+		'patterns' => array( 'challenges.cloudflare.com' ),
 		'cookies'  => array(
 			array( '__cf_bm', __( '30 minutes', 'smart-cookie-consent-manager' ), __( 'Bot protection.', 'smart-cookie-consent-manager' ) ),
 			array( 'cf_clearance', __( '1 year', 'smart-cookie-consent-manager' ), __( 'Proves a security challenge was passed.', 'smart-cookie-consent-manager' ) ),
+			array( '_cfuvid', __( 'Session', 'smart-cookie-consent-manager' ), __( 'Rate limiting and bot protection (Cloudflare).', 'smart-cookie-consent-manager' ) ),
 		),
 	),
 	'recaptcha'          => array(
 		'name'     => 'Google reCAPTCHA',
 		'provider' => 'Google LLC',
 		'category' => 'necessary',
-		'patterns' => array(),
+		'patterns' => array( 'google.com/recaptcha', 'gstatic.com/recaptcha', 'recaptcha.net' ),
 		'cookies'  => array(
 			array( '_GRECAPTCHA', __( '6 months', 'smart-cookie-consent-manager' ), __( 'Protects forms against spam and abuse.', 'smart-cookie-consent-manager' ) ),
+			array( 'rc::a', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Distinguishes humans from bots to protect forms.', 'smart-cookie-consent-manager' ), 'localStorage' ),
+			array( 'rc::c', __( 'Session', 'smart-cookie-consent-manager' ), __( 'Distinguishes humans from bots to protect forms.', 'smart-cookie-consent-manager' ), 'sessionStorage' ),
+		),
+	),
+
+	'calendly'           => array(
+		'name'     => 'Calendly',
+		'provider' => 'Calendly LLC',
+		'category' => 'necessary',
+		'patterns' => array( 'assets.calendly.com', 'calendly.com/' ),
+		'cookies'  => array(
+			array( '__cf_bm', __( '30 minutes', 'smart-cookie-consent-manager' ), __( 'Distinguishes humans from bots (Cloudflare, used by Calendly).', 'smart-cookie-consent-manager' ) ),
+			array( '_cfuvid', __( 'Session', 'smart-cookie-consent-manager' ), __( 'Rate limiting and bot protection (Cloudflare, used by Calendly).', 'smart-cookie-consent-manager' ) ),
+			array( '_calendly_session', __( '21 days', 'smart-cookie-consent-manager' ), __( 'Keeps the Calendly booking session working.', 'smart-cookie-consent-manager' ) ),
+		),
+	),
+	'stripe'             => array(
+		'name'     => 'Stripe',
+		'provider' => 'Stripe, Inc.',
+		'category' => 'necessary',
+		'patterns' => array( 'js.stripe.com' ),
+		'cookies'  => array(
+			array( '__stripe_mid', __( '1 year', 'smart-cookie-consent-manager' ), __( 'Fraud prevention for card payments.', 'smart-cookie-consent-manager' ) ),
+			array( '__stripe_sid', __( '30 minutes', 'smart-cookie-consent-manager' ), __( 'Fraud prevention for card payments.', 'smart-cookie-consent-manager' ) ),
+		),
+	),
+	'elementor'          => array(
+		'name'     => 'Elementor',
+		'provider' => __( 'This website', 'smart-cookie-consent-manager' ),
+		'category' => 'necessary',
+		'patterns' => array(),
+		'cookies'  => array(
+			array( 'elementor', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Stores page layout state for this website (Elementor page builder).', 'smart-cookie-consent-manager' ), 'localStorage' ),
 		),
 	),
 
@@ -86,17 +120,21 @@ return array(
 	),
 	'google-maps'        => array(
 		'name'     => 'Google Maps',
-		'provider' => 'Google LLC',
+		'provider' => 'Google Maps (Google LLC)',
 		'category' => 'functional',
 		'patterns' => array( 'maps.googleapis.com', 'google.com/maps', 'maps.google.' ),
-		'cookies'  => array(),
+		'cookies'  => array(
+			array( 'NID', __( '6 months', 'smart-cookie-consent-manager' ), __( 'Remembers your Google preferences and is used for personalised ads.', 'smart-cookie-consent-manager' ) ),
+		),
 	),
 	'vimeo'              => array(
 		'name'     => 'Vimeo',
 		'provider' => 'Vimeo, Inc.',
 		'category' => 'functional',
 		'patterns' => array( 'player.vimeo.com' ),
-		'cookies'  => array(),
+		'cookies'  => array(
+			array( 'vuid', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Collects statistics about the Vimeo videos you watch.', 'smart-cookie-consent-manager' ) ),
+		),
 	),
 	'polylang'           => array(
 		'name'     => 'Polylang',
@@ -170,7 +208,7 @@ return array(
 		'provider' => 'Google LLC',
 		'category' => 'analytics',
 		'google'   => true,
-		'patterns' => array( 'googletagmanager.com/gtag/js', "gtag('config'", 'gtag("config"' ),
+		'patterns' => array( 'googletagmanager.com/gtag/js', "gtag('config'", 'gtag("config"', 'google-analytics.com/g/collect', 'analytics.google.com/g/collect' ),
 		'cookies'  => array(
 			array( '_ga', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Distinguishes unique visitors.', 'smart-cookie-consent-manager' ) ),
 			array( '_ga_*', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Keeps the session state.', 'smart-cookie-consent-manager' ) ),
@@ -196,6 +234,8 @@ return array(
 		'cookies'  => array(
 			array( '_clck', __( '1 year', 'smart-cookie-consent-manager' ), __( 'Stores the Clarity user ID.', 'smart-cookie-consent-manager' ) ),
 			array( '_clsk', __( '1 day', 'smart-cookie-consent-manager' ), __( 'Connects page views into one session recording.', 'smart-cookie-consent-manager' ) ),
+			array( 'CLID', __( '1 year', 'smart-cookie-consent-manager' ), __( 'Identifies the first time Clarity saw this browser.', 'smart-cookie-consent-manager' ) ),
+			array( 'MUID', __( '1 year', 'smart-cookie-consent-manager' ), __( 'Microsoft user ID, used for analytics and ads.', 'smart-cookie-consent-manager' ) ),
 		),
 	),
 	'hotjar'             => array(
@@ -228,7 +268,17 @@ return array(
 		),
 	),
 
-	/* ---------------------------------------------------------------- Tracking / Advertising */
+	'woocommerce-attribution' => array(
+		'name'     => 'WooCommerce order attribution',
+		'provider' => __( 'This website', 'smart-cookie-consent-manager' ),
+		'category' => 'analytics',
+		'patterns' => array(),
+		'cookies'  => array(
+			array( 'sbjs_*', __( 'Session', 'smart-cookie-consent-manager' ), __( 'Remembers how you arrived at the shop, to see which channels lead to orders.', 'smart-cookie-consent-manager' ) ),
+		),
+	),
+
+	/* ---------------------------------------------------------------- Marketing */
 
 	'google-ads'         => array(
 		'name'     => 'Google Ads',
@@ -238,6 +288,8 @@ return array(
 		'patterns' => array( 'googleadservices.com', 'googlesyndication.com', 'doubleclick.net', 'google.com/pagead' ),
 		'cookies'  => array(
 			array( '_gcl_*', __( '3 months', 'smart-cookie-consent-manager' ), __( 'Stores ad-click information to measure conversions.', 'smart-cookie-consent-manager' ) ),
+			array( 'IDE', __( '1 year', 'smart-cookie-consent-manager' ), __( 'Used by Google DoubleClick to show and measure ads.', 'smart-cookie-consent-manager' ) ),
+			array( 'test_cookie', __( '1 day', 'smart-cookie-consent-manager' ), __( 'Checks whether your browser accepts cookies (Google DoubleClick).', 'smart-cookie-consent-manager' ) ),
 		),
 	),
 	'meta-pixel'         => array(
@@ -248,6 +300,7 @@ return array(
 		'cookies'  => array(
 			array( '_fbp', __( '3 months', 'smart-cookie-consent-manager' ), __( 'Identifies browsers for advertising and analytics.', 'smart-cookie-consent-manager' ) ),
 			array( '_fbc', __( '2 years', 'smart-cookie-consent-manager' ), __( 'Stores the last ad click.', 'smart-cookie-consent-manager' ), 'cookie', true ),
+			array( 'fr', __( '3 months', 'smart-cookie-consent-manager' ), __( 'Used by Meta to deliver, measure and improve the relevance of ads.', 'smart-cookie-consent-manager' ) ),
 		),
 	),
 	'linkedin-insight'   => array(
@@ -257,6 +310,11 @@ return array(
 		'patterns' => array( 'snap.licdn.com', 'px.ads.linkedin.com', '_linkedin_partner_id' ),
 		'cookies'  => array(
 			array( 'li_fat_id', __( '30 days', 'smart-cookie-consent-manager' ), __( 'Measures LinkedIn ad conversions.', 'smart-cookie-consent-manager' ), 'cookie', true ),
+			array( 'bcookie', __( '1 year', 'smart-cookie-consent-manager' ), __( 'LinkedIn browser identifier, used for ads and security.', 'smart-cookie-consent-manager' ) ),
+			array( 'lidc', __( '1 day', 'smart-cookie-consent-manager' ), __( 'Selects the LinkedIn data centre.', 'smart-cookie-consent-manager' ) ),
+			array( 'li_gc', __( '6 months', 'smart-cookie-consent-manager' ), __( 'Stores your cookie choices for LinkedIn.', 'smart-cookie-consent-manager' ) ),
+			array( 'UserMatchHistory', __( '30 days', 'smart-cookie-consent-manager' ), __( 'Syncs LinkedIn ad IDs.', 'smart-cookie-consent-manager' ) ),
+			array( 'AnalyticsSyncHistory', __( '30 days', 'smart-cookie-consent-manager' ), __( 'Stores when LinkedIn last synced ad data.', 'smart-cookie-consent-manager' ) ),
 		),
 	),
 	'tiktok-pixel'       => array(
@@ -310,9 +368,15 @@ return array(
 	),
 	'youtube'            => array(
 		'name'     => 'YouTube',
-		'provider' => 'Google LLC',
+		'provider' => 'YouTube (Google LLC)',
 		'category' => 'marketing',
 		'patterns' => array( 'youtube.com/embed', 'youtube-nocookie.com/embed', 'youtube.com/iframe_api' ),
-		'cookies'  => array(),
+		'cookies'  => array(
+			array( 'YSC', __( 'Session', 'smart-cookie-consent-manager' ), __( 'Registers a unique ID to keep statistics of which YouTube videos you have seen.', 'smart-cookie-consent-manager' ) ),
+			array( 'VISITOR_INFO1_LIVE', __( '6 months', 'smart-cookie-consent-manager' ), __( 'Estimates your bandwidth on pages with embedded YouTube videos.', 'smart-cookie-consent-manager' ) ),
+			array( 'VISITOR_PRIVACY_METADATA', __( '6 months', 'smart-cookie-consent-manager' ), __( 'Stores your cookie choices for YouTube.', 'smart-cookie-consent-manager' ) ),
+			array( 'yt-remote-device-id', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Stores your YouTube video player preferences.', 'smart-cookie-consent-manager' ), 'localStorage' ),
+			array( 'ytidb::LAST_RESULT_ENTRY_KEY', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Stores the last YouTube search or video for the embedded player.', 'smart-cookie-consent-manager' ), 'localStorage' ),
+		),
 	),
 );

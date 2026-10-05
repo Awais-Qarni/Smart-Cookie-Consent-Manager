@@ -1,5 +1,5 @@
 /* Smart Cookie Consent Manager — front end.
- * Colours come from CSS variables printed by the plugin (Appearance settings).
+ * Colours come from CSS variables printed by the plugin (Banner settings).
  * Override any variable in your theme: .sccm-root { --sccm-radius: 0; }
  */
 .sccm-root {
@@ -42,8 +42,15 @@
 	margin: 0;
 }
 
+.sccm-root button {
+	font: inherit;
+	letter-spacing: normal;
+	text-transform: none;
+}
+
 /* ---------------------------------------------------------------- Buttons */
 
+/* Deny, Allow selection and Allow all always look exactly the same (fair consent). */
 .sccm-btn {
 	appearance: none;
 	background: var(--sccm-btn-bg);
@@ -51,14 +58,12 @@
 	border-radius: var(--sccm-radius);
 	color: var(--sccm-btn-text);
 	cursor: pointer;
-	font: inherit;
 	font-weight: 600;
 	line-height: 1.2;
 	margin: 0;
-	min-height: 44px;
-	padding: 10px 18px;
+	min-height: 46px;
+	padding: 10px 16px;
 	text-align: center;
-	text-transform: none;
 	transition: opacity 0.15s ease;
 }
 
@@ -66,75 +71,120 @@
 	opacity: 0.88;
 }
 
-.sccm-btn:focus-visible,
-.sccm-close:focus-visible,
-.sccm-floating:focus-visible,
-.sccm-root summary:focus-visible,
-.sccm-switch input:focus-visible + .sccm-slider,
-.sccm-copy:focus-visible {
-	outline: 3px solid var(--sccm-link);
-	outline-offset: 2px;
+.sccm-actions {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(3, 1fr);
 }
 
-/* "Manage" and "Allow selection" are secondary actions; Accept and Reject always share the same style. */
-.sccm-btn--manage,
-.sccm-btn--selection {
-	background: transparent;
-	color: var(--sccm-btn-bg);
-}
-
-/* A quiet text button (e.g. "Show details" next to the category switches). */
 .sccm-linkbtn {
 	appearance: none;
 	background: none;
 	border: 0;
 	color: var(--sccm-link);
 	cursor: pointer;
-	font: inherit;
-	font-size: 0.9em;
 	font-weight: 600;
 	margin: 0;
-	min-height: 32px;
-	padding: 4px 6px;
+	padding: 4px 0;
 	text-decoration: underline;
 }
 
-.sccm-linkbtn:focus-visible {
+.sccm-btn:focus-visible,
+.sccm-linkbtn:focus-visible,
+.sccm-close:focus-visible,
+.sccm-tab:focus-visible,
+.sccm-acc__toggle:focus-visible,
+.sccm-prov__toggle:focus-visible,
+.sccm-copy:focus-visible,
+.sccm-floating:focus-visible,
+.sccm-switch input:focus-visible + .sccm-slider {
 	outline: 3px solid var(--sccm-link);
 	outline-offset: 2px;
 }
 
-.sccm-actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 10px;
-}
+/* ---------------------------------------------------------------- Dialog */
 
-.sccm-actions .sccm-btn {
-	flex: 1 1 160px;
-}
-
-/* ---------------------------------------------------------------- Banner */
-
-.sccm-banner {
+.sccm-dialog {
 	position: fixed;
 }
 
-.sccm-banner__inner {
+.sccm-dialog__box {
 	background: var(--sccm-bg);
 	border-radius: var(--sccm-radius);
-	box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
+	box-shadow: 0 12px 48px rgba(0, 0, 0, 0.22);
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
-	padding: 22px 24px;
+	max-height: calc(100vh - 32px);
+	overflow: hidden;
+	position: relative;
+	width: 100%;
+}
+
+.sccm-dialog__box:focus {
+	outline: none;
+}
+
+.sccm-dialog__head {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	padding: 18px 24px 12px;
 }
 
 .sccm-title {
 	font-size: 1.15em;
 	font-weight: 700;
 	line-height: 1.3;
-	margin: 0 0 6px;
+}
+
+.sccm-close {
+	background: transparent;
+	border: 0;
+	border-radius: var(--sccm-radius);
+	color: inherit;
+	cursor: pointer;
+	font-size: 28px;
+	height: 40px;
+	line-height: 1;
+	padding: 0;
+	width: 40px;
+}
+
+.sccm-tabs {
+	border-bottom: 1px solid var(--sccm-border);
+	border-top: 1px solid var(--sccm-border);
+	display: flex;
+}
+
+.sccm-tab {
+	background: none;
+	border: 0;
+	border-bottom: 3px solid transparent;
+	color: var(--sccm-muted);
+	cursor: pointer;
+	flex: 1 1 0;
+	font-weight: 600;
+	margin: 0;
+	padding: 12px 8px 9px;
+}
+
+.sccm-tab[aria-selected="true"] {
+	border-bottom-color: var(--sccm-link);
+	color: var(--sccm-link);
+}
+
+.sccm-dialog__body {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	padding: 18px 24px;
+}
+
+.sccm-dialog__foot {
+	border-top: 1px solid var(--sccm-border);
+	padding: 14px 24px 16px;
 }
 
 .sccm-text {
@@ -153,38 +203,12 @@
 	margin-top: 10px !important;
 }
 
-/* Category switches on the first layer of the banner */
-.sccm-cats {
-	align-items: center;
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
-	margin-top: 14px;
-}
-
-.sccm-pill {
-	align-items: center;
-	background: var(--sccm-soft);
-	border: 1px solid var(--sccm-border);
-	border-radius: 999px;
-	cursor: pointer;
-	display: inline-flex;
+.sccm-muted {
+	color: var(--sccm-muted);
 	font-size: 0.9em;
-	font-weight: 600;
-	gap: 8px;
-	padding: 5px 12px 5px 6px;
 }
 
-.sccm-pill:has(input:disabled) {
-	cursor: default;
-}
-
-/* Accept and Reject side by side, "Allow selection" full width below them (boxes, small screens). */
-.sccm-banner--cats .sccm-actions .sccm-btn--selection {
-	flex: 1 1 100%;
-}
-
-/* Full-width bar */
+/* Bars at the bottom or top */
 .sccm-pos-bottom,
 .sccm-pos-top {
 	left: 0;
@@ -200,55 +224,30 @@
 	top: 0;
 }
 
-.sccm-pos-bottom .sccm-banner__inner,
-.sccm-pos-top .sccm-banner__inner {
+.sccm-pos-bottom .sccm-dialog__box,
+.sccm-pos-top .sccm-dialog__box {
 	margin: 0 auto;
-	max-width: 1200px;
+	max-height: min(80vh, 640px);
+	max-width: 1100px;
 }
 
-@media (min-width: 900px) {
-	.sccm-pos-bottom .sccm-banner__inner,
-	.sccm-pos-top .sccm-banner__inner {
-		align-items: center;
-		flex-direction: row;
-		gap: 28px;
-	}
-
-	.sccm-pos-bottom .sccm-banner__content,
-	.sccm-pos-top .sccm-banner__content {
-		flex: 1 1 auto;
-	}
-
-	.sccm-pos-bottom .sccm-actions,
-	.sccm-pos-top .sccm-actions {
-		flex: 0 0 auto;
-		flex-direction: column;
-		width: 240px;
-	}
-
-	.sccm-pos-bottom .sccm-actions .sccm-btn,
-	.sccm-pos-top .sccm-actions .sccm-btn {
-		flex: 0 0 auto;
-	}
-}
-
-/* Corner box */
+/* Boxes in a corner */
 .sccm-pos-bottom-left,
 .sccm-pos-bottom-right {
 	bottom: 16px;
-	max-width: 440px;
+	max-width: 460px;
 	width: calc(100% - 32px);
 }
 
 .sccm-pos-bottom-left {
-	inset-inline-start: 16px;
+	left: 16px;
 }
 
 .sccm-pos-bottom-right {
-	inset-inline-end: 16px;
+	right: 16px;
 }
 
-/* Centered dialog */
+/* Window in the centre (also used when the dialog is reopened) */
 .sccm-pos-center {
 	align-items: center;
 	display: flex;
@@ -257,10 +256,9 @@
 	padding: 16px;
 }
 
-.sccm-pos-center .sccm-banner__inner {
-	max-width: 560px;
-	position: relative;
-	width: 100%;
+.sccm-pos-center .sccm-dialog__box {
+	max-height: min(88vh, 780px);
+	max-width: 720px;
 }
 
 .sccm-overlay {
@@ -269,168 +267,55 @@
 	position: fixed;
 }
 
-/* ---------------------------------------------------------------- Preferences window */
+/* ---------------------------------------------------------------- Consent tab: category switches */
 
-.sccm-modal {
-	align-items: center;
-	display: flex;
-	inset: 0;
-	justify-content: center;
-	padding: 16px;
-	position: fixed;
+.sccm-toggles {
+	background: var(--sccm-border);
+	border: 1px solid var(--sccm-border);
+	border-radius: var(--sccm-radius);
+	display: grid;
+	gap: 1px;
+	grid-template-columns: repeat(var(--sccm-n, 4), 1fr);
+	margin-top: 18px;
+	overflow: hidden;
 }
 
-.sccm-modal__dialog {
+.sccm-toggle {
+	align-items: center;
 	background: var(--sccm-bg);
-	border-radius: var(--sccm-radius);
-	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-	display: flex;
-	flex-direction: column;
-	max-height: calc(100vh - 32px);
-	max-width: 680px;
-	position: relative;
-	width: 100%;
-}
-
-.sccm-modal__dialog:focus {
-	outline: none;
-}
-
-.sccm-modal__header {
-	align-items: center;
-	border-bottom: 1px solid var(--sccm-border);
-	display: flex;
-	gap: 12px;
-	justify-content: space-between;
-	padding: 18px 24px;
-}
-
-.sccm-modal__header .sccm-title {
-	margin: 0;
-}
-
-.sccm-close {
-	background: transparent;
-	border: 0;
-	border-radius: var(--sccm-radius);
-	color: inherit;
 	cursor: pointer;
-	font-size: 28px;
-	height: 40px;
-	line-height: 1;
-	padding: 0;
-	width: 40px;
-}
-
-.sccm-modal__body {
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
-	overflow-y: auto;
-	padding: 18px 24px;
-}
-
-.sccm-modal__footer {
-	border-top: 1px solid var(--sccm-border);
-	padding: 16px 24px;
-}
-
-.sccm-notice {
-	background: var(--sccm-soft);
-	border-inline-start: 4px solid var(--sccm-toggle);
-	border-radius: 4px;
 	font-size: 0.92em;
-	padding: 10px 12px;
-}
-
-.sccm-cat {
-	border: 1px solid var(--sccm-border);
-	border-radius: var(--sccm-radius);
-	padding: 14px 16px;
-}
-
-.sccm-cat__head {
-	align-items: center;
-	display: flex;
-	gap: 12px;
-	justify-content: space-between;
-}
-
-.sccm-cat__title {
-	align-items: center;
-	display: flex;
-	flex-wrap: wrap;
+	font-weight: 600;
 	gap: 8px;
-}
-
-.sccm-cat__label {
-	font-weight: 700;
-}
-
-.sccm-cat__desc {
-	color: var(--sccm-muted);
-	font-size: 0.9em;
-	margin-top: 6px !important;
-}
-
-.sccm-badge {
-	background: var(--sccm-soft);
-	border-radius: 999px;
-	font-size: 0.78em;
-	font-weight: 600;
-	padding: 2px 10px;
-}
-
-.sccm-muted {
-	color: var(--sccm-muted);
-	font-size: 0.88em;
-}
-
-/* What the visitor chose, when, and the consent ID they can quote as evidence */
-.sccm-status {
-	background: var(--sccm-soft);
-	border-radius: var(--sccm-radius);
-	font-size: 0.9em;
-}
-
-.sccm-status:not(:empty) {
-	padding: 10px 14px;
-}
-
-.sccm-status__row {
-	margin: 2px 0 !important;
-	overflow-wrap: anywhere;
-}
-
-.sccm-status code {
-	font-size: 0.95em;
-	margin-inline-end: 8px;
-}
-
-.sccm-copy {
-	background: transparent;
-	border: 1px solid var(--sccm-border);
-	border-radius: 999px;
-	color: inherit;
-	cursor: pointer;
-	font: inherit;
-	font-size: 0.85em;
-	padding: 1px 10px;
-}
-
-.sccm-count {
-	background: var(--sccm-soft);
-	border-radius: 999px;
-	font-size: 0.78em;
-	font-weight: 600;
-	min-width: 22px;
-	padding: 1px 8px;
+	justify-content: center;
+	padding: 12px 6px;
 	text-align: center;
 }
 
-/* Switch */
+/* Corner boxes: two per row, full width */
+.sccm-pos-bottom-left .sccm-toggles,
+.sccm-pos-bottom-right .sccm-toggles {
+	grid-template-columns: repeat(2, 1fr);
+}
+
+.sccm-pos-bottom-left .sccm-toggle,
+.sccm-pos-bottom-right .sccm-toggle {
+	flex-direction: row;
+	justify-content: space-between;
+	padding: 12px 14px;
+	text-align: start;
+}
+
+.sccm-more {
+	margin-top: 10px !important;
+	text-align: end;
+}
+
+/* ---------------------------------------------------------------- Switch */
+
 .sccm-switch {
-	cursor: pointer;
 	display: inline-block;
 	flex: 0 0 auto;
 	height: 26px;
@@ -439,6 +324,7 @@
 }
 
 .sccm-switch input {
+	cursor: pointer;
 	height: 100%;
 	left: 0;
 	margin: 0;
@@ -446,6 +332,7 @@
 	position: absolute;
 	top: 0;
 	width: 100%;
+	z-index: 1;
 }
 
 .sccm-slider {
@@ -483,69 +370,199 @@
 }
 
 .sccm-switch input:disabled + .sccm-slider {
-	opacity: 0.6;
+	opacity: 0.55;
 }
 
-.sccm-switch--sm {
-	height: 22px;
-	width: 38px;
-}
+/* ---------------------------------------------------------------- Details tab: accordions and cookie cards */
 
-.sccm-switch--sm .sccm-slider::before {
-	height: 16px;
-	width: 16px;
-}
-
-.sccm-switch--sm input:checked + .sccm-slider::before {
-	transform: translateX(16px);
-}
-
-.sccm-sr {
-	border: 0;
-	clip: rect(0 0 0 0);
-	height: 1px;
-	margin: -1px;
-	overflow: hidden;
-	padding: 0;
-	position: absolute;
-	white-space: nowrap;
-	width: 1px;
-}
-
-/* Cookie list */
-.sccm-cookies {
-	margin-top: 10px;
-}
-
-.sccm-cookies summary {
-	color: var(--sccm-link);
-	cursor: pointer;
-	font-size: 0.9em;
-	font-weight: 600;
-}
-
-.sccm-table {
-	border-collapse: collapse;
-	font-size: 0.85em;
-	margin-top: 10px;
-	width: 100%;
-}
-
-.sccm-table th,
-.sccm-table td {
-	border-bottom: 1px solid var(--sccm-border);
-	padding: 6px 8px;
-	text-align: start;
-	vertical-align: top;
-	word-break: break-word;
-}
-
-.sccm-table th {
+.sccm-notice {
 	background: var(--sccm-soft);
-	font-weight: 600;
+	border-inline-start: 4px solid var(--sccm-toggle);
+	border-radius: 4px;
+	font-size: 0.92em;
+	margin-bottom: 8px !important;
+	padding: 10px 12px;
 }
+
+.sccm-acc {
+	border-bottom: 1px solid var(--sccm-border);
+}
+
+.sccm-acc__head,
+.sccm-prov__head {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+}
+
+.sccm-acc__head {
+	padding: 10px 0;
+}
+
+.sccm-acc__toggle,
+.sccm-prov__toggle {
+	align-items: center;
+	background: none;
+	border: 0;
+	color: inherit;
+	cursor: pointer;
+	display: flex;
+	flex: 1 1 auto;
+	gap: 10px;
+	margin: 0;
+	padding: 6px 0;
+	text-align: start;
+}
+
+.sccm-acc__toggle {
+	font-weight: 700;
+}
+
+.sccm-prov__toggle {
+	font-weight: 600;
+	padding: 12px 14px;
+}
+
+.sccm-chev {
+	border-bottom: 2px solid currentColor;
+	border-right: 2px solid currentColor;
+	flex: 0 0 auto;
+	height: 8px;
+	margin: 0 4px;
+	transform: rotate(-45deg);
+	transition: transform 0.15s ease;
+	width: 8px;
+}
+
+[aria-expanded="true"] > .sccm-chev {
+	transform: rotate(45deg);
+}
+
+.sccm-count {
+	background: var(--sccm-soft);
+	border-radius: 999px;
+	font-size: 0.78em;
+	font-weight: 600;
+	min-width: 24px;
+	padding: 1px 8px;
+	text-align: center;
+}
+
+.sccm-acc__panel {
+	padding: 0 0 16px 26px;
+}
+
+.sccm-acc__desc {
+	color: var(--sccm-muted);
+	font-size: 0.92em;
+	margin-bottom: 4px !important;
+}
+
+.sccm-prov {
+	border: 1px solid var(--sccm-border);
+	border-radius: var(--sccm-radius);
+	margin-top: 10px;
+}
+
+.sccm-prov__panel {
+	display: grid;
+	gap: 10px;
+	padding: 0 14px 14px;
+}
+
+.sccm-ck {
+	background: var(--sccm-soft);
+	border-radius: var(--sccm-radius);
+	padding: 12px 14px;
+}
+
+.sccm-ck__name {
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+
+.sccm-ck__purpose {
+	font-size: 0.92em;
+	margin-top: 4px !important;
+}
+
+.sccm-ck__meta {
+	border-top: 1px solid var(--sccm-border);
+	color: var(--sccm-muted);
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.85em;
+	gap: 4px 28px;
+	margin-top: 10px !important;
+	padding-top: 8px;
+}
+
+/* ---------------------------------------------------------------- About tab: the visitor's consent */
+
+.sccm-status {
+	background: var(--sccm-soft);
+	border-radius: var(--sccm-radius);
+	font-size: 0.9em;
+	margin-top: 14px;
+	padding: 10px 14px;
+}
+
+.sccm-status__row {
+	margin: 2px 0 !important;
+	overflow-wrap: anywhere;
+}
+
+.sccm-status code {
+	font-size: 0.95em;
+	margin-inline-end: 8px;
+}
+
+.sccm-copy {
+	background: transparent;
+	border: 1px solid var(--sccm-border);
+	border-radius: 999px;
+	color: inherit;
+	cursor: pointer;
+	font-size: 0.85em;
+	padding: 1px 10px;
+}
+
+/* ---------------------------------------------------------------- Small screens */
 
 @media (max-width: 600px) {
+	.sccm-pos-bottom,
+	.sccm-pos-top {
+		padding: 8px;
+	}
+
+	.sccm-pos-bottom-left,
+	.sccm-pos-bottom-right {
+		bottom: 8px;
+		left: 8px;
+		max-width: none;
+		right: 8px;
+		width: auto;
+	}
+
+	.sccm-dialog__head,
+	.sccm-dialog__body,
+	.sccm-dialog__foot {
+		padding-left: 16px;
+		padding-right: 16px;
+	}
+
+	.sccm-toggles {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.sccm-actions {
+		grid-template-columns: 1fr;
+	}
+
+	.sccm-acc__panel {
+		padding-left: 8px;
+	}
+
 	.sccm-table thead {
 		display: none;
 	}
@@ -566,17 +583,9 @@
 		content: attr(data-label) ": ";
 		font-weight: 600;
 	}
-
-	.sccm-banner__inner,
-	.sccm-modal__header,
-	.sccm-modal__body,
-	.sccm-modal__footer {
-		padding-left: 16px;
-		padding-right: 16px;
-	}
 }
 
-/* ---------------------------------------------------------------- Floating button */
+/* ---------------------------------------------------------------- Cookie settings button */
 
 .sccm-floating {
 	align-items: center;
@@ -595,7 +604,11 @@
 	width: 46px;
 }
 
-/* Corners: a round button */
+.sccm-floating__icon {
+	display: flex;
+}
+
+/* Corners: a round icon button */
 .sccm-floating--bottom-left {
 	bottom: 16px;
 	left: 16px;
@@ -607,54 +620,64 @@
 }
 
 /*
- * Centred positions: a minimal half-circle that peeks out from the edge of the screen. The
- * other half is outside the window. It slides out when hovered or focused; on touch screens
- * it simply stays as a small tab.
+ * Bottom centre and the middle of a side: a slim tab with a text label, attached to the edge
+ * of the screen. It sits slightly tucked in and comes out a little when hovered or focused.
  */
-.sccm-floating--bottom-center,
-.sccm-floating--left-center,
-.sccm-floating--right-center {
-	height: 52px;
-	width: 52px;
+.sccm-floating--tab {
+	font-size: 13px;
+	font-weight: 700;
+	gap: 7px;
+	height: auto;
+	line-height: 1;
+	width: auto;
+}
+
+.sccm-floating--tab .sccm-floating__icon svg {
+	height: 16px;
+	width: 16px;
 }
 
 .sccm-floating--bottom-center {
-	align-items: flex-start;
+	border-radius: 10px 10px 0 0;
 	bottom: 0;
 	left: 50%;
-	padding-top: 7px;
-	transform: translate(-50%, 50%);
-}
-
-.sccm-floating--left-center {
-	justify-content: flex-end;
-	left: 0;
-	padding-right: 7px;
-	top: 50%;
-	transform: translate(-50%, -50%);
-}
-
-.sccm-floating--right-center {
-	justify-content: flex-start;
-	padding-left: 7px;
-	right: 0;
-	top: 50%;
-	transform: translate(50%, -50%);
+	padding: 9px 16px 10px;
+	transform: translate(-50%, 3px);
 }
 
 .sccm-floating--bottom-center:hover,
 .sccm-floating--bottom-center:focus-visible {
-	transform: translate(-50%, 12%);
+	transform: translate(-50%, 0);
+}
+
+.sccm-floating--left-center,
+.sccm-floating--right-center {
+	padding: 16px 9px;
+	top: 50%;
+	writing-mode: vertical-rl;
+}
+
+/* Reads bottom-to-top on the left edge, top-to-bottom on the right edge. */
+.sccm-floating--left-center {
+	border-radius: 10px 0 0 10px;
+	left: 0;
+	transform: translate(-3px, -50%) rotate(180deg);
 }
 
 .sccm-floating--left-center:hover,
 .sccm-floating--left-center:focus-visible {
-	transform: translate(-12%, -50%);
+	transform: translate(0, -50%) rotate(180deg);
+}
+
+.sccm-floating--right-center {
+	border-radius: 10px 0 0 10px;
+	right: 0;
+	transform: translate(3px, -50%);
 }
 
 .sccm-floating--right-center:hover,
 .sccm-floating--right-center:focus-visible {
-	transform: translate(12%, -50%);
+	transform: translate(0, -50%);
 }
 
 /* ---------------------------------------------------------------- Blocked iframe placeholder */
@@ -687,8 +710,25 @@
 	margin: 1.5em 0 0.5em;
 }
 
-.sccm-policy .sccm-table {
+.sccm-table {
+	border-collapse: collapse;
 	font-size: 0.95em;
+	margin-top: 10px;
+	width: 100%;
+}
+
+.sccm-table th,
+.sccm-table td {
+	border-bottom: 1px solid var(--sccm-border);
+	padding: 6px 8px;
+	text-align: start;
+	vertical-align: top;
+	word-break: break-word;
+}
+
+.sccm-table th {
+	background: var(--sccm-soft);
+	font-weight: 600;
 }
 
 html.sccm-noscroll {
@@ -697,7 +737,8 @@ html.sccm-noscroll {
 
 @media (prefers-reduced-motion: reduce) {
 	.sccm-root *,
-	.sccm-root *::before {
+	.sccm-root *::before,
+	.sccm-floating {
 		transition: none !important;
 	}
 }

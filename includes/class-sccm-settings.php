@@ -35,7 +35,7 @@ class SCCM_Settings {
 			// General.
 			'enabled'              => 1,
 			'position'             => 'bottom',   // bottom | top | bottom-left | bottom-right | center.
-			'banner_categories'    => 1,          // Show the category switches inside the banner.
+			'button_order'         => 'accept_first', // accept_first | reject_first (all buttons always look the same).
 			'floating_button'      => 1,
 			'floating_position'    => 'bottom-left', // bottom-left | bottom-right | bottom-center | left-center | right-center.
 			'policy_page_id'       => 0,
@@ -122,41 +122,49 @@ class SCCM_Settings {
 	 */
 	public static function default_texts() {
 		return array(
-			'banner_title'      => __( 'We value your privacy', 'smart-cookie-consent-manager' ),
-			'banner_text'       => __( 'We use cookies to make this website work. With your consent, we also use cookies to understand how the site is used and to support our marketing. Choose which cookies you allow, or accept or reject them all. You can change your choice at any time.', 'smart-cookie-consent-manager' ),
-			'btn_accept'        => __( 'Accept all', 'smart-cookie-consent-manager' ),
-			'btn_reject'        => __( 'Reject non-essential', 'smart-cookie-consent-manager' ),
-			'btn_selection'     => __( 'Allow selection', 'smart-cookie-consent-manager' ),
-			'btn_manage'        => __( 'Manage preferences', 'smart-cookie-consent-manager' ),
-			'btn_details'       => __( 'Show details', 'smart-cookie-consent-manager' ),
-			'btn_save'          => __( 'Save preferences', 'smart-cookie-consent-manager' ),
-			'prefs_title'       => __( 'Cookie preferences', 'smart-cookie-consent-manager' ),
-			'prefs_text'        => __( 'Choose which cookies you allow. Necessary cookies are always on because the website cannot work without them. Other cookies are only used if you switch them on.', 'smart-cookie-consent-manager' ),
-			'always_on'         => __( 'Always active', 'smart-cookie-consent-manager' ),
-			'show_cookies'      => __( 'Show cookies', 'smart-cookie-consent-manager' ),
-			'no_cookies'        => __( 'No cookies in this category.', 'smart-cookie-consent-manager' ),
-			'col_name'          => __( 'Name', 'smart-cookie-consent-manager' ),
-			'col_provider'      => __( 'Provider', 'smart-cookie-consent-manager' ),
-			'col_purpose'       => __( 'Purpose', 'smart-cookie-consent-manager' ),
-			'col_duration'      => __( 'Duration', 'smart-cookie-consent-manager' ),
-			'policy_link'       => __( 'Cookie Policy', 'smart-cookie-consent-manager' ),
-			'privacy_link'      => __( 'Privacy Policy', 'smart-cookie-consent-manager' ),
-			'settings_button'   => __( 'Cookie settings', 'smart-cookie-consent-manager' ),
-			'close'             => __( 'Close', 'smart-cookie-consent-manager' ),
-			'consent_id'        => __( 'Your consent ID', 'smart-cookie-consent-manager' ),
-			'consent_status'    => __( 'Your current choice', 'smart-cookie-consent-manager' ),
-			'consent_date'      => __( 'Date', 'smart-cookie-consent-manager' ),
-			'no_choice'         => __( 'You have not made a choice yet.', 'smart-cookie-consent-manager' ),
-			'copy'              => __( 'Copy', 'smart-cookie-consent-manager' ),
-			'copied'            => __( 'Copied', 'smart-cookie-consent-manager' ),
-			'choice_accept_all' => __( 'Accepted all cookies', 'smart-cookie-consent-manager' ),
-			'choice_reject_all' => __( 'Rejected non-essential cookies', 'smart-cookie-consent-manager' ),
-			'choice_custom'     => __( 'Chose which cookies to allow', 'smart-cookie-consent-manager' ),
-			'choice_gpc'        => __( 'Browser privacy signal (GPC) honoured', 'smart-cookie-consent-manager' ),
-			'gpc_notice'        => __( 'Your browser sent a Global Privacy Control (GPC) signal. We have honoured it, so the following cookies stay off: %s.', 'smart-cookie-consent-manager' ),
-			'placeholder_text'  => __( 'This content is provided by a third party and may set %s cookies. It is blocked until you allow them.', 'smart-cookie-consent-manager' ),
-			'placeholder_btn'   => __( 'Allow and load', 'smart-cookie-consent-manager' ),
-			'saved'             => __( 'Your preferences have been saved.', 'smart-cookie-consent-manager' ),
+			// Dialog: header, tabs and buttons.
+			'banner_title'         => __( 'This website uses cookies', 'smart-cookie-consent-manager' ),
+			'banner_text'          => __( 'We use cookies to make this website work. With your consent, we also use cookies to understand how the site is used and to support our marketing. Choose which cookies you allow, or accept or reject them all. You can change your choice at any time.', 'smart-cookie-consent-manager' ),
+			'tab_consent'          => __( 'Consent', 'smart-cookie-consent-manager' ),
+			'tab_details'          => __( 'Details', 'smart-cookie-consent-manager' ),
+			'tab_about'            => __( 'About', 'smart-cookie-consent-manager' ),
+			'btn_accept'           => __( 'Allow all', 'smart-cookie-consent-manager' ),
+			'btn_reject'           => __( 'Deny', 'smart-cookie-consent-manager' ),
+			'btn_selection'        => __( 'Allow selection', 'smart-cookie-consent-manager' ),
+			'btn_details'          => __( 'Show details', 'smart-cookie-consent-manager' ),
+			'about_text'           => __( 'Cookies are small text files that websites store in your browser. The law says we may only store cookies that are strictly necessary for the website to work. For all other types of cookies we need your permission. Some cookies are placed by third-party services that appear on our pages. You can change or withdraw your consent at any time with the cookie settings button.', 'smart-cookie-consent-manager' ),
+			// Details tab: cookie cards.
+			'no_cookies'           => __( 'No cookies in this category.', 'smart-cookie-consent-manager' ),
+			'provider_site'        => __( 'This website', 'smart-cookie-consent-manager' ),
+			'col_name'             => __( 'Name', 'smart-cookie-consent-manager' ),
+			'col_provider'         => __( 'Provider', 'smart-cookie-consent-manager' ),
+			'col_purpose'          => __( 'Purpose', 'smart-cookie-consent-manager' ),
+			'col_duration'         => __( 'Maximum storage duration', 'smart-cookie-consent-manager' ),
+			'col_type'             => __( 'Type', 'smart-cookie-consent-manager' ),
+			'type_cookie'          => __( 'HTTP Cookie', 'smart-cookie-consent-manager' ),
+			'type_localStorage'    => __( 'HTML Local Storage', 'smart-cookie-consent-manager' ),
+			'type_sessionStorage'  => __( 'HTML Session Storage', 'smart-cookie-consent-manager' ),
+			// Links, widget, misc.
+			'policy_link'          => __( 'Cookie Policy', 'smart-cookie-consent-manager' ),
+			'privacy_link'         => __( 'Privacy Policy', 'smart-cookie-consent-manager' ),
+			'settings_button'      => __( 'Cookie settings', 'smart-cookie-consent-manager' ),
+			'widget_label'         => __( 'Cookies', 'smart-cookie-consent-manager' ),
+			'close'                => __( 'Close', 'smart-cookie-consent-manager' ),
+			// About tab: the visitor's consent.
+			'consent_status'       => __( 'Your current choice', 'smart-cookie-consent-manager' ),
+			'consent_date'         => __( 'Date', 'smart-cookie-consent-manager' ),
+			'consent_id'           => __( 'Your consent ID', 'smart-cookie-consent-manager' ),
+			'no_choice'            => __( 'You have not made a choice yet.', 'smart-cookie-consent-manager' ),
+			'copy'                 => __( 'Copy', 'smart-cookie-consent-manager' ),
+			'copied'               => __( 'Copied', 'smart-cookie-consent-manager' ),
+			'choice_accept_all'    => __( 'Allowed all cookies', 'smart-cookie-consent-manager' ),
+			'choice_reject_all'    => __( 'Denied non-essential cookies', 'smart-cookie-consent-manager' ),
+			'choice_custom'        => __( 'Allowed a selection', 'smart-cookie-consent-manager' ),
+			'choice_gpc'           => __( 'Browser privacy signal (GPC) honoured', 'smart-cookie-consent-manager' ),
+			'gpc_notice'           => __( 'Your browser sent a Global Privacy Control (GPC) signal. We have honoured it, so the following cookies stay off: %s.', 'smart-cookie-consent-manager' ),
+			// Blocked videos / maps.
+			'placeholder_text'     => __( 'This content is provided by a third party and may set %s cookies. It is blocked until you allow them.', 'smart-cookie-consent-manager' ),
+			'placeholder_btn'      => __( 'Allow and load', 'smart-cookie-consent-manager' ),
 		);
 	}
 
@@ -242,7 +250,7 @@ class SCCM_Settings {
 		$defaults = self::defaults();
 		$out      = $current;
 
-		$bools = array( 'enabled', 'banner_categories', 'floating_button', 'show_privacy_link', 'reask_on_change', 'reload_on_withdraw', 'ads_data_redaction', 'url_passthrough', 'blocker_enabled', 'iframe_placeholder', 'gpc_enabled', 'scanner_client', 'alerts_enabled', 'log_enabled', 'delete_on_uninstall' );
+		$bools = array( 'enabled', 'floating_button', 'show_privacy_link', 'reask_on_change', 'reload_on_withdraw', 'ads_data_redaction', 'url_passthrough', 'blocker_enabled', 'iframe_placeholder', 'gpc_enabled', 'scanner_client', 'alerts_enabled', 'log_enabled', 'delete_on_uninstall' );
 		foreach ( $bools as $key ) {
 			if ( array_key_exists( $key, $input ) ) {
 				$out[ $key ] = empty( $input[ $key ] ) ? 0 : 1;
@@ -252,6 +260,7 @@ class SCCM_Settings {
 		$enums = array(
 			'position'          => array( 'bottom', 'top', 'bottom-left', 'bottom-right', 'center' ),
 			'floating_position' => array( 'bottom-left', 'bottom-right', 'bottom-center', 'left-center', 'right-center' ),
+			'button_order'      => array( 'accept_first', 'reject_first' ),
 			'consent_mode'      => array( 'basic', 'advanced', 'off' ),
 			'gpc_scope'         => array( 'all', 'marketing' ),
 			'scan_schedule'     => array( 'daily', 'weekly', 'off' ),

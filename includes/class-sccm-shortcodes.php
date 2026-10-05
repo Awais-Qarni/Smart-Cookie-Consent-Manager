@@ -2,7 +2,7 @@
 /**
  * Shortcodes:
  *   [sccm_cookie_policy]                     Full cookie list grouped by category.
- *   [sccm_cookie_settings text="…" style="link|button"]  Opens the preferences window.
+ *   [sccm_cookie_settings text="…" style="link|button"]  Opens the cookie settings window.
  *
  * @package SmartCookieConsentManager
  */
@@ -83,7 +83,7 @@ class SCCM_Shortcodes {
 	}
 
 	/**
-	 * Link/button that opens the preferences window.
+	 * Link/button that opens the cookie settings window.
 	 *
 	 * @param array $atts text, style.
 	 * @return string
