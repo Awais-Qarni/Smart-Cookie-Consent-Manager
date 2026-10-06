@@ -26,7 +26,7 @@ class SCCM_Admin {
 		add_filter( 'plugin_action_links_' . SCCM_BASENAME, array( __CLASS__, 'action_links' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'notices' ) );
 
-		$actions = array( 'save', 'cookie_save', 'cookie_delete', 'cookie_status', 'ignore_all', 'add_service', 'scan_now', 'send_digest', 'send_test_email', 'export_log', 'purge_log', 'delete_log', 'export_settings', 'import_settings', 'bump_version', 'create_policy_page', 'reset_settings', 'add_rule' );
+		$actions = array( 'save', 'cookie_save', 'cookie_delete', 'cookie_status', 'ignore_all', 'add_service', 'scan_now', 'send_digest', 'send_test_email', 'export_log', 'purge_log', 'delete_log', 'export_settings', 'import_settings', 'bump_version', 'create_policy_page', 'reset_settings' );
 		foreach ( $actions as $action ) {
 			add_action( 'admin_post_sccm_' . $action, array( __CLASS__, 'handle_' . $action ) );
 		}
@@ -183,7 +183,7 @@ class SCCM_Admin {
 		echo '<div class="sccm-header">';
 		echo '<h1>' . esc_html__( 'Cookie Consent', 'smart-cookie-consent-manager' ) . '</h1>';
 		echo '<span class="sccm-pill sccm-pill--' . ( $settings['enabled'] ? 'on' : 'off' ) . '">' . ( $settings['enabled'] ? esc_html__( 'Banner on', 'smart-cookie-consent-manager' ) : esc_html__( 'Banner off', 'smart-cookie-consent-manager' ) ) . '</span>';
-		echo '<button type="button" class="button sccm-help-toggle" id="sccm-help-toggle" aria-expanded="false" aria-controls="sccm-help"><span class="dashicons dashicons-editor-help" aria-hidden="true"></span> ' . esc_html__( 'Help: how it works', 'smart-cookie-consent-manager' ) . '</button>';
+		echo '<button type="button" class="button sccm-help-toggle sccm-header__help" id="sccm-help-toggle" aria-expanded="false" aria-controls="sccm-help"><span class="dashicons dashicons-editor-help" aria-hidden="true"></span> ' . esc_html__( 'Help: how it works', 'smart-cookie-consent-manager' ) . '</button>';
 		echo '</div><hr class="wp-header-end">';
 
 		include SCCM_PATH . 'includes/admin/views/help.php';
@@ -841,23 +841,6 @@ class SCCM_Admin {
 		SCCM_Settings::flush();
 		SCCM_Install::schedule_events();
 		self::back( 'tools', __( 'Settings reset to defaults.', 'smart-cookie-consent-manager' ) );
-	}
-
-	/**
-	 * Add a custom blocking rule (e.g. from a scanner finding).
-	 */
-	public static function handle_add_rule() {
-		self::require_cap();
-		check_admin_referer( 'sccm_add_rule' );
-		$pattern  = isset( $_POST['pattern'] ) ? sanitize_text_field( wp_unslash( $_POST['pattern'] ) ) : '';
-		$category = isset( $_POST['category'] ) ? sanitize_key( wp_unslash( $_POST['category'] ) ) : '';
-		$rules    = (array) SCCM_Settings::get( 'rules' );
-		$rules[]  = array(
-			'pattern'  => $pattern,
-			'category' => $category,
-		);
-		SCCM_Settings::update( array( 'rules' => $rules ) );
-		self::back( 'cookies', __( 'Blocking rule added.', 'smart-cookie-consent-manager' ) );
 	}
 
 	/**

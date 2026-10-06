@@ -1,8 +1,9 @@
 # Performance
 
 The plugin must not make a website slow. This page records what it costs, how that was
-measured, and what was changed. Numbers were measured on a development WordPress 6.5 / PHP 8.3 /
-MariaDB 10.11 (local, no page cache). They show relative cost; your server will differ.
+measured, and what was changed. Timings were measured on a development WordPress / PHP 8.3 /
+MariaDB (local, no page cache); file sizes are of version 1.2.0. They show relative cost; your
+server will differ.
 
 ## What a visitor's page view pays
 
@@ -12,9 +13,9 @@ MariaDB 10.11 (local, no page cache). They show relative cost; your server will 
 | PHP: HTML blocker (output buffer) | **about 1.2 ms** for a 434 KB page | Three regex passes over the page; measured with the real service patterns. |
 | Whole request, plugin on vs off | 48.1 ms vs 47.6 ms | Difference is within measurement noise. |
 | Inline in `<head>` (boot script + config) | ≈ 8.5–9.5 KB raw, **≈ 3.6 KB gzipped** | Grows about 120 bytes per listed cookie. |
-| `sccm-frontend.js` (deferred) | 35.5 KB raw, **10.5 KB gzipped** | v0.1.0: 23.7 / 7.0 KB. It now draws the compact banner, the tabbed dialog (Consent / Details / About), the edge tabs and supports the browser scan. No jQuery, loaded with `defer`. The Details tab (every cookie card) is built only when a visitor opens it. |
+| `sccm-frontend.js` (deferred) | 37.9 KB raw, **11.0 KB gzipped** | v0.1.0: 23.7 / 7.0 KB. It now draws the compact banner, the tabbed dialog (Consent / Details / About), the edge tabs and supports the browser scan. No jQuery, loaded with `defer`. The Details tab (every cookie card) is built only when a visitor opens it. |
 | `sccm-boot.js` (inline) | 4.0 KB raw, **1.8 KB gzipped** | v0.1.0: 3.1 / 1.5 KB. |
-| `sccm-frontend.css` | 14.4 KB raw, **3.6 KB gzipped** | v0.1.0: 9.3 / 2.4 KB. No longer blocks the first paint (see below). |
+| `sccm-frontend.css` | 18.3 KB raw, **4.4 KB gzipped** | v0.1.0: 9.3 / 2.4 KB. Bigger because every rule is scoped to `#sccm-app` (theme isolation). No longer blocks the first paint (see below). |
 | REST calls | none on a normal page view | One POST when the visitor chooses; one low-priority POST at most once per browser session, only if there are unknown cookies, never for logged-in users. |
 
 Everything is the same for every visitor, so full-page caches and CDNs serve it as-is.

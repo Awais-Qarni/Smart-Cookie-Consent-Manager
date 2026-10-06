@@ -7,10 +7,12 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.2.0 (set at the owner's request; not yet staging-tested on a real site)
-- **Branch:** `feature/v1-build` (pull request to `main`)
-- **Phase:** 5b, pre-staging changes done (see `ROADMAP.md`); staging test is next
+- **Version:** 1.2.0 (all owner requests so far done; not yet staging-tested on a real site)
+- **Branch:** `feature/v1-build`, merged into `main` by pull request
+- **Phase:** 5b done (see `ROADMAP.md`); staging test and release are next
 - **Last updated:** 2026-10-06 (session 6)
+- **Tests:** unit 33, WP-CLI 120, visitor e2e 102, admin e2e 44, all passing; WordPress.org
+  Plugin Check clean on the release files except the requested `mailto:` Author URI
 
 ---
 
@@ -96,6 +98,14 @@ work on Windows (output path, `SCCM_WP` pointing at `wp-cli.phar`).
 - GA4-by-ID uses Google's snippet (no raw script tag); new admin e2e check for Strict/Advanced.
 - Dead-code sweep: no unused PHP functions or texts; removed `.sccm-linkbtn` CSS, `.gitkeep`.
 - Tests: unit 33/33, WP-CLI 120/120, e2e 102/102, admin e2e 41/41, no PHP notices with WP_DEBUG.
+
+**Round 8 (same day): small admin fixes, then pull request**
+- Help button in the top right corner of the header.
+- Removed the "Add rule" form in the scan report and its handler: it saved a rule under
+  Settings but the report looked unchanged, so it seemed to do nothing. Rules are added under
+  Settings → Blocking and Google.
+- Fold-out panels: full-width tables and text areas keep the 20 px right padding.
+- Docs brought in line with the code (README, FEATURES, ROADMAP, PERFORMANCE sizes).
 
 **Round 7 (same day): "Scan now stops when I switch tab or leave the page"**
 - Causes: background tabs slow page timers (the settle loop crawled); leaving the page killed

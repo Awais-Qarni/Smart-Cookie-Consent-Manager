@@ -33,9 +33,11 @@ scanner, with no coding and no subscription. All data stays on your own server.
 8. **Consent records**: each choice is stored with a consent ID, date/time, categories, GPC flag,
    version and page. The IP is anonymised or hashed. Filter and export to CSV.
 9. **Cookie scanner**: scans your pages on the server and in your own browser (so cookies set by
-   scripts and by embedded services are found, like Cookiebot's crawler), sorts known services
-   into the right category automatically and emails you a readable summary about unknown ones,
-   which wait for your approval.
+   scripts and by embedded services are found, like Cookiebot's crawler). Small websites are
+   scanned completely, bigger ones 40–80 pages (main pages, then sub pages of every section).
+   Known services are sorted into the right category automatically; unknown cookies wait for
+   your approval. Once a day, at a time you choose, an email reports what changed, only if
+   something did.
 10. **Cookie list for visitors**: shown in the banner's Details tab and on your Cookie Policy page
     via `[sccm_cookie_policy]`, and updated automatically.
 11. **Global Privacy Control (GPC)**: honours the browser privacy signal and records it.
@@ -68,7 +70,7 @@ blocked automatically until consent.
 | Run your own script only after consent | `<script type="text/plain" data-sccm-category="analytics">…</script>` |
 | Block another third-party service | Settings → Blocking and Google → Your own blocking rules |
 | Same settings on another website | Tools → Export settings, then Import on the other site |
-| Alert emails to several people | Settings → Cookie scan and email alerts (one address per line) |
+| Daily change email (time, recipients) | Settings → Cookie scan and email alerts (one address per line; the site admin gets it too) |
 | Preview the banner | Visit `https://your-site/#sccm-banner` |
 
 Developers: see [`docs/HOOKS.md`](docs/HOOKS.md) for PHP filters/actions and the JavaScript API.
@@ -98,8 +100,9 @@ Start with [`AGENTS.md`](AGENTS.md), then [`docs/PROGRESS.md`](docs/PROGRESS.md)
 ```bash
 npm install          # dev tools only
 npm test             # PHP/JS lint + PHP unit tests
-npm run e2e          # browser tests (needs a running WordPress, see tests/e2e/README.md)
-npm run test:wp      # cookie list / settings / email checks via WP-CLI (dev site only)
+npm run e2e          # visitor-side browser tests (needs a running WordPress, see tests/e2e/README.md)
+npm run test:wp      # cookie list, scan plan, settings, email, records checks via WP-CLI (dev site only)
+npm run e2e:admin    # admin screens incl. a real browser scan (dev site only)
 ```
 
 | Doc | Content |

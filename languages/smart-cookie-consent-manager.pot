@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-06T18:11:35+00:00\n"
+"POT-Creation-Date: 2026-10-06T18:25:49+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: smart-cookie-consent-manager\n"
@@ -287,10 +287,6 @@ msgstr ""
 msgid "Settings reset to defaults."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:860
-msgid "Blocking rule added."
-msgstr ""
-
 #: includes/admin/views/help.php:34
 msgid "How Cookie Consent works"
 msgstr ""
@@ -403,7 +399,7 @@ msgid "Cookies the scan found but could not recognise. Nothing is shown to visit
 msgstr ""
 
 #: includes/admin/views/help.php:83
-#: includes/admin/views/tab-cookies.php:137
+#: includes/admin/views/tab-cookies.php:136
 msgid "Approve"
 msgstr ""
 
@@ -420,7 +416,7 @@ msgid "Hides a cookie that is not part of your website, for example one from a b
 msgstr ""
 
 #: includes/admin/views/help.php:85
-#: includes/admin/views/tab-cookies.php:191
+#: includes/admin/views/tab-cookies.php:190
 #: includes/admin/views/tab-dashboard.php:56
 #: includes/admin/views/tab-dashboard.php:184
 msgid "Scan now"
@@ -447,8 +443,8 @@ msgid "Change a cookie's category, provider, purpose or duration, or remove it f
 msgstr ""
 
 #: includes/admin/views/help.php:88
-#: includes/admin/views/tab-cookies.php:51
-#: includes/admin/views/tab-cookies.php:250
+#: includes/admin/views/tab-cookies.php:50
+#: includes/admin/views/tab-cookies.php:249
 msgid "Add a cookie by hand"
 msgstr ""
 
@@ -753,10 +749,9 @@ msgid "A random code given to a visitor when they first choose. It identifies th
 msgstr ""
 
 #: includes/admin/views/help.php:158
-#: includes/admin/views/tab-cookies.php:59
-#: includes/admin/views/tab-cookies.php:130
-#: includes/admin/views/tab-cookies.php:311
-#: includes/admin/views/tab-cookies.php:340
+#: includes/admin/views/tab-cookies.php:58
+#: includes/admin/views/tab-cookies.php:129
+#: includes/admin/views/tab-cookies.php:310
 #: includes/admin/views/tab-settings.php:118
 #: includes/admin/views/tab-settings.php:142
 msgid "Category"
@@ -767,7 +762,7 @@ msgid "Necessary (always on), Preferences, Statistics and Marketing. Visitors ca
 msgstr ""
 
 #: includes/admin/views/help.php:160
-#: includes/admin/views/tab-cookies.php:81
+#: includes/admin/views/tab-cookies.php:80
 #: includes/class-sccm-scanner.php:1181
 msgid "Needs review"
 msgstr ""
@@ -1113,8 +1108,8 @@ msgid "A hidden category stays refused and its content stays blocked."
 msgstr ""
 
 #: includes/admin/views/tab-banner.php:178
-#: includes/admin/views/tab-cookies.php:56
-#: includes/admin/views/tab-cookies.php:214
+#: includes/admin/views/tab-cookies.php:55
+#: includes/admin/views/tab-cookies.php:213
 #: includes/class-sccm-settings.php:143
 msgid "Name"
 msgstr ""
@@ -1139,279 +1134,271 @@ msgstr ""
 msgid "Optional. Elements use the <code>sccm-</code> prefix, e.g. <code>#sccm-banner</code> (first-visit banner), <code>#sccm-prefs</code> (cookie settings window), <code>.sccm-btn</code>, <code>.sccm-policy</code> (Cookie Policy list). Colours can be changed with variables: <code>.sccm-root { --sccm-radius: 0; }</code>."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:25
+#: includes/admin/views/tab-cookies.php:24
 #: includes/class-sccm-scanner.php:1321
 msgid "Cookie"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:26
+#: includes/admin/views/tab-cookies.php:25
 msgid "Local storage"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:27
+#: includes/admin/views/tab-cookies.php:26
 msgid "Session storage"
 msgstr ""
 
+#: includes/admin/views/tab-cookies.php:29
 #: includes/admin/views/tab-cookies.php:30
 #: includes/admin/views/tab-cookies.php:31
-#: includes/admin/views/tab-cookies.php:32
 msgid "Automatic"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:33
+#: includes/admin/views/tab-cookies.php:32
 msgid "Added by you"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:34
+#: includes/admin/views/tab-cookies.php:33
 msgid "Imported"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:51
+#: includes/admin/views/tab-cookies.php:50
 msgid "Edit cookie"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:58
+#: includes/admin/views/tab-cookies.php:57
 msgid "Use * as a wildcard, for example _ga_* matches _ga_ABC123."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:65
-#: includes/admin/views/tab-cookies.php:215
+#: includes/admin/views/tab-cookies.php:64
+#: includes/admin/views/tab-cookies.php:214
 #: includes/class-sccm-settings.php:144
 msgid "Provider"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:66
+#: includes/admin/views/tab-cookies.php:65
 msgid "Who sets it, e.g. Google LLC"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:67
-#: includes/admin/views/tab-cookies.php:216
+#: includes/admin/views/tab-cookies.php:66
+#: includes/admin/views/tab-cookies.php:215
 msgid "What it does"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:69
+#: includes/admin/views/tab-cookies.php:68
 msgid "How long it lasts"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:70
+#: includes/admin/views/tab-cookies.php:69
 msgid "e.g. 1 year, Session"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:71
+#: includes/admin/views/tab-cookies.php:70
 #: includes/class-sccm-settings.php:147
 msgid "Type"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:78
+#: includes/admin/views/tab-cookies.php:77
 msgid "Status"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:80
+#: includes/admin/views/tab-cookies.php:79
 msgid "Shown to visitors"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:82
+#: includes/admin/views/tab-cookies.php:81
 msgid "Ignored (hidden, not reported again)"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:88
+#: includes/admin/views/tab-cookies.php:87
 msgid "Save cookie"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:89
+#: includes/admin/views/tab-cookies.php:88
 msgid "Cancel"
 msgstr ""
 
 #. translators: %d: number of cookies
-#: includes/admin/views/tab-cookies.php:100
+#: includes/admin/views/tab-cookies.php:99
 #, php-format
 msgid "%d cookie needs your review"
 msgid_plural "%d cookies need your review"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/admin/views/tab-cookies.php:105
+#: includes/admin/views/tab-cookies.php:104
 msgid "Ignore all"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:108
+#: includes/admin/views/tab-cookies.php:107
 msgid "We could not tell what these are for. Choose a category for each one and click Approve. Approved cookies appear in the list your visitors see. Click Ignore for anything that is not a cookie of your website. Known cookies (like Google Analytics) never wait here, they are sorted automatically."
 msgstr ""
 
 #. translators: %s: time span like "2 days"
-#: includes/admin/views/tab-cookies.php:121
+#: includes/admin/views/tab-cookies.php:120
 #, php-format
 msgid "found %s ago"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:132
+#: includes/admin/views/tab-cookies.php:131
 msgid "Choose a category…"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:138
+#: includes/admin/views/tab-cookies.php:137
 msgid "Ignore"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:150
+#: includes/admin/views/tab-cookies.php:149
 msgid "Cookie scan"
 msgstr ""
 
 #. translators: %s: date and time
-#: includes/admin/views/tab-cookies.php:155
+#: includes/admin/views/tab-cookies.php:154
 #, php-format
 msgid "Last scan: %s."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:157
+#: includes/admin/views/tab-cookies.php:156
 msgid "Not scanned yet."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:162
+#: includes/admin/views/tab-cookies.php:161
 msgid "Automatic scans are off."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:163
+#: includes/admin/views/tab-cookies.php:162
 msgid "Scans run every day."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:163
+#: includes/admin/views/tab-cookies.php:162
 msgid "Scans run every week."
 msgstr ""
 
 #. translators: 1: pages opened, 2: names found
-#: includes/admin/views/tab-cookies.php:176
+#: includes/admin/views/tab-cookies.php:175
 #, php-format
 msgid "Browser part: %1$d page(s) opened with everything allowed; %2$d cookie and storage names seen."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:181
+#: includes/admin/views/tab-cookies.php:180
 msgid "Browser part: no page could be opened in the hidden frame (the site may forbid being shown in a frame, or a cache served a different page). Only the server part ran, so cookies set by scripts may be missing."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:185
+#: includes/admin/views/tab-cookies.php:184
 msgid "The last scan ran on the server only (scheduled scan or an old page). Click Scan now to also find cookies that scripts set."
 msgstr ""
 
 #. translators: %d: number of cookies
-#: includes/admin/views/tab-cookies.php:199
+#: includes/admin/views/tab-cookies.php:198
 #, php-format
 msgid "Your cookie list (%d)"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:202
+#: includes/admin/views/tab-cookies.php:201
 msgid "This is what visitors see in the cookie banner (Details tab) and on your Cookie Policy page."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:209
+#: includes/admin/views/tab-cookies.php:208
 #: includes/class-sccm-settings.php:141
 msgid "No cookies in this category."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:217
+#: includes/admin/views/tab-cookies.php:216
 msgid "Lasts"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:218
+#: includes/admin/views/tab-cookies.php:217
 msgid "Added"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:231
-#: includes/admin/views/tab-cookies.php:284
+#: includes/admin/views/tab-cookies.php:230
+#: includes/admin/views/tab-cookies.php:283
 msgid "Edit"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:235
-#: includes/admin/views/tab-cookies.php:288
+#: includes/admin/views/tab-cookies.php:234
+#: includes/admin/views/tab-cookies.php:287
 msgid "Delete"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:247
+#: includes/admin/views/tab-cookies.php:246
 msgid "Add a cookie yourself"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:248
+#: includes/admin/views/tab-cookies.php:247
 msgid "Only needed for cookies the scan cannot see, for example ones set after a login or inside a form."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:254
+#: includes/admin/views/tab-cookies.php:253
 msgid "or add all cookies of a known service:"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:265
+#: includes/admin/views/tab-cookies.php:264
 msgid "Add"
 msgstr ""
 
 #. translators: %d: number of cookies
-#: includes/admin/views/tab-cookies.php:274
+#: includes/admin/views/tab-cookies.php:273
 #, php-format
 msgid "Ignored cookies (%d)"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:277
+#: includes/admin/views/tab-cookies.php:276
 msgid "Hidden from visitors and never reported again. Click Edit to bring one back."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:300
+#: includes/admin/views/tab-cookies.php:299
 msgid "Scan report (details)"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:306
+#: includes/admin/views/tab-cookies.php:305
 msgid "Services found on your pages"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:308
+#: includes/admin/views/tab-cookies.php:307
 msgid "No known third-party services found."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:311
+#: includes/admin/views/tab-cookies.php:310
 #: includes/admin/views/tab-settings.php:117
 msgid "Service"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:311
+#: includes/admin/views/tab-cookies.php:310
 msgid "Found in"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:324
+#: includes/admin/views/tab-cookies.php:323
 msgid "Other third-party files"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:325
-msgid "External scripts, frames or stylesheets we do not know yet, so they are not blocked. If one of them tracks visitors, add a blocking rule."
+#: includes/admin/views/tab-cookies.php:324
+msgid "External scripts, frames or stylesheets we do not know yet, so they are not blocked. If one of them tracks visitors, add its address under Settings → Blocking and Google → Your own blocking rules."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:327
+#: includes/admin/views/tab-cookies.php:326
 msgid "None found."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:330
+#: includes/admin/views/tab-cookies.php:329
 msgid "Host"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:330
+#: includes/admin/views/tab-cookies.php:329
 msgid "Example"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:330
-msgid "Block as"
-msgstr ""
-
-#: includes/admin/views/tab-cookies.php:345
-msgid "Add rule"
-msgstr ""
-
-#: includes/admin/views/tab-cookies.php:354
+#: includes/admin/views/tab-cookies.php:341
 msgid "Pages checked"
 msgstr ""
 
 #. translators: %s: cookie names
-#: includes/admin/views/tab-cookies.php:364
+#: includes/admin/views/tab-cookies.php:351
 #, php-format
 msgid "Cookies the server sent: %s"
 msgstr ""
 
 #. translators: %s: cookie and storage names
-#: includes/admin/views/tab-cookies.php:372
+#: includes/admin/views/tab-cookies.php:359
 #, php-format
 msgid "Cookies and storage seen in your browser: %s"
 msgstr ""

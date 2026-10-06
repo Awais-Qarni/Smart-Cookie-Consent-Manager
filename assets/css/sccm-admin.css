@@ -28,6 +28,11 @@
 	margin: 0;
 }
 
+/* Help button in the top right corner of the header. */
+.sccm-header .sccm-header__help {
+	margin-inline-start: auto;
+}
+
 .sccm-help-toggle .dashicons {
 	font-size: 18px;
 	height: 18px;
@@ -505,8 +510,11 @@
 	margin-inline: 20px;
 }
 
-.sccm-fold > table.widefat,
-.sccm-fold > .notice {
+/* Full-width content keeps the same 20px gap on the right as on the left. */
+.sccm-fold > table,
+.sccm-fold > .notice,
+.sccm-fold > div {
+	box-sizing: border-box;
 	margin-inline: 20px;
 	width: calc(100% - 40px);
 }

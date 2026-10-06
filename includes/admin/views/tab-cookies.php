@@ -18,7 +18,6 @@ $sccm_pending    = SCCM_Cookies::query( array( 'status' => 'pending' ) );
 $sccm_ignored    = SCCM_Cookies::query( array( 'status' => 'ignored' ) );
 $sccm_grouped    = SCCM_Cookies::grouped();
 $sccm_categories = SCCM_Admin::category_options();
-$sccm_optional   = SCCM_Admin::category_options( true );
 $sccm_editing    = $sccm_edit_id ? SCCM_Cookies::get( $sccm_edit_id ) : null;
 $sccm_scan       = get_option( SCCM_Scanner::RESULT_OPTION );
 $sccm_types      = array(
@@ -322,29 +321,17 @@ $sccm_sources    = array(
 		<?php endif; ?>
 
 		<h3><?php esc_html_e( 'Other third-party files', 'smart-cookie-consent-manager' ); ?></h3>
-		<p class="description"><?php esc_html_e( 'External scripts, frames or stylesheets we do not know yet, so they are not blocked. If one of them tracks visitors, add a blocking rule.', 'smart-cookie-consent-manager' ); ?></p>
+		<p class="description"><?php esc_html_e( 'External scripts, frames or stylesheets we do not know yet, so they are not blocked. If one of them tracks visitors, add its address under Settings → Blocking and Google → Your own blocking rules.', 'smart-cookie-consent-manager' ); ?></p>
 		<?php if ( empty( $sccm_scan['unclassified'] ) ) : ?>
 			<p><?php esc_html_e( 'None found.', 'smart-cookie-consent-manager' ); ?></p>
 		<?php else : ?>
 			<table class="widefat striped">
-				<thead><tr><th><?php esc_html_e( 'Host', 'smart-cookie-consent-manager' ); ?></th><th><?php esc_html_e( 'Example', 'smart-cookie-consent-manager' ); ?></th><th><?php esc_html_e( 'Block as', 'smart-cookie-consent-manager' ); ?></th></tr></thead>
+				<thead><tr><th><?php esc_html_e( 'Host', 'smart-cookie-consent-manager' ); ?></th><th><?php esc_html_e( 'Example', 'smart-cookie-consent-manager' ); ?></th></tr></thead>
 				<tbody>
 				<?php foreach ( $sccm_scan['unclassified'] as $sccm_item ) : ?>
 					<tr>
 						<td><code><?php echo esc_html( $sccm_item['host'] ); ?></code> <small>(<?php echo esc_html( $sccm_item['tag'] ); ?>)</small></td>
 						<td class="sccm-break"><?php echo esc_html( $sccm_item['url'] ); ?></td>
-						<td>
-							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sccm-inline-form">
-								<?php SCCM_Admin::action_fields( 'add_rule' ); ?>
-								<input type="hidden" name="pattern" value="<?php echo esc_attr( $sccm_item['host'] ); ?>">
-								<select name="category" aria-label="<?php esc_attr_e( 'Category', 'smart-cookie-consent-manager' ); ?>">
-									<?php foreach ( $sccm_optional as $sccm_value => $sccm_label ) : ?>
-										<option value="<?php echo esc_attr( $sccm_value ); ?>"><?php echo esc_html( $sccm_label ); ?></option>
-									<?php endforeach; ?>
-								</select>
-								<button class="button button-small"><?php esc_html_e( 'Add rule', 'smart-cookie-consent-manager' ); ?></button>
-							</form>
-						</td>
 					</tr>
 				<?php endforeach; ?>
 				</tbody>

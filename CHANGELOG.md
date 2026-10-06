@@ -42,6 +42,12 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   Real Cookie Banner, iubenda, Cookie Notice, Termly…): two banners would conflict.
 - Translation template `languages/smart-cookie-consent-manager.pot`.
 
+### Fixed (admin)
+- The **Help** button sits in the top right corner of the plugin header.
+- Removed the "Add rule" button from the scan report's "Other third-party files" (it did not
+  work); add blocking rules under Settings → Blocking and Google → Your own blocking rules.
+- Fold-out settings panels keep the same padding on the right as on the left.
+
 ### Fixed (scan)
 - **"Scan now" no longer stops when you switch tabs or leave the page.** In another browser tab
   it runs at full speed (its timers run in a Web Worker, which browsers do not slow down in

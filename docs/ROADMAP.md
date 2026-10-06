@@ -32,7 +32,7 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - [x] REST `/sccm/v1/consent` → consent log (validation, rate limit, IP anonymise/hash)
 - [x] REST `/sccm/v1/report` → pending cookies (validation, rate limit)
 - [x] Server scanner (cron + manual) + service detection
-- [x] Email digest for new items (max 1/day)
+- [x] Daily change email for new items (at a chosen time, only when something changed)
 - [x] Log retention purge (daily cron)
 
 ## Phase 4 — Admin
@@ -49,7 +49,7 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - [x] readme.txt, CHANGELOG
 - [x] `.pot` translation template (`languages/smart-cookie-consent-manager.pot`; regenerate with `wp i18n make-pot . languages/smart-cookie-consent-manager.pot --exclude=node_modules,tests,docs,.github`)
 - [ ] Staging test on a real site with the TESTING.md checklist (incl. Compliance review)
-- [ ] Release 1.0.0 (tag + zip)
+- [ ] Release 1.2.0 (merge to `main`, tag + zip) after the staging test
 
 ## Phase 5b — Pre-staging changes requested after v0.1.0 (2026-10-05)
 - [x] Simpler admin: Dashboard (status, to-do, key numbers), 6 tabs, Help panel

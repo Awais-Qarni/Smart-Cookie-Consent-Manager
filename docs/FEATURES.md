@@ -98,18 +98,23 @@ a choice brings the banner back), and again later, centred, with a close button.
       (names only, never values; rate-limited; never from logged-in users; local storage is not
       reported). An unknown cookie is listed only after at least two different visitors
       reported it; at most 50 items wait for review.
-- [ ] Server-side scan (scheduled + "Scan now"): fetches key pages, reads `Set-Cookie`
-      headers and third-party scripts/iframes/fonts, matches the service library.
+- [ ] Server-side scan (scheduled + "Scan now"): fetches the planned pages (all pages of a small
+      site; 40–80 for bigger ones: main pages first, then sub and sub-sub pages of every
+      section), reads `Set-Cookie` headers and third-party scripts/iframes/fonts, matches the
+      service library. Works in short steps, so no request runs into the PHP time limit.
 - [ ] Browser scan ("Scan now"): the same pages open in a hidden, sandboxed frame in the
       admin's browser in scan mode (all categories allowed; admin-only one-time token; never
       cached, stored or logged). Cookie and storage names set by scripts, and the third-party
       services the pages load, are recorded; third-party cookies come from the service library.
+      Keeps going in a background tab; if the page is left it continues on the next plugin page.
 - [ ] Known cookies are added automatically as Active in the right category; only cookies the
       service always sets are added (conditional ones are categorised when actually seen).
 - [ ] Unknown cookies appear under **Needs review** in the Cookies tab; the admin must choose a
       category to approve (never pre-selected) or ignore them.
-- [ ] Email alert (digest, max once per day, HTML + plain text) to one or more configured
-      addresses; a sample email can be sent on demand.
+- [ ] Daily change email at a time the owner chooses, sent only when something changed in the
+      last 24 hours (HTML + plain text, readable in dark mode, no admin links), to the site admin
+      and up to 10 more addresses; a sample email can be sent on demand; the result of the last
+      email is shown in the settings.
 
 ### 10. Cookie list for visitors
 - [ ] Preferences window lists cookies per category (from the registry).
