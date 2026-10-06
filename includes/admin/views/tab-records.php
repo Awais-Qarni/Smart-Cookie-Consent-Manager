@@ -22,6 +22,33 @@ $sccm_choices = array(
 ?>
 <p><?php esc_html_e( 'Every time a visitor chooses, a record is saved here: their consent ID, the date and time (UTC), what they chose, which categories they allowed and on which page. A visitor can read their consent ID in the About tab of the cookie banner, so you can find their record by pasting it in the search box.', 'smart-cookie-consent-manager' ); ?></p>
 
+<?php
+$sccm_problem = get_option( SCCM_REST::REST_PROBLEM_OPTION );
+if ( is_array( $sccm_problem ) && time() - (int) $sccm_problem['time'] < WEEK_IN_SECONDS ) :
+	?>
+	<div class="notice notice-warning inline"><p>
+		<?php
+		printf(
+			/* translators: 1: HTTP status code or "blocked", 2: date and time */
+			esc_html__( 'Visitors\' browsers could not reach the WordPress REST API (%1$s, last on %2$s), so records are saved through admin-ajax.php instead. Nothing is lost. If records are missing, a security plugin or firewall may also block admin-ajax.php for visitors.', 'smart-cookie-consent-manager' ),
+			$sccm_problem['status'] ? 'HTTP ' . (int) $sccm_problem['status'] : esc_html__( 'blocked', 'smart-cookie-consent-manager' ),
+			esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $sccm_problem['time'] ) )
+		);
+		?>
+	</p></div>
+<?php endif; ?>
+<?php if ( ! $sccm_result['total'] && ! array_filter( $sccm_filters ) ) : ?>
+	<div class="notice notice-info inline"><p>
+		<?php
+		if ( empty( $settings['log_enabled'] ) ) {
+			esc_html_e( 'Records are switched off: Settings → Consent records → "Keep a record of every choice".', 'smart-cookie-consent-manager' );
+		} else {
+			esc_html_e( 'A record is saved when a visitor clicks Allow all, Deny or Allow selection. To test: open your website in a private window, click a button, then reload this page. If you just updated the plugin, clear your page cache first, because old cached pages still carry the old script.', 'smart-cookie-consent-manager' );
+		}
+		?>
+	</p></div>
+<?php endif; ?>
+
 <form method="get" class="sccm-filters">
 	<input type="hidden" name="page" value="<?php echo esc_attr( SCCM_Admin::SLUG ); ?>">
 	<input type="hidden" name="tab" value="records">

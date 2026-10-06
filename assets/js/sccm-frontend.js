@@ -216,18 +216,46 @@
 		setTimeout(flushStyles, 1500);
 	})();
 
-	function post(url, body) {
+	/**
+	 * Send data to the website (consent record, cookie report).
+	 *
+	 * Same-origin credentials: password-protected sites (e.g. staging behind HTTP auth) need them,
+	 * and the endpoints work for logged-in and logged-out visitors alike. When the REST API does
+	 * not answer (blocked by a security plugin or firewall, or an error), the same data goes
+	 * through admin-ajax.php instead. Rejected data (400) and rate limits (429) are not resent.
+	 *
+	 * @param {string} url    REST address.
+	 * @param {Object} body   Data.
+	 * @param {string} action admin-ajax fallback action.
+	 */
+	function post(url, body, action) {
 		if (!url) {
 			return;
+		}
+		function fallback(status) {
+			if (!action || !C.rest.ajax || !w.URLSearchParams) {
+				return;
+			}
+			var form = new w.URLSearchParams();
+			form.append('action', action);
+			form.append('payload', JSON.stringify(body));
+			form.append('rest_status', String(typeof status === 'number' ? status : 0));
+			w.fetch(C.rest.ajax, { method: 'POST', body: form, credentials: 'same-origin', keepalive: true }).catch(function () {});
 		}
 		try {
 			w.fetch(url, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body),
-				credentials: 'omit',
+				credentials: 'same-origin',
 				keepalive: true
-			}).catch(function () {});
+			}).then(function (response) {
+				if (!response.ok && response.status !== 400 && response.status !== 429) {
+					fallback(response.status);
+				}
+			}, function () {
+				fallback(0);
+			});
 		} catch (e) {
 			/* Logging must never break the page. */
 		}
@@ -499,7 +527,7 @@
 				gpc: state.gpc ? 1 : 0,
 				version: C.v,
 				url: w.location.href.split('#')[0]
-			});
+			}, 'sccm_consent');
 		}
 
 		if (w.dataLayer && typeof w.dataLayer.push === 'function') {
@@ -1081,7 +1109,7 @@
 			}
 			w.sessionStorage.setItem('sccm_reported', signature);
 		} catch (e) { /* ignore */ }
-		post(C.rest.report, { items: items, url: w.location.href.split('#')[0] });
+		post(C.rest.report, { items: items, url: w.location.href.split('#')[0] }, 'sccm_report');
 	}
 
 	/* ------------------------------------------------------------------ Wiring */

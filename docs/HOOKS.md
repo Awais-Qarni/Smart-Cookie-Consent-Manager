@@ -55,6 +55,16 @@ Cache, WP Super Cache, WP Fastest Cache, SiteGround Speed Optimizer, Breeze and 
 `sccm_settings_saved`, `sccm_consent_version_changed` and `sccm_cookie_list_changed` (once per
 request; clears not started by an administrator at most every 5 minutes).
 
+## Endpoints the banner uses
+
+| Endpoint | Fallback (REST API blocked) | Data |
+|---|---|---|
+| `POST /wp-json/sccm/v1/consent` | `admin-ajax.php`, action `sccm_consent`, field `payload` (JSON) | Consent record: consent_id, choice, categories, gpc, version, url |
+| `POST /wp-json/sccm/v1/report` | `admin-ajax.php`, action `sccm_report`, field `payload` (JSON) | Unknown cookie names (visitor scanner) |
+
+Both are public (pages are cached, so no nonces), validated and rate-limited per IP. The
+browser sends with same-origin credentials to a same-site address.
+
 ## CSS
 
 The banner (`#sccm-banner`), the cookie settings window (`#sccm-prefs`) and the widget

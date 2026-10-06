@@ -160,6 +160,52 @@ check('X1 a bad nonce is refused', bad.status() === 403, String(bad.status()));
 const anon = await (await browser.newContext()).request.post(`${BASE}/wp-admin/admin-post.php`, { form: { action: 'sccm_scan_now' }, maxRedirects: 0 });
 check('X2 logged-out requests are refused', anon.status() !== 200 && anon.status() < 500, String(anon.status()));
 
+// Consent records end to end: a visitor's choice is stored and listed, also when the REST API is blocked.
+{
+	wp('eval', `SCCM_Consent_Log::delete_all(); delete_option( SCCM_REST::REST_PROBLEM_OPTION );`);
+	const count = () => parseInt(wp('eval', `echo SCCM_Consent_Log::query( array() )['total'];`), 10);
+	const visitor = async (blockRest) => {
+		const ctx2 = await browser.newContext();
+		// A cookie like the one a password-protected staging site sets after its login prompt.
+		await ctx2.addCookies([{ name: 'sccm_probe_auth', value: '1', url: BASE }]);
+		const seen = { cookie: '', rest: 0, ajax: 0, url: '' };
+		await ctx2.route('**/*', async (route) => {
+			const req = route.request();
+			if (req.url().includes('sccm/v1/consent')) {
+				seen.rest++;
+				seen.cookie = (await req.allHeaders()).cookie || '';
+				if (blockRest) {
+					return route.fulfill({ status: 401, contentType: 'application/json', body: '{"code":"rest_disabled"}' });
+				}
+			}
+			if (req.url().includes('admin-ajax.php') && (req.postData() || '').includes('action=sccm_consent')) {
+				seen.ajax++;
+			}
+			return route.continue();
+		});
+		const p = await ctx2.newPage();
+		await p.goto(BASE + '/');
+		seen.url = await p.evaluate(() => window.SCCM_CONFIG.rest.consent);
+		await p.click('#sccm-banner .sccm-btn--accept');
+		await p.waitForTimeout(1500);
+		await ctx2.close();
+		return seen;
+	};
+	const direct = await visitor(false);
+	check('CR1 a visitor\'s "Allow all" is stored as a consent record', count() === 1, String(count()));
+	check('CR2 the record is sent with the visitor\'s credentials (needed on password-protected staging sites)', direct.cookie.includes('sccm_probe_auth=1'), direct.cookie);
+	check('CR3 the address is same-site (a page cached under another domain or http/https still works)', direct.url.startsWith('/'), direct.url);
+	await page.goto(admin('records'));
+	check('CR1 the record is listed in the Consent Records tab', /Allowed all/.test(await page.textContent('table.widefat tbody')));
+	const blocked = await visitor(true);
+	check('CR4 REST API blocked: the record is saved through admin-ajax.php instead', blocked.rest === 1 && blocked.ajax === 1 && count() === 2, JSON.stringify(blocked));
+	await page.goto(admin('records'));
+	check('CR4 the Consent Records tab explains that the REST API is blocked', /could not reach the WordPress REST API \(HTTP 401/.test(await page.textContent('.sccm-tab')));
+	wp('eval', `SCCM_Consent_Log::delete_all(); delete_option( SCCM_REST::REST_PROBLEM_OPTION );`);
+	await page.goto(admin('records'));
+	check('CR5 an empty list explains how to test record saving', /open your website in a private window/.test(await page.textContent('.sccm-tab')));
+}
+
 // Leaving the page during "Scan now": the browser warns, and the scan continues on the next plugin page.
 const extra = JSON.parse(wp('eval', `$ids = array(); for ( $i = 1; $i <= 15; $i++ ) { $ids[] = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => "Leave test $i", 'post_content' => 'x' ) ); } echo wp_json_encode( $ids );`));
 await page.goto(admin('cookies'));

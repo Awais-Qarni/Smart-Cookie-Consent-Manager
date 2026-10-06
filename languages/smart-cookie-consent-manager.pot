@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-06T18:25:49+00:00\n"
+"POT-Creation-Date: 2026-10-06T19:25:46+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: smart-cookie-consent-manager\n"
@@ -58,7 +58,7 @@ msgstr ""
 #: includes/admin/class-sccm-admin.php:49
 #: includes/admin/class-sccm-admin.php:134
 #: includes/admin/views/help.php:113
-#: includes/admin/views/tab-records.php:106
+#: includes/admin/views/tab-records.php:133
 msgid "Settings"
 msgstr ""
 
@@ -738,9 +738,9 @@ msgid "Words you may meet"
 msgstr ""
 
 #: includes/admin/views/help.php:156
-#: includes/admin/views/tab-records.php:28
-#: includes/admin/views/tab-records.php:29
-#: includes/admin/views/tab-records.php:57
+#: includes/admin/views/tab-records.php:55
+#: includes/admin/views/tab-records.php:56
+#: includes/admin/views/tab-records.php:84
 msgid "Consent ID"
 msgstr ""
 
@@ -1579,76 +1579,94 @@ msgstr ""
 msgid "Every time a visitor chooses, a record is saved here: their consent ID, the date and time (UTC), what they chose, which categories they allowed and on which page. A visitor can read their consent ID in the About tab of the cookie banner, so you can find their record by pasting it in the search box."
 msgstr ""
 
-#: includes/admin/views/tab-records.php:30
-#: includes/admin/views/tab-records.php:58
+#. translators: 1: HTTP status code or "blocked", 2: date and time
+#: includes/admin/views/tab-records.php:33
+#, php-format
+msgid "Visitors' browsers could not reach the WordPress REST API (%1$s, last on %2$s), so records are saved through admin-ajax.php instead. Nothing is lost. If records are missing, a security plugin or firewall may also block admin-ajax.php for visitors."
+msgstr ""
+
+#: includes/admin/views/tab-records.php:34
+msgid "blocked"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:44
+msgid "Records are switched off: Settings → Consent records → \"Keep a record of every choice\"."
+msgstr ""
+
+#: includes/admin/views/tab-records.php:46
+msgid "A record is saved when a visitor clicks Allow all, Deny or Allow selection. To test: open your website in a private window, click a button, then reload this page. If you just updated the plugin, clear your page cache first, because old cached pages still carry the old script."
+msgstr ""
+
+#: includes/admin/views/tab-records.php:57
+#: includes/admin/views/tab-records.php:85
 msgid "Choice"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:36
+#: includes/admin/views/tab-records.php:63
 msgid "From"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:37
+#: includes/admin/views/tab-records.php:64
 msgid "To"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:38
+#: includes/admin/views/tab-records.php:65
 msgid "Filter"
 msgstr ""
 
 #. translators: %d: number of records
-#: includes/admin/views/tab-records.php:49
+#: includes/admin/views/tab-records.php:76
 #, php-format
 msgid "Export CSV (%d records)"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:56
+#: includes/admin/views/tab-records.php:83
 msgid "Date / time (UTC)"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:59
+#: includes/admin/views/tab-records.php:86
 msgid "Categories"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:60
+#: includes/admin/views/tab-records.php:87
 msgid "GPC"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:61
+#: includes/admin/views/tab-records.php:88
 msgid "Version"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:62
+#: includes/admin/views/tab-records.php:89
 msgid "Page"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:63
+#: includes/admin/views/tab-records.php:90
 msgid "IP"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:67
+#: includes/admin/views/tab-records.php:94
 msgid "No consent records yet."
 msgstr ""
 
-#: includes/admin/views/tab-records.php:75
+#: includes/admin/views/tab-records.php:102
 msgid "Yes"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:75
+#: includes/admin/views/tab-records.php:102
 msgid "No"
 msgstr ""
 
 #. translators: %s: link to the settings tab
-#: includes/admin/views/tab-records.php:105
+#: includes/admin/views/tab-records.php:132
 #, php-format
 msgid "How long records are kept, and how the IP address is stored, is set in %s."
 msgstr ""
 
-#: includes/admin/views/tab-records.php:114
+#: includes/admin/views/tab-records.php:141
 msgid "Delete records older than the retention period now"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:118
+#: includes/admin/views/tab-records.php:145
 msgid "Delete all consent records"
 msgstr ""
 
