@@ -4,17 +4,18 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
 
 ## [Unreleased]
 ### Added
-- **Scan report email after every scan**: "Scan now" and scheduled scans now email a report
-  right away (what was added, what needs review, how many cookies the banner lists), also when
-  nothing changed (Settings → "Scan report": or only when something new was found). Before,
-  the plugin only sent one daily digest from WP-Cron, so after a scan nothing arrived.
-- **Cookie changes between scans** (cookies learned from visitors) are emailed about 15 minutes
-  after they reach the banner (batched), instead of once a day.
+- **Daily change email at a time you choose** (Settings → "Daily check at", default 9:00 site
+  time): once a day the plugin checks whether anything changed in the last 24 hours (cookies
+  added to the banner, cookies waiting for review, new third-party services) and sends one email
+  only then; no changes, no email. Scheduled scans run one hour earlier so the email includes
+  them. Before, the daily job ran at a random time and was easy to miss.
 - Emails go to the **site admin and the listed addresses** ("Also send to the site admin", on by
   default). Before, listing addresses dropped the admin.
+- The email has **no links or buttons into the WordPress admin** (some recipients may not have an
+  account); it says in words where things are changed.
 - **Delivery status**: Settings shows when the last email was handed to the server and to whom,
-  or why it failed (e.g. the host cannot send mail; use an SMTP plugin). The scan result message
-  says where the report went.
+  or why it failed (e.g. the host cannot send mail; use an SMTP plugin). Unsent changes are kept
+  for the next day.
 - Third-party resources are reported once, not again after every scan.
 - **Button order: four choices.** Allow all · Deny · Allow selection (**new default**), Deny ·
   Allow all · Allow selection, and the earlier two with "Allow selection" in the middle. In the

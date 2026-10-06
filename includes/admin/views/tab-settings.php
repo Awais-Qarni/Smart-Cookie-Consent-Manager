@@ -175,15 +175,17 @@ SCCM_Admin::form_open( 'settings' );
 			__( 'The scan opens your home page, cookie policy and latest pages and posts, and looks for cookies and third-party services.', 'smart-cookie-consent-manager' )
 		);
 		SCCM_Admin::checkbox( 'scanner_client', __( 'Also learn from visitors', 'smart-cookie-consent-manager' ), $settings['scanner_client'], __( 'Catches cookies that only JavaScript sets, which a scan cannot see. Only cookie names are sent (never values), never from logged-in users, and a cookie is listed only after several different visitors reported it, so your list stays short.', 'smart-cookie-consent-manager' ) );
-		SCCM_Admin::checkbox( 'alerts_enabled', __( 'Email about scans and cookie changes', 'smart-cookie-consent-manager' ), $settings['alerts_enabled'], __( 'A report after each scan ("Scan now" and scheduled scans). Cookies learned from visitors between scans are emailed a few minutes after they are added to the banner.', 'smart-cookie-consent-manager' ) );
+		SCCM_Admin::checkbox( 'alerts_enabled', __( 'Email about cookie changes', 'smart-cookie-consent-manager' ), $settings['alerts_enabled'], __( 'Once a day the plugin checks whether anything changed in the last 24 hours (cookies added to the banner, cookies waiting for review, new third-party services). Only then it sends one email; no changes, no email.', 'smart-cookie-consent-manager' ) );
+		$sccm_hours = array();
+		for ( $sccm_h = 0; $sccm_h < 24; $sccm_h++ ) {
+			$sccm_hours[ $sccm_h ] = wp_date( get_option( 'time_format' ), ( new DateTimeImmutable( 'today', wp_timezone() ) )->setTime( $sccm_h, 0 )->getTimestamp() );
+		}
 		SCCM_Admin::select(
-			'alert_mode',
-			__( 'Scan report', 'smart-cookie-consent-manager' ),
-			$settings['alert_mode'],
-			array(
-				'every_scan' => __( 'After every scan, also when nothing changed', 'smart-cookie-consent-manager' ),
-				'changes'    => __( 'Only when a scan found something new', 'smart-cookie-consent-manager' ),
-			)
+			'alert_hour',
+			__( 'Daily check at', 'smart-cookie-consent-manager' ),
+			(int) $settings['alert_hour'],
+			$sccm_hours,
+			__( 'Your site\'s time zone (Settings → General). Scheduled scans run one hour earlier, so the email includes what they found.', 'smart-cookie-consent-manager' )
 		);
 		$sccm_recipients = str_replace( ', ', "\n", (string) $settings['alert_email'] );
 		SCCM_Admin::textarea(

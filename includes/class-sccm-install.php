@@ -52,8 +52,6 @@ class SCCM_Install {
 		wp_clear_scheduled_hook( 'sccm_scan_event' );
 		wp_clear_scheduled_hook( 'sccm_daily_event' );
 		wp_clear_scheduled_hook( 'sccm_purge_cache_event' );
-		wp_clear_scheduled_hook( 'sccm_alert_event' );
-		wp_clear_scheduled_hook( 'sccm_scan_report_event' );
 	}
 
 	/**
@@ -149,13 +147,23 @@ class SCCM_Install {
 	public static function schedule_events() {
 		$schedule = SCCM_Settings::get( 'scan_schedule' );
 
+		$email_at = SCCM_Scanner::next_daily_time();
+
+		// Scheduled scans run one hour before the daily email, so the email includes what they found.
 		wp_clear_scheduled_hook( 'sccm_scan_event' );
 		if ( in_array( $schedule, array( 'daily', 'weekly' ), true ) ) {
-			wp_schedule_event( time() + HOUR_IN_SECONDS, $schedule, 'sccm_scan_event' );
+			$scan_at = $email_at - HOUR_IN_SECONDS;
+			if ( $scan_at <= time() ) {
+				$scan_at += DAY_IN_SECONDS;
+			}
+			wp_schedule_event( $scan_at, $schedule, 'sccm_scan_event' );
 		}
 
-		if ( ! wp_next_scheduled( 'sccm_daily_event' ) ) {
-			wp_schedule_event( time() + 2 * HOUR_IN_SECONDS, 'daily', 'sccm_daily_event' );
+		// The daily email (sent only when something changed) at the hour chosen in the settings.
+		$next = wp_next_scheduled( SCCM_Scanner::DAILY_EVENT );
+		if ( ! $next || (int) wp_date( 'G', $next ) !== (int) SCCM_Settings::get( 'alert_hour' ) ) {
+			wp_clear_scheduled_hook( SCCM_Scanner::DAILY_EVENT );
+			wp_schedule_event( $email_at, 'daily', SCCM_Scanner::DAILY_EVENT );
 		}
 
 		// First install: scan once shortly after activation so the cookie list is filled
@@ -237,8 +245,6 @@ class SCCM_Install {
 		wp_clear_scheduled_hook( 'sccm_scan_event' );
 		wp_clear_scheduled_hook( 'sccm_daily_event' );
 		wp_clear_scheduled_hook( 'sccm_purge_cache_event' );
-		wp_clear_scheduled_hook( 'sccm_alert_event' );
-		wp_clear_scheduled_hook( 'sccm_scan_report_event' );
 
 		// Versioned copies of the plugin's CSS/JS (see SCCM_Plugin::asset()).
 		$uploads = wp_upload_dir( null, false );

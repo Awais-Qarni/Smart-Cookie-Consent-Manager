@@ -8,8 +8,8 @@ npm test             # php -l on every PHP file, node --check on JS, PHP unit te
 
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
 SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 99 browser checks (visitor side)
-SCCM_WP=/path/to/wp npm run test:wp                              # 100 checks: cookie list, browser-scan rules, settings, emails (scan reports, batching, delivery status), policy page, cache clearing (WP-CLI)
-SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 39 checks of the admin screens, incl. a real browser scan and its report email
+SCCM_WP=/path/to/wp npm run test:wp                              # 101 checks: cookie list, browser-scan rules, settings, daily change email (only with changes, time, delivery status), policy page, cache clearing (WP-CLI)
+SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 38 checks of the admin screens, incl. a real browser scan and the daily email about it
 ```
 
 `test:wp` and `e2e:admin` reset the cookie list and settings of the site they run on: dev sites only.
@@ -101,12 +101,12 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 - [ ] I4 Approving a cookie needs a category choice; "Ignore all" empties the review list.
 - [ ] I5 After updating the plugin, the admin screens look right without clearing any cache
       (assets are versioned by file time).
-- [ ] I7 Click "Scan now": within a minute the scan report arrives at the site admin address and
-      at every listed address (also when nothing changed, unless "only when something new"). The
-      result message says "The scan report was emailed to …". Settings → email alerts shows "Last
-      email: … handed to your server". If it says "Last email failed", the host cannot send mail:
-      install an SMTP plugin (e.g. WP Mail SMTP).
-- [ ] I8 A scheduled scan (or Tools → WP-Cron "sccm_scan_event" run now) also sends a report.
+- [ ] I7 Settings → "Daily check at": pick a time. After a change (approve nothing; run "Scan now"
+      on a site where it finds something), the email arrives once at that time, at the site admin
+      and every listed address, without links into WordPress. A day without changes sends nothing.
+      (To test without waiting: WP Crontrol → run "sccm_daily_event" now.)
+- [ ] I8 Settings shows "Last email: … handed to your server". "Last email failed" means the host
+      cannot send mail: install an SMTP plugin (e.g. WP Mail SMTP).
 - [ ] I6 Open the sample email in a mail app in dark mode (Outlook, Gmail app, Apple Mail):
       readable, header not inverted into a light block, the "Review and approve" button has
       its padding.

@@ -9,7 +9,7 @@
  *     Only unknown cookies reported by several different visitors are listed (see
  *     SCCM_Cookies), and logged-in users never report.
  * Known cookies are added automatically as Active in the right category; unknown ones wait as
- * "Needs review". New items are reported by email in a daily digest.
+ * "Needs review". Changes are reported by one email a day, only when there were any.
  *
  * @package SmartCookieConsentManager
  */
@@ -29,76 +29,31 @@ class SCCM_Scanner {
 	const MAIL_OPTION = 'sccm_last_mail';
 
 	/**
-	 * Cron hook: send what was queued outside a scan (cookies learned from visitors), batched.
+	 * Daily WP-Cron hook: the change email (at the hour chosen in the settings) and log clean-up.
 	 */
-	const ALERT_EVENT = 'sccm_alert_event';
-
-	/**
-	 * Cron hook: scan report for a "Scan now" whose browser part never finished (tab closed).
-	 */
-	const REPORT_EVENT = 'sccm_scan_report_event';
-
-	/**
-	 * Minutes between a change found outside a scan and its email (changes in between are batched).
-	 */
-	const ALERT_DELAY = 15;
+	const DAILY_EVENT = 'sccm_daily_event';
 
 	/**
 	 * Register hooks.
 	 */
 	public static function init() {
-		add_action( 'sccm_scan_event', array( __CLASS__, 'run_scheduled' ) );
-		add_action( 'sccm_daily_event', array( __CLASS__, 'daily' ) );
-		add_action( self::ALERT_EVENT, array( __CLASS__, 'send_queued' ) );
-		add_action( self::REPORT_EVENT, array( __CLASS__, 'scan_finished' ) );
+		add_action( 'sccm_scan_event', array( __CLASS__, 'run' ) );
+		add_action( self::DAILY_EVENT, array( __CLASS__, 'daily' ) );
 	}
 
 	/**
-	 * Scheduled scan (WP-Cron): scan, then email the report.
-	 */
-	public static function run_scheduled() {
-		self::run();
-		self::scan_finished();
-	}
-
-	/**
-	 * A scan is complete (scheduled scan, or both parts of "Scan now"): email the report to the
-	 * site admin and the listed addresses. Setting alert_mode: every_scan = always (also "no
-	 * changes"), changes = only when something new was found.
+	 * Next run of the daily email: today or tomorrow at the hour chosen in the settings (site time).
 	 *
-	 * @return bool Whether an email was sent.
+	 * @return int Unix time.
 	 */
-	public static function scan_finished() {
-		wp_clear_scheduled_hook( self::REPORT_EVENT );
-		if ( ! SCCM_Settings::get( 'alerts_enabled' ) ) {
-			return false;
+	public static function next_daily_time() {
+		$hour = max( 0, min( 23, (int) SCCM_Settings::get( 'alert_hour' ) ) );
+		$now  = new DateTimeImmutable( 'now', wp_timezone() );
+		$at   = $now->setTime( $hour, 0 );
+		if ( $at <= $now ) {
+			$at = $at->modify( '+1 day' );
 		}
-		$queue = (array) get_option( 'sccm_pending_alert', array() );
-		if ( ! $queue && 'every_scan' !== SCCM_Settings::get( 'alert_mode' ) ) {
-			return false;
-		}
-		$sent = self::mail( self::build_email( $queue, false, self::scan_summary() ) );
-		if ( $sent ) {
-			self::queue_sent();
-		}
-		return $sent;
-	}
-
-	/**
-	 * Schedule the email for changes found outside a scan (called when an item is queued).
-	 * Several changes within ALERT_DELAY minutes go out in one email.
-	 */
-	public static function schedule_alert() {
-		if ( SCCM_Settings::get( 'alerts_enabled' ) && ! wp_next_scheduled( self::ALERT_EVENT ) ) {
-			wp_schedule_single_event( time() + self::ALERT_DELAY * MINUTE_IN_SECONDS, self::ALERT_EVENT );
-		}
-	}
-
-	/**
-	 * Cron: email what is queued (if anything).
-	 */
-	public static function send_queued() {
-		self::send_digest( true );
+		return $at->getTimestamp();
 	}
 
 	/**
@@ -107,17 +62,14 @@ class SCCM_Scanner {
 	private static function queue_sent() {
 		update_option( 'sccm_last_alert', time(), false );
 		delete_option( 'sccm_pending_alert' );
-		wp_clear_scheduled_hook( self::ALERT_EVENT );
 	}
 
 	/**
-	 * Facts about the last scan and the current cookie list, for the scan report.
+	 * How many cookies the banner lists, per category (for the email).
 	 *
-	 * @return array time, pages, browser_pages, total, by_category (label => count), pending.
+	 * @return array total, by_category (label => count).
 	 */
-	public static function scan_summary() {
-		$last   = get_option( self::RESULT_OPTION );
-		$last   = is_array( $last ) ? $last : array();
+	public static function list_summary() {
 		$counts = array();
 		$total  = 0;
 		foreach ( SCCM_Cookies::grouped() as $key => $rows ) {
@@ -125,12 +77,8 @@ class SCCM_Scanner {
 			$total                                   += count( $rows );
 		}
 		return array(
-			'time'          => isset( $last['time'] ) ? (int) $last['time'] : time(),
-			'pages'         => isset( $last['pages'] ) ? count( (array) $last['pages'] ) : 0,
-			'browser_pages' => isset( $last['browser']['pages'] ) ? (int) $last['browser']['pages'] : 0,
-			'total'         => $total,
-			'by_category'   => $counts,
-			'pending'       => (int) SCCM_Cookies::counts()['pending'],
+			'total'       => $total,
+			'by_category' => $counts,
 		);
 	}
 
@@ -566,28 +514,30 @@ class SCCM_Scanner {
 	 * Daily housekeeping: email digest + consent log retention.
 	 */
 	public static function daily() {
-		// Safety net: anything still queued (e.g. the email failed earlier) goes out once a day.
-		self::send_digest( true );
+		self::send_digest();
 		SCCM_Consent_Log::purge( (int) SCCM_Settings::get( 'retention_months' ) );
+
+		// Keep the chosen hour (a "daily" repeat drifts by an hour when the clocks change).
+		$next = wp_next_scheduled( self::DAILY_EVENT );
+		if ( $next && (int) wp_date( 'G', $next ) !== (int) SCCM_Settings::get( 'alert_hour' ) ) {
+			wp_clear_scheduled_hook( self::DAILY_EVENT );
+			wp_schedule_event( self::next_daily_time(), 'daily', self::DAILY_EVENT );
+		}
 	}
 
 	/**
-	 * Email the queued findings (changes found outside a scan, or left over).
+	 * The daily email: sent only when something changed since the last email (in practice the
+	 * last 24 hours): cookies added to the banner, cookies waiting for review, new third-party
+	 * resources. No changes, no email. Items stay queued until an email went out.
 	 *
-	 * @param bool $force Send even if an email went out in the last 23 hours.
 	 * @return bool Whether an email was sent.
 	 */
-	public static function send_digest( $force = false ) {
+	public static function send_digest() {
 		$queue = (array) get_option( 'sccm_pending_alert', array() );
 		if ( ! $queue || ! SCCM_Settings::get( 'alerts_enabled' ) ) {
 			return false;
 		}
-		$last = (int) get_option( 'sccm_last_alert', 0 );
-		if ( ! $force && time() - $last < 23 * HOUR_IN_SECONDS ) {
-			return false;
-		}
-
-		$sent = self::mail( self::build_email( $queue ) );
+		$sent = self::mail( self::build_email( $queue, false, self::list_summary() ) );
 		if ( $sent ) {
 			self::queue_sent();
 		}
@@ -595,7 +545,7 @@ class SCCM_Scanner {
 	}
 
 	/**
-	 * Send a sample scan report so the site owner can see the design and check delivery.
+	 * Send a sample email so the site owner can see the design and check delivery.
 	 *
 	 * @return bool
 	 */
@@ -624,7 +574,7 @@ class SCCM_Scanner {
 				'time'     => $now,
 			),
 		);
-		$email = self::build_email( $queue, true, self::scan_summary() );
+		$email = self::build_email( $queue, true, self::list_summary() );
 		return self::mail( $email );
 	}
 
@@ -669,15 +619,15 @@ class SCCM_Scanner {
 	}
 
 	/**
-	 * Build the digest: subject, HTML (inline styles, table layout for email clients) and text.
+	 * Build the daily change email: subject, HTML (inline styles, table layout for email clients)
+	 * and text. No links into the WordPress admin: some recipients may not have an account.
 	 *
 	 * @param array      $queue Items from SCCM_Cookies::queue_alert().
 	 * @param bool       $test  Mark the email as a sample.
-	 * @param array|null $scan  Scan report: scan_summary() of the scan that just finished; null for
-	 *                          changes found outside a scan.
+	 * @param array|null $list  list_summary(): how many cookies the banner lists.
 	 * @return array subject, html, text.
 	 */
-	public static function build_email( array $queue, $test = false, $scan = null ) {
+	public static function build_email( array $queue, $test = false, $list = null ) {
 		$groups = array(
 			'pending'      => array(),
 			'active'       => array(),
@@ -691,24 +641,19 @@ class SCCM_Scanner {
 			$groups[ $status ][ $item['type'] . ':' . $item['name'] ] = $item;
 		}
 		$site     = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
-		$review   = admin_url( 'admin.php?page=sccm&tab=cookies' );
-		$settings = admin_url( 'admin.php?page=sccm&tab=settings' );
 		$n_review = count( $groups['pending'] );
 		$n_auto   = count( $groups['active'] );
 		$n_other  = count( $groups['unclassified'] );
 
 		if ( $n_review ) {
 			/* translators: 1: site name, 2: number of cookies */
-			$subject = sprintf( _n( '[%1$s] %2$d cookie needs your review', '[%1$s] %2$d cookies need your review', $n_review, 'smart-cookie-consent-manager' ), $site, $n_review );
+			$subject = sprintf( _n( '[%1$s] %2$d new cookie needs review', '[%1$s] %2$d new cookies need review', $n_review, 'smart-cookie-consent-manager' ), $site, $n_review );
 		} elseif ( $n_auto ) {
 			/* translators: 1: site name, 2: number of cookies */
 			$subject = sprintf( _n( '[%1$s] %2$d cookie was added to your cookie banner', '[%1$s] %2$d cookies were added to your cookie banner', $n_auto, 'smart-cookie-consent-manager' ), $site, $n_auto );
-		} elseif ( $n_other ) {
-			/* translators: 1: site name, 2: number of resources */
-			$subject = sprintf( _n( '[%1$s] Cookie scan: %2$d new third-party resource', '[%1$s] Cookie scan: %2$d new third-party resources', $n_other, 'smart-cookie-consent-manager' ), $site, $n_other );
 		} else {
-			/* translators: %s: site name */
-			$subject = sprintf( __( '[%s] Cookie scan finished: no changes', 'smart-cookie-consent-manager' ), $site );
+			/* translators: 1: site name, 2: number of resources */
+			$subject = sprintf( _n( '[%1$s] %2$d new third-party resource found', '[%1$s] %2$d new third-party resources found', max( 1, $n_other ), 'smart-cookie-consent-manager' ), $site, max( 1, $n_other ) );
 		}
 		if ( $test ) {
 			/* translators: %s: subject */
@@ -765,36 +710,28 @@ class SCCM_Scanner {
 		$h .= '<tr><td height="4" bgcolor="#2563eb" style="height:4px;line-height:4px;font-size:4px;background:#2563eb;border-radius:10px 10px 0 0;">&nbsp;</td></tr>';
 		$h .= '<tr><td class="sccm-e-pad" style="padding:24px 32px 8px;">';
 		$h .= '<div class="sccm-e-muted" style="' . $font . 'font-size:12px;line-height:16px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;">' . esc_html( $site ) . '</div>';
-		$h .= '<div class="sccm-e-h" style="' . $font . 'font-size:22px;line-height:28px;font-weight:700;color:#111827;margin-top:4px;">' . esc_html__( 'Cookie scan report', 'smart-cookie-consent-manager' ) . '</div>';
+		$h .= '<div class="sccm-e-h" style="' . $font . 'font-size:22px;line-height:28px;font-weight:700;color:#111827;margin-top:4px;">' . esc_html__( 'Cookie changes in the last 24 hours', 'smart-cookie-consent-manager' ) . '</div>';
 		$h .= '</td></tr>';
 
-		if ( $scan ) {
+		if ( $list ) {
 			$h .= '<tr><td class="sccm-e-pad" style="padding:4px 32px 0;">';
-			$h .= '<div class="sccm-e-p" style="' . $font . 'font-size:14px;line-height:21px;color:#4b5563;">' . esc_html( self::email_scan_line( $scan ) ) . '</div>';
-			$h .= '<div class="sccm-e-p" style="' . $font . 'font-size:14px;line-height:21px;color:#4b5563;margin-top:2px;">' . esc_html( self::email_list_line( $scan ) ) . '</div>';
+			$h .= '<div class="sccm-e-p" style="' . $font . 'font-size:14px;line-height:21px;color:#4b5563;">' . esc_html( self::email_list_line( $list ) ) . '</div>';
 			$h .= '</td></tr>';
 		}
 
 		// Summary numbers.
 		$h .= '<tr><td class="sccm-e-pad" style="padding:16px 32px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>';
-		$h .= self::email_stat( $n_review, _n( 'needs your review', 'need your review', $n_review, 'smart-cookie-consent-manager' ), $n_review ? '#d97706' : '#9ca3af' );
+		$h .= self::email_stat( $n_review, _n( 'needs review', 'need review', $n_review, 'smart-cookie-consent-manager' ), $n_review ? '#d97706' : '#9ca3af' );
 		$h .= '<td class="sccm-e-gap" width="12" style="width:12px;">&nbsp;</td>';
 		$h .= self::email_stat( $n_auto, __( 'added automatically', 'smart-cookie-consent-manager' ), '#16a34a' );
 		$h .= '</tr></table></td></tr>';
 
-		if ( ! $n_review && ! $n_auto && ! $n_other ) {
-			$h .= '<tr><td class="sccm-e-pad" style="padding:20px 32px 0;">';
-			$h .= self::email_heading( __( 'No changes', 'smart-cookie-consent-manager' ), __( 'No new cookies or services were found. Your cookie banner and Cookie Policy page are up to date; nothing to do.', 'smart-cookie-consent-manager' ), $font );
-			$h .= '</td></tr>';
-		}
-
 		// Needs review.
 		if ( $n_review ) {
 			$h .= '<tr><td class="sccm-e-pad" style="padding:20px 32px 0;">';
-			$h .= self::email_heading( __( 'Needs your review', 'smart-cookie-consent-manager' ), __( 'We could not tell what these cookies are for. Choose a category for each one and click Approve. Until then they are not shown to visitors.', 'smart-cookie-consent-manager' ), $font );
+			$h .= self::email_heading( __( 'Needs review', 'smart-cookie-consent-manager' ), __( 'We could not tell what these cookies are for. Someone who manages the website should choose a category for each one in WordPress under Cookie Consent → Cookies. Until then they are not shown to visitors.', 'smart-cookie-consent-manager' ), $font );
 			$h .= self::email_rows( array_slice( $groups['pending'], 0, $limit ), $font, $mono, 'pending' );
 			$h .= self::email_more( count( $groups['pending'] ) - $limit, $font );
-			$h .= self::email_button( $review, __( 'Review and approve', 'smart-cookie-consent-manager' ), $font );
 			$h .= '</td></tr>';
 		}
 
@@ -814,33 +751,29 @@ class SCCM_Scanner {
 				$hosts[] = $item['name'];
 			}
 			$h .= '<tr><td class="sccm-e-pad" style="padding:24px 32px 0;">';
-			$h .= self::email_heading( __( 'Other third-party resources', 'smart-cookie-consent-manager' ), __( 'External files were found that are not in the service library, so they are not blocked. If one of them tracks visitors, add a blocking rule in the plugin settings.', 'smart-cookie-consent-manager' ), $font );
+			$h .= self::email_heading( __( 'Other third-party resources', 'smart-cookie-consent-manager' ), __( 'External files were found that are not in the service library, so they are not blocked. If one of them tracks visitors, a blocking rule can be added in WordPress under Cookie Consent → Settings.', 'smart-cookie-consent-manager' ), $font );
 			$h .= '<div class="sccm-e-p" style="' . $mono . 'font-size:13px;line-height:20px;color:#374151;word-break:break-all;">' . esc_html( implode( ', ', $hosts ) ) . ( $n_other > 8 ? ' …' : '' ) . '</div>';
 			$h .= '</td></tr>';
 		}
 
 		// Footer.
 		$h .= '<tr><td class="sccm-e-pad" style="padding:28px 32px 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="sccm-e-row" style="border-top:1px solid #e5e7eb;padding-top:16px;">';
-		$h .= '<div class="sccm-e-muted" style="' . $font . 'font-size:12px;line-height:18px;color:#6b7280;">' . esc_html__( 'Sent by Smart Cookie Consent Manager', 'smart-cookie-consent-manager' ) . ' · ' . esc_html( $recipients ) . '</div>';
-		$h .= '<div style="' . $font . 'font-size:12px;line-height:18px;margin-top:4px;"><a class="sccm-e-link" href="' . esc_url( $settings ) . '" style="color:#2563eb;text-decoration:underline;">' . esc_html__( 'Change recipients or turn these emails off', 'smart-cookie-consent-manager' ) . '</a></div>';
+		$h .= '<div class="sccm-e-muted" style="' . $font . 'font-size:12px;line-height:18px;color:#6b7280;">' . esc_html( self::email_footer( $recipients ) ) . '</div>';
 		$h .= '</td></tr></table></td></tr>';
 		$h .= '</table></td></tr></table></body></html>';
 
 		/* ---- Plain text */
-		$t = $site . ' — ' . __( 'Cookie scan report', 'smart-cookie-consent-manager' ) . "\n" . str_repeat( '=', 40 ) . "\n\n";
-		if ( $scan ) {
-			$t .= self::email_scan_line( $scan ) . "\n" . self::email_list_line( $scan ) . "\n\n";
-		}
-		if ( ! $n_review && ! $n_auto && ! $n_other ) {
-			$t .= __( 'No new cookies or services were found. Your cookie banner and Cookie Policy page are up to date; nothing to do.', 'smart-cookie-consent-manager' ) . "\n\n";
+		$t = $site . ' — ' . __( 'Cookie changes in the last 24 hours', 'smart-cookie-consent-manager' ) . "\n" . str_repeat( '=', 40 ) . "\n\n";
+		if ( $list ) {
+			$t .= self::email_list_line( $list ) . "\n\n";
 		}
 		if ( $n_review ) {
-			$t .= __( 'NEEDS YOUR REVIEW', 'smart-cookie-consent-manager' ) . ' (' . $n_review . ")\n";
-			$t .= __( 'Choose a category for each cookie and click Approve. Until then visitors do not see them.', 'smart-cookie-consent-manager' ) . "\n";
+			$t .= __( 'NEEDS REVIEW', 'smart-cookie-consent-manager' ) . ' (' . $n_review . ")\n";
+			$t .= __( 'Someone who manages the website should choose a category for each one in WordPress under Cookie Consent → Cookies. Until then visitors do not see them.', 'smart-cookie-consent-manager' ) . "\n";
 			foreach ( array_slice( $groups['pending'], 0, $limit ) as $item ) {
 				$t .= '  - ' . $item['name'] . ' (' . $item['type'] . ")\n";
 			}
-			$t .= "\n" . __( 'Review and approve:', 'smart-cookie-consent-manager' ) . ' ' . $review . "\n\n";
+			$t .= "\n";
 		}
 		if ( $n_auto ) {
 			$t .= __( 'ADDED AUTOMATICALLY', 'smart-cookie-consent-manager' ) . ' (' . $n_auto . ")\n";
@@ -856,7 +789,7 @@ class SCCM_Scanner {
 			}
 			$t .= "\n";
 		}
-		$t .= '--' . "\n" . __( 'Change recipients or turn these emails off:', 'smart-cookie-consent-manager' ) . ' ' . $settings . "\n";
+		$t .= '--' . "\n" . self::email_footer( $recipients ) . "\n";
 
 		return array(
 			'subject' => $subject,
@@ -881,34 +814,30 @@ class SCCM_Scanner {
 	}
 
 	/**
-	 * "Scan finished on …: N pages checked (M in your browser)."
+	 * Footer: who gets the email and where it is set up (no admin link: recipients may not have an account).
 	 *
-	 * @param array $scan scan_summary().
+	 * @param string $recipients Comma-separated addresses.
 	 * @return string
 	 */
-	private static function email_scan_line( array $scan ) {
-		$when = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $scan['time'] );
-		if ( ! empty( $scan['browser_pages'] ) ) {
-			/* translators: 1: date and time, 2: pages checked by the server, 3: pages opened in the browser */
-			return sprintf( __( 'Scan finished on %1$s: %2$d page(s) checked, %3$d opened in your browser.', 'smart-cookie-consent-manager' ), $when, (int) $scan['pages'], (int) $scan['browser_pages'] );
-		}
-		/* translators: 1: date and time, 2: number of pages */
-		return sprintf( __( 'Scan finished on %1$s: %2$d page(s) checked.', 'smart-cookie-consent-manager' ), $when, (int) $scan['pages'] );
+	private static function email_footer( $recipients ) {
+		$hour = wp_date( get_option( 'time_format' ), ( new DateTimeImmutable( 'today', wp_timezone() ) )->setTime( (int) SCCM_Settings::get( 'alert_hour' ), 0 )->getTimestamp() );
+		/* translators: 1: email addresses, 2: time of day */
+		return sprintf( __( 'Sent by Smart Cookie Consent Manager to %1$s. This email is sent once a day at %2$s, only when something changed. The website\'s administrator can change this in WordPress under Cookie Consent → Settings.', 'smart-cookie-consent-manager' ), $recipients, $hour );
 	}
 
 	/**
 	 * "Your cookie banner now lists N cookies: Necessary 3 · Statistics 2 …"
 	 *
-	 * @param array $scan scan_summary().
+	 * @param array $list list_summary().
 	 * @return string
 	 */
-	private static function email_list_line( array $scan ) {
+	private static function email_list_line( array $list ) {
 		$parts = array();
-		foreach ( (array) $scan['by_category'] as $label => $count ) {
+		foreach ( (array) $list['by_category'] as $label => $count ) {
 			$parts[] = $label . ' ' . (int) $count;
 		}
 		/* translators: 1: number of cookies, 2: count per category, e.g. "Necessary 3 · Statistics 2" */
-		return sprintf( _n( 'Your cookie banner now lists %1$d cookie (%2$s).', 'Your cookie banner now lists %1$d cookies (%2$s).', (int) $scan['total'], 'smart-cookie-consent-manager' ), (int) $scan['total'], implode( ' · ', $parts ) );
+		return sprintf( _n( 'Your cookie banner now lists %1$d cookie (%2$s).', 'Your cookie banner now lists %1$d cookies (%2$s).', (int) $list['total'], 'smart-cookie-consent-manager' ), (int) $list['total'], implode( ' · ', $parts ) );
 	}
 
 	/**
@@ -949,21 +878,6 @@ class SCCM_Scanner {
 				. '</tr>';
 		}
 		return $h . '</table>';
-	}
-
-	/**
-	 * A button that works in every mail app (padding on the cell, mso-padding-alt for Outlook).
-	 *
-	 * @param string $url   Link.
-	 * @param string $label Text.
-	 * @param string $font  Font style.
-	 * @return string
-	 */
-	private static function email_button( $url, $label, $font ) {
-		return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 4px;"><tr>'
-			. '<td align="center" bgcolor="#2563eb" style="background:#2563eb;border-radius:6px;mso-padding-alt:12px 24px;">'
-			. '<a href="' . esc_url( $url ) . '" target="_blank" style="' . $font . 'display:inline-block;padding:12px 24px;font-size:15px;line-height:20px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;">' . esc_html( $label ) . '</a>'
-			. '</td></tr></table>';
 	}
 
 	/**

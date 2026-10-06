@@ -139,10 +139,10 @@ check('BS2 an unknown cookie set by a script waits for review', listed.includes(
 check('BS2 an unknown local storage key set by a script waits for review', listed.includes('test_unknown_storage|pending|necessary'));
 check('BS2 no admin-only cookies are listed', !listed.some((x) => /^wordpress_|^wp-settings/.test(x)));
 check('BS3 the result message counts what was found', /Scan finished: \d+ page\(s\) opened in your browser\. [1-9]\d* new cookie/.test(await page.textContent('.notice')), (await page.textContent('.notice')).trim().slice(0, 140));
-const report = fs.existsSync(CONTENT + '/mail-captured.json') ? JSON.parse(fs.readFileSync(CONTENT + '/mail-captured.json', 'utf8')) : null;
-check('BS4 "Scan now" emails the scan report right away (admin + listed addresses)', report && /need(s)? your review|added to your cookie banner/.test(report.subject) && report.to.includes(adminEmail) && report.to.includes('owner@example.com'), report && report.subject);
-check('BS4 the result message says where the report went', /The scan report was emailed to/.test(await page.textContent('.notice')));
-check('BS4 no fallback report is left scheduled', wp('eval', 'echo (int) wp_next_scheduled( SCCM_Scanner::REPORT_EVENT );') === '0');
+check('BS4 "Scan now" sends no email itself: the changes wait for the daily check', !fs.existsSync(CONTENT + '/mail-captured.json') && JSON.parse(wp('option', 'get', 'sccm_pending_alert', '--format=json')).length > 0);
+wp('eval', 'SCCM_Scanner::daily();');
+const daily = fs.existsSync(CONTENT + '/mail-captured.json') ? JSON.parse(fs.readFileSync(CONTENT + '/mail-captured.json', 'utf8')) : null;
+check('BS4 the daily check then sends one email about the changes found by the scan (admin + listed addresses)', daily && /need(s)? review|added to your cookie banner/.test(daily.subject) && daily.to.includes(adminEmail) && daily.to.includes('owner@example.com'), daily && daily.subject);
 const leftover = await page.evaluate(() => document.querySelectorAll('iframe[sandbox]').length);
 check('BS3 the hidden frames are removed afterwards', leftover === 0);
 

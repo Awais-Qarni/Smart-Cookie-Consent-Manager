@@ -105,7 +105,7 @@ class SCCM_Settings {
 			'scanner_client'       => 1,
 			'scan_schedule'        => 'weekly',   // daily | weekly | off.
 			'alerts_enabled'       => 1,
-			'alert_mode'           => 'every_scan', // every_scan (report after each scan) | changes (only when something new was found).
+			'alert_hour'           => 9,          // Daily email time (0-23, site time zone); sent only when something changed.
 			'alert_email'          => '',
 			'alert_include_admin'  => 1,          // Also send to the site admin email.
 
@@ -271,7 +271,6 @@ class SCCM_Settings {
 			'consent_mode'      => array( 'basic', 'advanced', 'off' ),
 			'gpc_scope'         => array( 'all', 'marketing' ),
 			'scan_schedule'     => array( 'daily', 'weekly', 'off' ),
-			'alert_mode'        => array( 'every_scan', 'changes' ),
 			'ip_mode'           => array( 'anonymize', 'hash', 'none' ),
 		);
 		foreach ( $enums as $key => $allowed ) {
@@ -287,6 +286,7 @@ class SCCM_Settings {
 			'reject_grace_days'   => array( 0, 395 ),
 			'border_radius'       => array( 0, 32 ),
 			'retention_months'    => array( 0, 120 ),
+			'alert_hour'          => array( 0, 23 ),
 		);
 		foreach ( $ints as $key => $range ) {
 			if ( isset( $input[ $key ] ) ) {

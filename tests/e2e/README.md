@@ -37,8 +37,8 @@ and screenshots go to `tests/e2e/output/` (git-ignored).
 | Command | What it covers |
 |---|---|
 | `npm run e2e` | Visitor side: compact banner + Customize, dialog tabs, switches, details, the four button orders, first-visit preview, theme isolation (hostile theme CSS), one-line buttons, Cookie Policy on a dark theme, widget, expiry, scan-mode safety, reporting (99 checks). |
-| `SCCM_WP=/path/to/wp-cli-wrapper npm run test:wp` | Cookie list rules, browser-scan rules, settings, button orders, email recipients and design (dark mode, Outlook button), categories, library details, hashed asset files, Cookie Policy sidebar, cache clearing and throttling, other-CMP detection (WP-CLI, 100 checks; also scan-report emails, batching and delivery status). |
-| `SCCM_WP=… SCCM_E2E_URL=… npm run e2e:admin` | Admin screens as `admin`/`admin`: approve/ignore, expiry, recipients, sample email, positions, button order, banner style, a real browser scan and its report email, CSRF (39 checks). |
+| `SCCM_WP=/path/to/wp-cli-wrapper npm run test:wp` | Cookie list rules, browser-scan rules, settings, button orders, email recipients and design (dark mode, Outlook button), categories, library details, hashed asset files, Cookie Policy sidebar, cache clearing and throttling, other-CMP detection (WP-CLI, 101 checks; also the daily change email: only with changes, send time, delivery status). |
+| `SCCM_WP=… SCCM_E2E_URL=… npm run e2e:admin` | Admin screens as `admin`/`admin`: approve/ignore, expiry, recipients, sample email, positions, button order, banner style, a real browser scan and the daily email about it, CSRF (38 checks). |
 | `node tests/e2e/admin-shots.mjs <dir>` | Screenshots of every admin tab, for visual review. |
 
 The last three reset the plugin settings and cookie list of the site they run on: use a

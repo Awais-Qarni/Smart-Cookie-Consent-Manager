@@ -192,25 +192,6 @@ class SCCM_Admin {
 	/* ------------------------------------------------------------------ Form helpers (used by views) */
 
 	/**
-	 * " The scan report was emailed to …" / " The email could not be sent: …" after a scan.
-	 *
-	 * @param bool $mailed Whether scan_finished() sent the email.
-	 * @return string Sentence with a leading space, or '' when no email was due.
-	 */
-	public static function mail_note( $mailed ) {
-		$last = get_option( SCCM_Scanner::MAIL_OPTION );
-		if ( $mailed && is_array( $last ) ) {
-			/* translators: %s: email addresses */
-			return ' ' . sprintf( __( 'The scan report was emailed to %s.', 'smart-cookie-consent-manager' ), implode( ', ', (array) $last['to'] ) );
-		}
-		if ( is_array( $last ) && empty( $last['ok'] ) && (int) $last['time'] >= time() - 60 ) {
-			/* translators: %s: error message */
-			return ' ' . sprintf( __( 'The scan report email could not be sent: %s', 'smart-cookie-consent-manager' ), $last['error'] );
-		}
-		return '';
-	}
-
-	/**
 	 * Other cookie consent plugins that are active (two banners would conflict).
 	 *
 	 * @return string[] Plugin names.
@@ -478,9 +459,9 @@ class SCCM_Admin {
 			$input['rules']             = isset( $input['rules'] ) && is_array( $input['rules'] ) ? $input['rules'] : array();
 		}
 
-		$before = SCCM_Settings::get( 'scan_schedule' );
+		$before = array( SCCM_Settings::get( 'scan_schedule' ), (int) SCCM_Settings::get( 'alert_hour' ) );
 		SCCM_Settings::update( $input );
-		if ( SCCM_Settings::get( 'scan_schedule' ) !== $before ) {
+		if ( array( SCCM_Settings::get( 'scan_schedule' ), (int) SCCM_Settings::get( 'alert_hour' ) ) !== $before ) {
 			SCCM_Install::schedule_events();
 		}
 		/**
@@ -565,9 +546,8 @@ class SCCM_Admin {
 	public static function handle_scan_now() {
 		self::guard( 'sccm_scan_now' );
 		$results = SCCM_Scanner::run( true );
-		$mailed  = SCCM_Scanner::scan_finished();
 		/* translators: 1: pages, 2: services */
-		self::back( 'cookies', sprintf( __( 'Scan finished: %1$d page(s) checked, %2$d service(s) detected.', 'smart-cookie-consent-manager' ), count( $results['pages'] ), count( $results['services'] ) ) . self::mail_note( $mailed ) );
+		self::back( 'cookies', sprintf( __( 'Scan finished: %1$d page(s) checked, %2$d service(s) detected.', 'smart-cookie-consent-manager' ), count( $results['pages'] ), count( $results['services'] ) ) );
 	}
 
 	/**
@@ -582,9 +562,6 @@ class SCCM_Admin {
 		$counts  = SCCM_Cookies::counts();
 		$results = SCCM_Scanner::run( true );
 		$token   = SCCM_Scanner::scan_token( $first, $counts );
-		// The report is emailed when the browser part finishes; if it never does (tab closed), later.
-		wp_clear_scheduled_hook( SCCM_Scanner::REPORT_EVENT );
-		wp_schedule_single_event( time() + 10 * MINUTE_IN_SECONDS, SCCM_Scanner::REPORT_EVENT );
 		wp_send_json_success(
 			array(
 				'token' => $token,
@@ -610,7 +587,6 @@ class SCCM_Admin {
 		$data = isset( $_POST['data'] ) ? json_decode( wp_unslash( $_POST['data'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- every value is validated in record_browser_scan().
 		$sum  = SCCM_Scanner::record_browser_scan( is_array( $data ) ? $data : array(), $valid );
 		delete_transient( 'sccm_scan_' . $token );
-		$mailed = SCCM_Scanner::scan_finished();
 
 		$message = sprintf(
 			/* translators: 1: pages, 2: cookies added automatically, 3: cookies waiting for review */
@@ -622,7 +598,6 @@ class SCCM_Admin {
 		if ( ! empty( $data['blocked'] ) && absint( $data['blocked'] ) >= absint( $data['pages'] ?? 0 ) ) {
 			$message .= ' ' . __( 'Your website did not allow itself to be opened in a frame (a security header), so only the server scan ran. Cookies set by scripts may be missing.', 'smart-cookie-consent-manager' );
 		}
-		$message .= self::mail_note( $mailed );
 		wp_send_json_success( array( 'redirect' => self::url( 'cookies', array( 'sccm_msg' => rawurlencode( $message ) ) ) ) );
 	}
 
@@ -631,7 +606,7 @@ class SCCM_Admin {
 	 */
 	public static function handle_send_digest() {
 		self::guard( 'sccm_send_digest' );
-		$sent = SCCM_Scanner::send_digest( true );
+		$sent = SCCM_Scanner::send_digest();
 		self::back( 'settings', $sent ? __( 'Email sent.', 'smart-cookie-consent-manager' ) : __( 'Nothing to send, or the email could not be sent.', 'smart-cookie-consent-manager' ), ! $sent );
 	}
 
