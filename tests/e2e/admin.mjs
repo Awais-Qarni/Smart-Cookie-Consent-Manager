@@ -9,7 +9,9 @@ import fs from 'node:fs';
 
 const BASE = (process.env.SCCM_E2E_URL || 'http://127.0.0.1:8080').replace(/\/$/, '');
 const WP = process.env.SCCM_WP;
-const wp = (...args) => execFileSync(WP, args, { encoding: 'utf8' }).trim();
+// SCCM_WP may point straight at wp-cli.phar (Windows cannot exec a .phar or a shell wrapper): run it with PHP.
+const [WP_BIN, WP_PRE] = /\.phar$/i.test(WP || '') ? [process.env.SCCM_PHP || 'php', [WP]] : [WP, []];
+const wp = (...args) => execFileSync(WP_BIN, [...WP_PRE, ...args], { encoding: 'utf8' }).trim();
 const option = () => JSON.parse(wp('option', 'get', 'sccm_settings', '--format=json'));
 const results = [];
 const check = (name, ok, detail = '') => { results.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? ' — ' + detail : ''}`); };

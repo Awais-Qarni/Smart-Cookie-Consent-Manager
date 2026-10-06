@@ -7,9 +7,10 @@
  */
 import { chromium } from 'playwright';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const BASE = (process.env.SCCM_E2E_URL || 'http://127.0.0.1:8080').replace(/\/$/, '');
-const OUT = new URL('./output/', import.meta.url).pathname;
+const OUT = fileURLToPath(new URL('./output/', import.meta.url));
 fs.mkdirSync(OUT, { recursive: true });
 
 const TRACKERS = /googletagmanager\.com|facebook\.net|youtube\.com|fonts\.googleapis\.com|fonts\.gstatic\.com/;
