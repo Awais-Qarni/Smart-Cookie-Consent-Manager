@@ -1,0 +1,2792 @@
+# Copyright (C) 2026 Muhammad Awais
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Smart Cookie Consent Manager 1.2.0\n"
+"Report-Msgid-Bugs-To: https://github.com/Awais-Qarni/Smart-Cookie-Consent-Manager/issues\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-10-06T18:25:49+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: smart-cookie-consent-manager\n"
+
+#. Plugin Name of the plugin
+#: smart-cookie-consent-manager.php
+msgid "Smart Cookie Consent Manager"
+msgstr ""
+
+#. Plugin URI of the plugin
+#: smart-cookie-consent-manager.php
+msgid "https://github.com/Awais-Qarni/Smart-Cookie-Consent-Manager"
+msgstr ""
+
+#. Description of the plugin
+#: smart-cookie-consent-manager.php
+msgid "Plug-and-play cookie consent: Accept / Reject / Manage Preferences banner, blocking until consent, Google Consent Mode v2, GPC, consent records, cookie scanner and an automatic cookie policy."
+msgstr ""
+
+#. Author of the plugin
+#: smart-cookie-consent-manager.php
+msgid "Muhammad Awais"
+msgstr ""
+
+#. Author URI of the plugin
+#: smart-cookie-consent-manager.php
+msgid "mailto:reachoutawais@gmail.com"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:46
+#: includes/admin/views/help.php:67
+msgid "Dashboard"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:47
+#: includes/admin/views/help.php:80
+#: includes/class-sccm-settings.php:155
+msgid "Cookies"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:48
+#: includes/admin/views/help.php:96
+msgid "Banner"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:49
+#: includes/admin/class-sccm-admin.php:134
+#: includes/admin/views/help.php:113
+#: includes/admin/views/tab-records.php:106
+msgid "Settings"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:50
+#: includes/admin/views/help.php:132
+msgid "Consent Records"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:51
+#: includes/admin/views/help.php:143
+msgid "Tools"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:79
+#: includes/admin/class-sccm-admin.php:80
+#: includes/admin/class-sccm-admin.php:184
+msgid "Cookie Consent"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:107
+msgid "Are you sure?"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:110
+msgid "Step 1 of 2: checking your pages on the server…"
+msgstr ""
+
+#. translators: 1: pages checked so far, 2: pages planned
+#: includes/admin/class-sccm-admin.php:112
+#, php-format
+msgid "Step 1 of 2: checking your pages on the server (%1$d of %2$d)…"
+msgstr ""
+
+#. translators: 1: page number, 2: number of pages
+#: includes/admin/class-sccm-admin.php:114
+#, php-format
+msgid "Step 2 of 2: opening page %1$d of %2$d in your browser to see the cookies its scripts set…"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:115
+msgid "Saving what was found…"
+msgstr ""
+
+#. translators: %s: error message
+#: includes/admin/class-sccm-admin.php:117
+#, php-format
+msgid "The scan could not finish: %s"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:119
+msgid "Cookie scan: continuing where it stopped…"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:120
+msgid "A cookie scan is running in another browser tab."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:121
+msgid "Cookie scan finished. The results are in the Cookies tab."
+msgstr ""
+
+#. translators: %d: number of cookies
+#: includes/admin/class-sccm-admin.php:160
+#, php-format
+msgid "%d cookie is waiting for your approval."
+msgid_plural "%d cookies are waiting for your approval."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/class-sccm-admin.php:163
+msgid "Review now"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:185
+msgid "Banner on"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:185
+msgid "Banner off"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:186
+msgid "Help: how it works"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:281
+msgid "Save changes"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:309
+msgid "Enabled"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:433
+#: includes/admin/class-sccm-admin.php:597
+#: includes/admin/class-sccm-admin.php:614
+#: includes/admin/class-sccm-admin.php:644
+#: includes/admin/class-sccm-admin.php:676
+msgid "You are not allowed to do this."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:497
+msgid "Settings saved. Page caches of supported caching plugins and hosts were cleared; if you use another cache or a CDN, clear it so visitors get the new settings."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:513
+msgid "Could not save the cookie. Please check the name."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:515
+msgid "Cookie saved."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:525
+msgid "Cookie deleted."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:541
+msgid "Please choose a category for the cookie first."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:546
+msgid "Cookie approved. It now appears in the cookie list."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:546
+msgid "Cookie ignored. It will not be reported again."
+msgstr ""
+
+#. translators: %d: number of cookies
+#: includes/admin/class-sccm-admin.php:557
+#, php-format
+msgid "%d cookie ignored."
+msgid_plural "%d cookies ignored."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of cookies
+#: includes/admin/class-sccm-admin.php:569
+#, php-format
+msgid "%d cookie(s) added from the library."
+msgstr ""
+
+#. translators: 1: pages checked, 2: pages planned
+#: includes/admin/class-sccm-admin.php:585
+#, php-format
+msgid "Scan started: %1$d of %2$d page(s) checked. The rest is scanned in the background in the next minutes."
+msgstr ""
+
+#. translators: 1: pages, 2: services
+#: includes/admin/class-sccm-admin.php:589
+#, php-format
+msgid "Scan finished: %1$d page(s) checked, %2$d service(s) detected."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:682
+msgid "The scan took too long. Please start it again."
+msgstr ""
+
+#. translators: 1: pages, 2: cookies added automatically, 3: cookies waiting for review
+#: includes/admin/class-sccm-admin.php:700
+#, php-format
+msgid "Scan finished: %1$d page(s) opened in your browser. %2$d new cookie(s) were recognised and added automatically, %3$d need your review."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:706
+msgid "Your website did not allow itself to be opened in a frame (a security header), so only the server scan ran. Cookies set by scripts may be missing."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:719
+msgid "Email sent."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:719
+msgid "Nothing to send, or the email could not be sent."
+msgstr ""
+
+#. translators: %s: email addresses
+#: includes/admin/class-sccm-admin.php:731
+#, php-format
+msgid "Sample email sent to %s. If it does not arrive, check your spam folder or your site's email setup."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:733
+msgid "The sample email could not be sent. Your website may not be set up to send email."
+msgstr ""
+
+#. translators: %d: rows
+#: includes/admin/class-sccm-admin.php:758
+#, php-format
+msgid "%d old record(s) deleted."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:768
+msgid "All consent records deleted."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:791
+msgid "Please choose a file."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:798
+msgid "Settings imported."
+msgstr ""
+
+#. translators: %d: version
+#: includes/admin/class-sccm-admin.php:809
+#, php-format
+msgid "Consent version is now %d. Every visitor will be asked again (clear your page cache)."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:820
+#: includes/class-sccm-settings.php:152
+msgid "Cookie Policy"
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:821
+msgid "This page explains which cookies this website uses and why. You can change your choice at any time."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:831
+msgid "Cookie Policy page created and linked in the banner."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:843
+msgid "Settings reset to defaults."
+msgstr ""
+
+#: includes/admin/views/help.php:34
+msgid "How Cookie Consent works"
+msgstr ""
+
+#: includes/admin/views/help.php:35
+msgid "Close help"
+msgstr ""
+
+#: includes/admin/views/help.php:40
+msgid "A visitor arrives"
+msgstr ""
+
+#: includes/admin/views/help.php:41
+msgid "They see your banner. Until they choose, every non-essential script, video, map and font on the page stays switched off. Only the Necessary ones run."
+msgstr ""
+
+#: includes/admin/views/help.php:44
+msgid "They make a choice"
+msgstr ""
+
+#: includes/admin/views/help.php:45
+msgid "Allow all, Deny, or switch on the categories they want and click Allow selection. The things they allowed switch on immediately, without reloading the page."
+msgstr ""
+
+#: includes/admin/views/help.php:48
+msgid "The choice is remembered"
+msgstr ""
+
+#: includes/admin/views/help.php:49
+msgid "It is stored in a small cookie called sccm_consent together with a unique consent ID, and saved in your Consent Records as proof. The visitor can see their consent ID and change their choice at any time with the cookie settings button."
+msgstr ""
+
+#: includes/admin/views/help.php:52
+msgid "Your cookie list keeps itself current"
+msgstr ""
+
+#: includes/admin/views/help.php:53
+msgid "A scan looks at your pages. Well-known cookies (Google Analytics, Meta Pixel, YouTube and more) are put in the right category automatically. Anything it does not recognise waits in the Cookies tab for you to approve. Visitors see the list in the Details tab of the banner and on your Cookie Policy page."
+msgstr ""
+
+#: includes/admin/views/help.php:56
+msgid "It works with page caching"
+msgstr ""
+
+#: includes/admin/views/help.php:57
+msgid "Every visitor gets the same page. The banner and the visitor's choice are handled in their browser, so caching plugins and CDNs keep working. When you save settings or the cookie list changes, the plugin clears the page cache of common caching plugins and hosts (WP Engine, NitroPack, WP Rocket, LiteSpeed, W3 Total Cache, WP Super Cache, WP Fastest Cache, SiteGround, Breeze, Hummingbird). With any other cache or a CDN, clear it once after changing settings."
+msgstr ""
+
+#: includes/admin/views/help.php:61
+msgid "Every tab, button and option explained"
+msgstr ""
+
+#: includes/admin/views/help.php:69
+#: includes/admin/views/tab-dashboard.php:102
+msgid "Preview banner"
+msgstr ""
+
+#: includes/admin/views/help.php:69
+msgid "Opens your website with the banner showing, even if you already made a choice yourself."
+msgstr ""
+
+#: includes/admin/views/help.php:70
+msgid "Switch off / Switch on"
+msgstr ""
+
+#: includes/admin/views/help.php:70
+msgid "Turns the whole system off or on. When off, visitors see no banner and nothing is blocked."
+msgstr ""
+
+#: includes/admin/views/help.php:71
+#: includes/admin/views/tab-dashboard.php:111
+msgid "Needs your attention"
+msgstr ""
+
+#: includes/admin/views/help.php:71
+msgid "A short to-do list. Each line says what is missing and has one button to fix it. \"Everything looks good\" means there is nothing to do."
+msgstr ""
+
+#: includes/admin/views/help.php:72
+#: includes/admin/views/tab-dashboard.php:136
+msgid "Cookies on your site"
+msgstr ""
+
+#: includes/admin/views/help.php:72
+msgid "How many cookies are in your list, split by category."
+msgstr ""
+
+#: includes/admin/views/help.php:73
+msgid "Visitor choices"
+msgstr ""
+
+#: includes/admin/views/help.php:73
+msgid "How many visitors accepted, rejected or chose custom settings in the last 30 days."
+msgstr ""
+
+#: includes/admin/views/help.php:74
+msgid "Last scan / Scan now"
+msgstr ""
+
+#: includes/admin/views/help.php:74
+msgid "When your website was last checked for cookies, and a button to check it again now."
+msgstr ""
+
+#: includes/admin/views/help.php:82
+msgid "Needs your review"
+msgstr ""
+
+#: includes/admin/views/help.php:82
+msgid "Cookies the scan found but could not recognise. Nothing is shown to visitors until you decide. It only appears when something is waiting."
+msgstr ""
+
+#: includes/admin/views/help.php:83
+#: includes/admin/views/tab-cookies.php:136
+msgid "Approve"
+msgstr ""
+
+#: includes/admin/views/help.php:83
+msgid "Choose a category, then click Approve. The cookie joins the list visitors see. (If \"Ask again when the cookie list changes\" is on, visitors are asked again.)"
+msgstr ""
+
+#: includes/admin/views/help.php:84
+msgid "Ignore / Ignore all"
+msgstr ""
+
+#: includes/admin/views/help.php:84
+msgid "Hides a cookie that is not part of your website, for example one from a browser extension. It is not reported again."
+msgstr ""
+
+#: includes/admin/views/help.php:85
+#: includes/admin/views/tab-cookies.php:190
+#: includes/admin/views/tab-dashboard.php:56
+#: includes/admin/views/tab-dashboard.php:184
+msgid "Scan now"
+msgstr ""
+
+#: includes/admin/views/help.php:85
+msgid "Two steps. First the server reads your pages. Small websites (up to 40 pages) are scanned completely; bigger ones get more pages the bigger they are (100 pages → 55, 300 → 72, at most 80): every main page first, one item of each content type, then sub pages and sub-sub pages from every section in turn. Then the same pages open in hidden frames in your own browser (three at a time) with everything allowed, so cookies set by scripts (Google Analytics, HubSpot, chat widgets…) and by embedded services (YouTube, Calendly…) are found too. Nothing is stored for visitors. Known cookies are added automatically. It takes one to two minutes for a big website. You can switch to another browser tab meanwhile; if you leave the page, the server part finishes in the background and the browser part continues the next time you open a Cookie Consent screen."
+msgstr ""
+
+#: includes/admin/views/help.php:86
+msgid "Your cookie list"
+msgstr ""
+
+#: includes/admin/views/help.php:86
+msgid "Everything visitors see, grouped by category. \"Automatic\" means we added it, \"Added by you\" means you did."
+msgstr ""
+
+#: includes/admin/views/help.php:87
+msgid "Edit / Delete"
+msgstr ""
+
+#: includes/admin/views/help.php:87
+msgid "Change a cookie's category, provider, purpose or duration, or remove it from the list."
+msgstr ""
+
+#: includes/admin/views/help.php:88
+#: includes/admin/views/tab-cookies.php:50
+#: includes/admin/views/tab-cookies.php:249
+msgid "Add a cookie by hand"
+msgstr ""
+
+#: includes/admin/views/help.php:88
+msgid "For cookies a scan cannot see. A * in the name matches anything, so _ga_* covers _ga_ABC123."
+msgstr ""
+
+#: includes/admin/views/help.php:89
+msgid "Add all cookies of a known service"
+msgstr ""
+
+#: includes/admin/views/help.php:89
+msgid "Adds the usual cookies of a service such as Google Analytics in one click."
+msgstr ""
+
+#: includes/admin/views/help.php:90
+msgid "Scan report"
+msgstr ""
+
+#: includes/admin/views/help.php:90
+msgid "Technical details of the last scan: services found, other third-party files, and pages checked."
+msgstr ""
+
+#: includes/admin/views/help.php:98
+#: includes/admin/views/tab-banner.php:70
+msgid "Where should the banner appear?"
+msgstr ""
+
+#: includes/admin/views/help.php:98
+msgid "A bar at the bottom or top, a box in a corner, or a window in the centre of the page. Click the picture that looks right."
+msgstr ""
+
+#: includes/admin/views/help.php:99
+#: includes/admin/views/tab-banner.php:89
+msgid "Banner style"
+msgstr ""
+
+#: includes/admin/views/help.php:99
+msgid "Compact (default): your text and three buttons, Allow all, Deny and Customize. Customize opens the detailed window. Detailed: the window with tabs opens straight away."
+msgstr ""
+
+#: includes/admin/views/help.php:100
+msgid "What visitors see"
+msgstr ""
+
+#: includes/admin/views/help.php:100
+msgid "The detailed window has three tabs. Consent: your text and a switch per category. Details: every category opens to show the providers and each cookie (what it does, how long it lasts, its type). About: what cookies are, and the visitor's own choice, date and consent ID."
+msgstr ""
+
+#: includes/admin/views/help.php:101
+#: includes/admin/views/tab-banner.php:99
+msgid "Button order"
+msgstr ""
+
+#: includes/admin/views/help.php:101
+msgid "Four orders: Allow all · Deny · Allow selection (default), Deny · Allow all · Allow selection, or with \"Allow selection\" in the middle. In the compact style \"Customize\" takes the place of \"Allow selection\". Allow all, Deny and Allow selection always look exactly the same, which is what makes any order fair."
+msgstr ""
+
+#: includes/admin/views/help.php:102
+#: includes/admin/views/tab-banner.php:110
+msgid "Cookie settings button"
+msgstr ""
+
+#: includes/admin/views/help.php:102
+msgid "A small button visible after the choice, so visitors can change their mind. In a corner it is a round icon. At the bottom centre or on the left or right edge it is a slim tab with the word \"Cookies\"."
+msgstr ""
+
+#: includes/admin/views/help.php:103
+msgid "Colours and rounded corners"
+msgstr ""
+
+#: includes/admin/views/help.php:103
+msgid "Match the banner to your brand. Accept and Reject always share one style, because valid consent needs both choices to be equally easy."
+msgstr ""
+
+#: includes/admin/views/help.php:104
+#: includes/admin/views/tab-banner.php:148
+msgid "Links in the banner"
+msgstr ""
+
+#: includes/admin/views/help.php:104
+msgid "The Cookie Policy page and your Privacy Policy page, linked in the banner."
+msgstr ""
+
+#: includes/admin/views/help.php:105
+#: includes/admin/views/tab-banner.php:168
+msgid "Category names and descriptions"
+msgstr ""
+
+#: includes/admin/views/help.php:105
+msgid "Rename a category, rewrite its description, or hide one your website does not need."
+msgstr ""
+
+#: includes/admin/views/help.php:106
+msgid "Words in the banner, the cookie details and the consent"
+msgstr ""
+
+#: includes/admin/views/help.php:106
+msgid "Every sentence and button label visitors see. Leave a field empty to keep the default, which is translated automatically."
+msgstr ""
+
+#: includes/admin/views/help.php:107
+msgid "Custom CSS"
+msgstr ""
+
+#: includes/admin/views/help.php:107
+msgid "For developers: extra styles for the banner. Classes start with sccm-."
+msgstr ""
+
+#: includes/admin/views/help.php:115
+#: includes/admin/views/tab-settings.php:40
+msgid "Remember the choice for"
+msgstr ""
+
+#: includes/admin/views/help.php:115
+msgid "How long a visitor is left alone before the banner shows again. Pick a preset or type your own number of days. The longest possible is 395 days, because browsers do not keep a cookie longer. 0 forgets the choice when the browser closes."
+msgstr ""
+
+#: includes/admin/views/help.php:116
+#: includes/admin/views/tab-settings.php:55
+msgid "Ask again when the cookie list changes"
+msgstr ""
+
+#: includes/admin/views/help.php:116
+msgid "If you add a new cookie, visitors agreed to an older list, so they are asked again. A scan that finds nothing new never asks again."
+msgstr ""
+
+#: includes/admin/views/help.php:117
+msgid "Do not ask again after a Reject"
+msgstr ""
+
+#: includes/admin/views/help.php:117
+msgid "A waiting period (in days) after a visitor refuses, so you do not nag them."
+msgstr ""
+
+#: includes/admin/views/help.php:118
+#: includes/admin/views/tab-settings.php:57
+msgid "Reload the page when consent is withdrawn"
+msgstr ""
+
+#: includes/admin/views/help.php:118
+#: includes/admin/views/tab-settings.php:57
+msgid "A script that already ran cannot be stopped, so the page reloads to stop it."
+msgstr ""
+
+#: includes/admin/views/help.php:119
+msgid "Browser privacy signal"
+msgstr ""
+
+#: includes/admin/views/help.php:119
+msgid "Some browsers send \"do not track me\" (Global Privacy Control). We honour it: the chosen categories stay off, no banner is shown, and the choice is recorded."
+msgstr ""
+
+#: includes/admin/views/help.php:120
+msgid "Google Consent Mode"
+msgstr ""
+
+#: includes/admin/views/help.php:120
+msgid "Tells Google Analytics and Google Ads what the visitor allowed. Strict blocks Google tags until consent. Advanced lets them load without cookies. Leave on Strict unless your marketing team asks."
+msgstr ""
+
+#: includes/admin/views/help.php:121
+msgid "Google Tag Manager / Analytics ID"
+msgstr ""
+
+#: includes/admin/views/help.php:121
+msgid "Optional. Enter an ID and the plugin loads the tag for you with correct consent handling. Leave empty if your theme or another plugin already adds it."
+msgstr ""
+
+#: includes/admin/views/help.php:122
+#: includes/admin/views/tab-settings.php:104
+msgid "Automatic blocking"
+msgstr ""
+
+#: includes/admin/views/help.php:122
+msgid "Switches off scripts, videos, maps and fonts of known services until the visitor allows their category. \"Known services\" lists what is recognised, and \"Your own blocking rules\" adds more."
+msgstr ""
+
+#: includes/admin/views/help.php:123
+#: includes/admin/views/tab-settings.php:168
+msgid "Scan my website"
+msgstr ""
+
+#: includes/admin/views/help.php:123
+msgid "How often your website is checked automatically."
+msgstr ""
+
+#: includes/admin/views/help.php:124
+#: includes/admin/views/tab-settings.php:177
+msgid "Also learn from visitors"
+msgstr ""
+
+#: includes/admin/views/help.php:124
+msgid "Visitors' browsers can report cookies that only JavaScript sets. Only names are sent, never values, never from logged-in users, and only after several visitors report the same cookie."
+msgstr ""
+
+#: includes/admin/views/help.php:125
+msgid "Email about cookie changes / Daily check at / Send the email to"
+msgstr ""
+
+#: includes/admin/views/help.php:125
+msgid "Once a day, at the time you choose, the plugin checks whether anything changed in the last 24 hours: cookies added to the banner, cookies waiting for review, new third-party services. Only then it sends one email; no changes, no email. Scheduled scans run one hour before, so their findings are included. The email goes to the site admin (unless switched off) and up to 10 addresses, one per line. It contains no links into WordPress, because some recipients may not have an account. \"Send me a sample email\" checks delivery; the result of the last email is shown under it."
+msgstr ""
+
+#: includes/admin/views/help.php:126
+msgid "Consent records"
+msgstr ""
+
+#: includes/admin/views/help.php:126
+msgid "Whether to keep a record of every choice, how the visitor's IP address is stored (shortened, as a one-way code, or not at all), and how many months to keep records."
+msgstr ""
+
+#: includes/admin/views/help.php:134
+msgid "The table"
+msgstr ""
+
+#: includes/admin/views/help.php:134
+msgid "One line per choice: when, the consent ID, what they chose, which categories they allowed, whether a privacy signal was used, which cookie-list version they agreed to, and on which page."
+msgstr ""
+
+#: includes/admin/views/help.php:135
+msgid "Search and filters"
+msgstr ""
+
+#: includes/admin/views/help.php:135
+msgid "Paste a visitor's consent ID to find their record, or filter by choice or date."
+msgstr ""
+
+#: includes/admin/views/help.php:136
+msgid "Export CSV"
+msgstr ""
+
+#: includes/admin/views/help.php:136
+msgid "Downloads the records (with your current filters) as a spreadsheet file, for audits."
+msgstr ""
+
+#: includes/admin/views/help.php:137
+msgid "Delete old / Delete all"
+msgstr ""
+
+#: includes/admin/views/help.php:137
+msgid "Removes records older than your retention period, or every record. Deleting all cannot be undone."
+msgstr ""
+
+#: includes/admin/views/help.php:145
+#: includes/admin/views/tab-tools.php:21
+msgid "Ask all visitors again"
+msgstr ""
+
+#: includes/admin/views/help.php:145
+msgid "Shows the banner to everyone again, for example after you change how you use cookies."
+msgstr ""
+
+#: includes/admin/views/help.php:146
+msgid "Export / Import settings"
+msgstr ""
+
+#: includes/admin/views/help.php:146
+msgid "Copies all settings and your cookie list to a file, so you can use the same setup on another website."
+msgstr ""
+
+#: includes/admin/views/help.php:147
+#: includes/admin/views/tab-tools.php:45
+msgid "Delete all data when the plugin is deleted"
+msgstr ""
+
+#: includes/admin/views/help.php:147
+msgid "Off by default, so your consent records survive. Turn it on only if you want a clean removal."
+msgstr ""
+
+#: includes/admin/views/help.php:148
+#: includes/admin/views/tab-tools.php:50
+msgid "Reset settings to defaults"
+msgstr ""
+
+#: includes/admin/views/help.php:148
+msgid "Puts every setting back to how it was at the start. Your cookie list and records are kept."
+msgstr ""
+
+#: includes/admin/views/help.php:149
+#: includes/admin/views/tab-tools.php:55
+msgid "Developer reference"
+msgstr ""
+
+#: includes/admin/views/help.php:149
+msgid "Shortcodes, links and JavaScript you can use in your theme."
+msgstr ""
+
+#: includes/admin/views/help.php:154
+msgid "Words you may meet"
+msgstr ""
+
+#: includes/admin/views/help.php:156
+#: includes/admin/views/tab-records.php:28
+#: includes/admin/views/tab-records.php:29
+#: includes/admin/views/tab-records.php:57
+msgid "Consent ID"
+msgstr ""
+
+#: includes/admin/views/help.php:157
+msgid "A random code given to a visitor when they first choose. It identifies their choice, not them: it contains no name or email. They can see it in the About tab of the cookie banner."
+msgstr ""
+
+#: includes/admin/views/help.php:158
+#: includes/admin/views/tab-cookies.php:58
+#: includes/admin/views/tab-cookies.php:129
+#: includes/admin/views/tab-cookies.php:310
+#: includes/admin/views/tab-settings.php:118
+#: includes/admin/views/tab-settings.php:142
+msgid "Category"
+msgstr ""
+
+#: includes/admin/views/help.php:159
+msgid "Necessary (always on), Preferences, Statistics and Marketing. Visitors can refuse every category except Necessary."
+msgstr ""
+
+#: includes/admin/views/help.php:160
+#: includes/admin/views/tab-cookies.php:80
+#: includes/class-sccm-scanner.php:1181
+msgid "Needs review"
+msgstr ""
+
+#: includes/admin/views/help.php:161
+msgid "A cookie we found but could not recognise. It is not shown to visitors until you approve it."
+msgstr ""
+
+#: includes/admin/views/help.php:162
+msgid "Consent version"
+msgstr ""
+
+#: includes/admin/views/help.php:163
+msgid "A number that goes up when visitors need to be asked again. A visitor whose choice has an older version sees the banner again."
+msgstr ""
+
+#: includes/admin/views/help.php:164
+msgid "Blocking"
+msgstr ""
+
+#: includes/admin/views/help.php:165
+msgid "Keeping a script, video or font from loading until the visitor allows its category."
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:16
+msgid "Words in the banner"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:17
+msgid "Title"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:18
+msgid "Text (Consent tab)"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:19
+msgid "Tab: Consent"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:20
+msgid "Tab: Details"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:21
+msgid "Tab: About"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:22
+msgid "Accept button"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:23
+msgid "\"Allow selection\" button"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:24
+msgid "Reject button"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:25
+msgid "\"Customize\" button (compact style)"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:26
+msgid "Text (About tab)"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:27
+msgid "Cookie Policy link"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:28
+msgid "Privacy Policy link"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:29
+msgid "Close label"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:31
+msgid "Words in the cookie details"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:32
+msgid "Empty category text"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:33
+msgid "Provider name for your own cookies"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:34
+msgid "\"Maximum storage duration\" label"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:35
+msgid "\"Type\" label"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:36
+msgid "Type: cookie"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:37
+msgid "Type: local storage"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:38
+msgid "Type: session storage"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:39
+msgid "Cookie Policy table: name"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:40
+msgid "Cookie Policy table: provider"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:41
+msgid "Cookie Policy table: purpose"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:43
+msgid "Words about the visitor's consent"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:44
+msgid "\"Your current choice\" label"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:45
+msgid "\"Date\" label"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:46
+msgid "\"Your consent ID\" label"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:47
+msgid "No choice made yet"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:48
+msgid "Copy button"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:49
+msgid "Copied message"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:50
+msgid "Status: allowed all"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:51
+msgid "Status: denied"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:52
+msgid "Status: selection"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:53
+msgid "Status: GPC honoured"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:55
+msgid "Other messages"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:56
+msgid "Cookie settings button: accessible name"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:57
+msgid "Cookie settings button: text on the edge tab"
+msgstr ""
+
+#. translators: Field label; keep "%s" as it is: it stands for the list of categories in the visitor-facing text.
+#: includes/admin/views/tab-banner.php:59
+#, php-format
+msgid "Privacy signal (GPC) notice (%s = categories)"
+msgstr ""
+
+#. translators: Field label; keep "%s" as it is: it stands for the category name in the visitor-facing text.
+#: includes/admin/views/tab-banner.php:61
+#, php-format
+msgid "Blocked video/map text (%s = category)"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:62
+msgid "Blocked video/map button"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:76
+msgid "Bar at the bottom"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:77
+msgid "Bar at the top"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:78
+msgid "Box, bottom left"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:79
+msgid "Box, bottom right"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:80
+msgid "Window in the centre"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:92
+msgid "Compact: text and three buttons (Allow all, Deny, Customize)"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:93
+msgid "Detailed: tabs (Consent, Details, About) and category switches at once"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:95
+msgid "In the compact style, \"Customize\" opens the detailed window with the category switches and every cookie. Both styles let visitors refuse as easily as they accept."
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:102
+msgid "\"Allow selection\" (detailed style) and \"Customize\" (compact style) take the same place. Allow all, Deny and Allow selection always have the same size, colour and style, which is what the law asks for. With equal buttons any order is fine; \"Deny\" first is the more cautious choice that some regulators prefer."
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:106
+msgid "Preview the banner on your website (save first)"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:111
+msgid "After a visitor has chosen, this small button lets them change their mind at any time. In a corner it is a round icon. At the bottom centre or on the left or right edge it is a slim tab with the word \"Cookies\" (change the word under \"Other messages\")."
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:113
+msgid "Show the button"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:113
+msgid "You can also add the shortcode <code>[sccm_cookie_settings]</code> or a menu link to <code>#sccm-preferences</code>."
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:120
+msgid "Bottom left"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:121
+msgid "Bottom centre"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:122
+msgid "Bottom right"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:123
+msgid "Left edge, middle"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:124
+msgid "Right edge, middle"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:132
+msgid "Colours"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:133
+msgid "Allow all, Allow selection and Deny always look the same, so no choice is pushed on the visitor. This is required for valid consent."
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:136
+msgid "Background"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:137
+msgid "Text"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:138
+msgid "Buttons"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:139
+msgid "Button text"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:140
+msgid "Links"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:141
+msgid "Switch (on)"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:142
+msgid "Rounded corners (px)"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:151
+msgid "Cookie Policy page"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:154
+msgid "— None —"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:159
+msgid "Add the shortcode <code>[sccm_cookie_policy]</code> to that page to show your cookie list. It updates by itself after every scan or change (the page cache of that page is cleared too). No page yet? The Dashboard can create one for you."
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:162
+msgid "Hide the sidebar on the Cookie Policy page"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:162
+msgid "Removes widget sidebars from that page so the cookie list uses the full width. If your theme still shows an empty column, choose its \"No sidebar\" or \"Full width\" layout when editing the page."
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:163
+msgid "Link to Privacy Policy"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:163
+msgid "Uses the page chosen in Settings → Privacy."
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:169
+msgid "The four categories are fixed (they work with Google Consent Mode). You can rename them, rewrite their descriptions, or hide the ones your site does not use. Leave a field empty to use the default."
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:176
+msgid "Show to visitors"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:176
+msgid "A hidden category stays refused and its content stays blocked."
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:178
+#: includes/admin/views/tab-cookies.php:55
+#: includes/admin/views/tab-cookies.php:213
+#: includes/class-sccm-settings.php:143
+msgid "Name"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:179
+msgid "Description"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:188
+msgid "Leave a field empty to use the default text (it is translated automatically for other languages). Links, bold and italic are allowed."
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:205
+msgid "Custom CSS (advanced)"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:207
+msgid "CSS"
+msgstr ""
+
+#: includes/admin/views/tab-banner.php:207
+msgid "Optional. Elements use the <code>sccm-</code> prefix, e.g. <code>#sccm-banner</code> (first-visit banner), <code>#sccm-prefs</code> (cookie settings window), <code>.sccm-btn</code>, <code>.sccm-policy</code> (Cookie Policy list). Colours can be changed with variables: <code>.sccm-root { --sccm-radius: 0; }</code>."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:24
+#: includes/class-sccm-scanner.php:1321
+msgid "Cookie"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:25
+msgid "Local storage"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:26
+msgid "Session storage"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:29
+#: includes/admin/views/tab-cookies.php:30
+#: includes/admin/views/tab-cookies.php:31
+msgid "Automatic"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:32
+msgid "Added by you"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:33
+msgid "Imported"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:50
+msgid "Edit cookie"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:57
+msgid "Use * as a wildcard, for example _ga_* matches _ga_ABC123."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:64
+#: includes/admin/views/tab-cookies.php:214
+#: includes/class-sccm-settings.php:144
+msgid "Provider"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:65
+msgid "Who sets it, e.g. Google LLC"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:66
+#: includes/admin/views/tab-cookies.php:215
+msgid "What it does"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:68
+msgid "How long it lasts"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:69
+msgid "e.g. 1 year, Session"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:70
+#: includes/class-sccm-settings.php:147
+msgid "Type"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:77
+msgid "Status"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:79
+msgid "Shown to visitors"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:81
+msgid "Ignored (hidden, not reported again)"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:87
+msgid "Save cookie"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:88
+msgid "Cancel"
+msgstr ""
+
+#. translators: %d: number of cookies
+#: includes/admin/views/tab-cookies.php:99
+#, php-format
+msgid "%d cookie needs your review"
+msgid_plural "%d cookies need your review"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/views/tab-cookies.php:104
+msgid "Ignore all"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:107
+msgid "We could not tell what these are for. Choose a category for each one and click Approve. Approved cookies appear in the list your visitors see. Click Ignore for anything that is not a cookie of your website. Known cookies (like Google Analytics) never wait here, they are sorted automatically."
+msgstr ""
+
+#. translators: %s: time span like "2 days"
+#: includes/admin/views/tab-cookies.php:120
+#, php-format
+msgid "found %s ago"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:131
+msgid "Choose a category…"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:137
+msgid "Ignore"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:149
+msgid "Cookie scan"
+msgstr ""
+
+#. translators: %s: date and time
+#: includes/admin/views/tab-cookies.php:154
+#, php-format
+msgid "Last scan: %s."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:156
+msgid "Not scanned yet."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:161
+msgid "Automatic scans are off."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:162
+msgid "Scans run every day."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:162
+msgid "Scans run every week."
+msgstr ""
+
+#. translators: 1: pages opened, 2: names found
+#: includes/admin/views/tab-cookies.php:175
+#, php-format
+msgid "Browser part: %1$d page(s) opened with everything allowed; %2$d cookie and storage names seen."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:180
+msgid "Browser part: no page could be opened in the hidden frame (the site may forbid being shown in a frame, or a cache served a different page). Only the server part ran, so cookies set by scripts may be missing."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:184
+msgid "The last scan ran on the server only (scheduled scan or an old page). Click Scan now to also find cookies that scripts set."
+msgstr ""
+
+#. translators: %d: number of cookies
+#: includes/admin/views/tab-cookies.php:198
+#, php-format
+msgid "Your cookie list (%d)"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:201
+msgid "This is what visitors see in the cookie banner (Details tab) and on your Cookie Policy page."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:208
+#: includes/class-sccm-settings.php:141
+msgid "No cookies in this category."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:216
+msgid "Lasts"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:217
+msgid "Added"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:230
+#: includes/admin/views/tab-cookies.php:283
+msgid "Edit"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:234
+#: includes/admin/views/tab-cookies.php:287
+msgid "Delete"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:246
+msgid "Add a cookie yourself"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:247
+msgid "Only needed for cookies the scan cannot see, for example ones set after a login or inside a form."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:253
+msgid "or add all cookies of a known service:"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:264
+msgid "Add"
+msgstr ""
+
+#. translators: %d: number of cookies
+#: includes/admin/views/tab-cookies.php:273
+#, php-format
+msgid "Ignored cookies (%d)"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:276
+msgid "Hidden from visitors and never reported again. Click Edit to bring one back."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:299
+msgid "Scan report (details)"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:305
+msgid "Services found on your pages"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:307
+msgid "No known third-party services found."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:310
+#: includes/admin/views/tab-settings.php:117
+msgid "Service"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:310
+msgid "Found in"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:323
+msgid "Other third-party files"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:324
+msgid "External scripts, frames or stylesheets we do not know yet, so they are not blocked. If one of them tracks visitors, add its address under Settings → Blocking and Google → Your own blocking rules."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:326
+msgid "None found."
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:329
+msgid "Host"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:329
+msgid "Example"
+msgstr ""
+
+#: includes/admin/views/tab-cookies.php:341
+msgid "Pages checked"
+msgstr ""
+
+#. translators: %s: cookie names
+#: includes/admin/views/tab-cookies.php:351
+#, php-format
+msgid "Cookies the server sent: %s"
+msgstr ""
+
+#. translators: %s: cookie and storage names
+#: includes/admin/views/tab-cookies.php:359
+#, php-format
+msgid "Cookies and storage seen in your browser: %s"
+msgstr ""
+
+#. translators: %s: plugin names
+#: includes/admin/views/tab-dashboard.php:31
+#, php-format
+msgid "Another cookie consent plugin is active: %s. Visitors would see two banners and the two plugins would block each other. Deactivate it once this banner is set up."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:34
+msgid "Open Plugins"
+msgstr ""
+
+#. translators: %d: number of cookies
+#: includes/admin/views/tab-dashboard.php:44
+#, php-format
+msgid "%d cookie was found and needs a category before visitors can see it in the list."
+msgid_plural "%d cookies were found and need a category before visitors can see them in the list."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/views/tab-dashboard.php:47
+msgid "Review cookies"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:55
+msgid "Your website has not been scanned yet. A scan finds the cookies and services your pages use and fills the cookie list for you."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:64
+msgid "You do not have a Cookie Policy page yet. Visitors expect a page that lists your cookies. We can create it for you; it updates itself."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:65
+msgid "Create the page"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:73
+msgid "Google Consent Mode is switched off. If you use Google Analytics or Google Ads, turn it on so Google respects your visitors' choices."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:74
+msgid "Open settings"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:81
+#: includes/admin/views/tab-records.php:17
+msgid "Allowed all"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:82
+#: includes/admin/views/tab-records.php:18
+msgid "Denied"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:83
+#: includes/admin/views/tab-records.php:19
+#: includes/class-sccm-settings.php:166
+msgid "Allowed a selection"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:84
+msgid "Privacy signal (GPC)"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:91
+msgid "Your cookie banner is live"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:91
+msgid "Your cookie banner is switched off"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:96
+msgid "New visitors see the banner. Analytics, marketing and other non-essential scripts stay blocked until they choose."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:97
+msgid "Visitors see no banner and nothing is blocked. Switch it on to start collecting consent."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:105
+msgid "Switch off"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:105
+msgid "Switch on"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:113
+msgid "Everything looks good. Nothing to do right now."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:143
+msgid "Open the cookie list"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:147
+msgid "Visitor choices, last 30 days"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:160
+msgid "No choices recorded yet. They appear here as soon as visitors use the banner."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:162
+msgid "See every record"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:166
+msgid "Last scan"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:168
+msgid "ago"
+msgstr ""
+
+#. translators: 1: pages, 2: services
+#: includes/admin/views/tab-dashboard.php:173
+#, php-format
+msgid "%1$d pages checked, %2$d services found."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:180
+msgid "No scan yet."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:190
+msgid "How it works"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:192
+msgid "We find your cookies"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:192
+msgid "A scan checks your pages. Well-known cookies (Google Analytics, Meta Pixel, YouTube…) are sorted into the right category automatically."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:193
+msgid "You approve the unknown ones"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:193
+msgid "If a cookie is not recognised, it waits in the Cookies tab. Pick a category and click Approve. That is the only manual step."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:194
+msgid "Visitors choose"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:194
+msgid "Until they do, non-essential scripts are blocked. Their choice is remembered and given a consent ID."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:195
+msgid "You have the proof"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:195
+msgid "Every choice is saved in Consent Records, and your cookie policy page stays up to date by itself."
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:197
+msgid "Open the full guide"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:16
+msgid "All choices"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:20
+msgid "GPC signal"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:23
+msgid "Every time a visitor chooses, a record is saved here: their consent ID, the date and time (UTC), what they chose, which categories they allowed and on which page. A visitor can read their consent ID in the About tab of the cookie banner, so you can find their record by pasting it in the search box."
+msgstr ""
+
+#: includes/admin/views/tab-records.php:30
+#: includes/admin/views/tab-records.php:58
+msgid "Choice"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:36
+msgid "From"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:37
+msgid "To"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:38
+msgid "Filter"
+msgstr ""
+
+#. translators: %d: number of records
+#: includes/admin/views/tab-records.php:49
+#, php-format
+msgid "Export CSV (%d records)"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:56
+msgid "Date / time (UTC)"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:59
+msgid "Categories"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:60
+msgid "GPC"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:61
+msgid "Version"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:62
+msgid "Page"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:63
+msgid "IP"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:67
+msgid "No consent records yet."
+msgstr ""
+
+#: includes/admin/views/tab-records.php:75
+msgid "Yes"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:75
+msgid "No"
+msgstr ""
+
+#. translators: %s: link to the settings tab
+#: includes/admin/views/tab-records.php:105
+#, php-format
+msgid "How long records are kept, and how the IP address is stored, is set in %s."
+msgstr ""
+
+#: includes/admin/views/tab-records.php:114
+msgid "Delete records older than the retention period now"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:118
+msgid "Delete all consent records"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:22
+msgid "Until the browser is closed"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:23
+#: includes/data/services.php:217
+msgid "1 week"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:24
+msgid "1 month"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:25
+#: includes/data/services.php:343
+#: includes/data/services.php:354
+#: includes/data/services.php:356
+#: includes/data/services.php:446
+msgid "3 months"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:26
+#: includes/data/services.php:77
+#: includes/data/services.php:159
+#: includes/data/services.php:206
+#: includes/data/services.php:245
+#: includes/data/services.php:368
+#: includes/data/services.php:416
+#: includes/data/services.php:417
+#: includes/data/services.php:456
+#: includes/data/services.php:457
+msgid "6 months"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:27
+msgid "12 months (most common)"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:28
+msgid "13 months (the longest browsers allow)"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:37
+msgid "When should visitors be asked again?"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:46
+msgid "Another number of days…"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:49
+msgid "days"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:51
+msgid "After this time the banner is shown again. Regulators often suggest 6 to 12 months. 395 days (13 months) is the maximum, because browsers do not keep a cookie longer. 0 means the choice is forgotten when the browser is closed."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:55
+msgid "When a new cookie is added or moved to another category, every visitor is asked again, because they agreed to an older list. A scan that finds nothing new never asks again."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:56
+msgid "Do not ask again after a \"Reject\" for (days)"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:56
+msgid "Optional. 0 = no waiting period. Some rules ask you not to bother visitors again for about 6 months (180 days) after they refuse."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:63
+msgid "Browser privacy signal (Global Privacy Control)"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:66
+msgid "Respect the signal"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:66
+msgid "Some browsers tell websites \"do not track me\". When that happens, the chosen categories count as refused, no banner is needed, and the choice is recorded. <a href=\"https://globalprivacycontrol.org/\" target=\"_blank\" rel=\"noopener\">About GPC</a>"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:69
+msgid "The signal applies to"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:72
+msgid "All non-essential cookies (recommended)"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:73
+msgid "Marketing only"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:81
+msgid "Blocking and Google"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:83
+msgid "Google Consent Mode v2"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:88
+msgid "Mode"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:91
+msgid "Strict: block Google tags until consent (recommended)"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:92
+msgid "Advanced: load Google tags, cookieless until consent"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:93
+msgid "Off: do not send Consent Mode signals"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:95
+msgid "In Strict and Advanced mode, consent is \"denied\" before any Google tag runs and is updated when the visitor chooses."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:97
+msgid "Redact ads data"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:97
+msgid "Removes ad click identifiers when marketing consent is denied."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:98
+msgid "URL passthrough"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:98
+msgid "Passes ad click information through URLs when cookies are denied. Leave off unless your marketing team needs it."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:99
+msgid "Google Tag Manager ID"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:99
+msgid "Optional, e.g. GTM-XXXXXXX. The plugin then loads GTM with correct consent handling. Leave empty if your theme or another plugin already adds it (it is still blocked until consent)."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:100
+msgid "Google Analytics 4 ID"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:100
+msgid "Optional, e.g. G-XXXXXXXXXX. Only if GA4 is not added in another way."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:107
+msgid "Block scripts, videos and fonts until consent"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:107
+msgid "Matching tags in the page are switched off until the visitor allows their category. You can also tag a script yourself: <code>&lt;script type=\"text/plain\" data-sccm-category=\"analytics\"&gt;</code>"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:108
+msgid "Show a message instead of a blocked video or map"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:108
+msgid "Visitors see a short text with an \"Allow and load\" button instead of an empty space."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:112
+msgid "Known services"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:113
+msgid "Blocked automatically when found on your pages. Untick a service only if you are sure it does not need consent."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:116
+msgid "Block"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:119
+msgid "Recognised by"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:137
+msgid "Your own blocking rules"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:138
+msgid "Block any other script, video or stylesheet whose address or code contains the text you enter (for example a domain name)."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:141
+msgid "Address or code contains"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:154
+msgid "Remove"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:159
+msgid "Add a rule"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:163
+msgid "Cookie scan and email alerts"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:171
+msgid "Every day"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:172
+msgid "Every week"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:173
+msgid "Never (only when I click \"Scan now\")"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:175
+msgid "The scan looks for cookies and third-party services on your pages. Small websites (up to 40 pages) are scanned completely; bigger ones get more pages the bigger they are (100 pages → 55, 300 → 72, at most 80): every main page first, one item of each content type, then sub pages and sub-sub pages from every section in turn."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:177
+msgid "Catches cookies that only JavaScript sets, which a scan cannot see. Only cookie names are sent (never values), never from logged-in users, and a cookie is listed only after several different visitors reported it, so your list stays short."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:178
+msgid "Email about cookie changes"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:178
+msgid "Once a day the plugin checks whether anything changed in the last 24 hours (cookies added to the banner, cookies waiting for review, new third-party services). Only then it sends one email; no changes, no email."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:185
+msgid "Daily check at"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:188
+msgid "Your site's time zone (Settings → General). Scheduled scans run one hour earlier, so the email includes what they found."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:193
+msgid "Send the email to"
+msgstr ""
+
+#. translators: %s: the site admin email address
+#: includes/admin/views/tab-settings.php:197
+#, php-format
+msgid "One email address per line (up to 10). Leave empty to use the site admin email: %s"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:205
+msgid "Also send to the site admin"
+msgstr ""
+
+#. translators: %s: the site admin email address
+#: includes/admin/views/tab-settings.php:209
+#, php-format
+msgid "The admin email address from Settings → General: %s"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:215
+msgid "Try it"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:217
+msgid "Send me a sample email"
+msgstr ""
+
+#. translators: %d: items waiting
+#: includes/admin/views/tab-settings.php:221
+#, php-format
+msgid "Send waiting alerts now (%d)"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:224
+msgid "Save your changes first. The sample goes to the addresses saved above."
+msgstr ""
+
+#. translators: 1: date and time, 2: email addresses
+#: includes/admin/views/tab-settings.php:232
+#, php-format
+msgid "Last email: %1$s, handed to your server for %2$s. If it did not arrive, check the spam folder; some hosts need an SMTP plugin (e.g. WP Mail SMTP) to deliver mail."
+msgstr ""
+
+#. translators: 1: date and time, 2: error message
+#: includes/admin/views/tab-settings.php:239
+#, php-format
+msgid "Last email failed (%1$s): %2$s Your server could not send email. Install an SMTP plugin (e.g. WP Mail SMTP) or ask your host."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:250
+msgid "Consent records (the proof)"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:253
+msgid "Keep a record of every choice"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:253
+msgid "Each choice is saved with its consent ID, date, categories and page. Keep this on if you may have to prove consent."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:256
+msgid "Visitor IP address"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:259
+msgid "Save it shortened (last part removed)"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:260
+msgid "Save it as a one-way code"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:261
+msgid "Do not save it"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:264
+msgid "Keep records for (months)"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:264
+msgid "Older records are deleted automatically every day. 0 = keep forever."
+msgstr ""
+
+#: includes/admin/views/tab-tools.php:12
+msgid "Ask everyone again"
+msgstr ""
+
+#. translators: %d: version
+#: includes/admin/views/tab-tools.php:16
+#, php-format
+msgid "Current consent version: %d. Increasing it shows the banner again to every visitor, for example after you change your cookie use or policy."
+msgstr ""
+
+#: includes/admin/views/tab-tools.php:26
+msgid "Use these settings on another website"
+msgstr ""
+
+#: includes/admin/views/tab-tools.php:27
+msgid "Export all settings and the cookie list to a file, then import it on another website that uses this plugin."
+msgstr ""
+
+#: includes/admin/views/tab-tools.php:30
+msgid "Export settings"
+msgstr ""
+
+#: includes/admin/views/tab-tools.php:34
+msgid "Settings file (.json)"
+msgstr ""
+
+#: includes/admin/views/tab-tools.php:36
+msgid "Also import the cookie list"
+msgstr ""
+
+#: includes/admin/views/tab-tools.php:37
+msgid "Import settings"
+msgstr ""
+
+#: includes/admin/views/tab-tools.php:42
+msgid "Uninstall"
+msgstr ""
+
+#: includes/admin/views/tab-tools.php:45
+msgid "Removes settings, the cookie list and all consent records. Keep this off if you may need the records as evidence."
+msgstr ""
+
+#: includes/admin/views/tab-tools.php:57
+msgid "cookie list grouped by category"
+msgstr ""
+
+#: includes/admin/views/tab-tools.php:58
+msgid "opens the cookie settings window"
+msgstr ""
+
+#: includes/admin/views/tab-tools.php:59
+msgid "any link (e.g. a menu item) that opens the cookie settings window"
+msgstr ""
+
+#: includes/admin/views/tab-tools.php:60
+msgid "run a script only after consent"
+msgstr ""
+
+#: includes/class-sccm-categories.php:28
+msgid "Necessary"
+msgstr ""
+
+#: includes/class-sccm-categories.php:29
+msgid "Necessary cookies make the website usable by enabling basic functions such as page navigation, security and remembering your cookie choice. The website cannot work properly without them."
+msgstr ""
+
+#: includes/class-sccm-categories.php:32
+msgid "Preferences"
+msgstr ""
+
+#: includes/class-sccm-categories.php:33
+msgid "Preference cookies let the website remember choices that change how it looks or behaves, such as your language or region, and provide extra features like embedded maps, fonts and chat."
+msgstr ""
+
+#: includes/class-sccm-categories.php:36
+msgid "Statistics"
+msgstr ""
+
+#: includes/class-sccm-categories.php:37
+msgid "Statistics cookies help us understand how visitors use the website by collecting and reporting information anonymously, so we can improve it."
+msgstr ""
+
+#: includes/class-sccm-categories.php:40
+msgid "Marketing"
+msgstr ""
+
+#: includes/class-sccm-categories.php:41
+msgid "Marketing cookies are used to track visitors across websites. The aim is to show ads that are relevant to you, and to measure how well advertising campaigns perform."
+msgstr ""
+
+#: includes/class-sccm-scanner.php:394
+msgid "Google Fonts are loaded from inside CSS (e.g. an @import or a combined stylesheet). These requests cannot be blocked by the plugin. Host the fonts on your own server to avoid them."
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1052
+msgid "No valid email address."
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1054
+msgid "WordPress could not send the email (wp_mail returned false)."
+msgstr ""
+
+#. translators: 1: site name, 2: number of cookies
+#: includes/class-sccm-scanner.php:1099
+#, php-format
+msgid "[%1$s] %2$d new cookie needs review"
+msgid_plural "[%1$s] %2$d new cookies need review"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: 1: site name, 2: number of cookies
+#: includes/class-sccm-scanner.php:1102
+#, php-format
+msgid "[%1$s] %2$d cookie was added to your cookie banner"
+msgid_plural "[%1$s] %2$d cookies were added to your cookie banner"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: 1: site name, 2: number of resources
+#: includes/class-sccm-scanner.php:1105
+#, php-format
+msgid "[%1$s] %2$d new third-party resource found"
+msgid_plural "[%1$s] %2$d new third-party resources found"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: subject
+#: includes/class-sccm-scanner.php:1109
+#, php-format
+msgid "Sample: %s"
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1162
+#: includes/class-sccm-scanner.php:1215
+msgid "Cookie changes in the last 24 hours"
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1173
+msgid "needs review"
+msgid_plural "need review"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-sccm-scanner.php:1175
+msgid "added automatically"
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1181
+msgid "We could not tell what these cookies are for. Someone who manages the website should choose a category for each one in WordPress under Cookie Consent → Cookies. Until then they are not shown to visitors."
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1190
+msgid "Added automatically"
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1190
+msgid "These are well-known cookies. They were put in the right category for you. Nothing to do unless you disagree."
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1203
+msgid "Other third-party resources"
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1203
+msgid "External files were found that are not in the service library, so they are not blocked. If one of them tracks visitors, a blocking rule can be added in WordPress under Cookie Consent → Settings."
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1220
+msgid "NEEDS REVIEW"
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1221
+msgid "Someone who manages the website should choose a category for each one in WordPress under Cookie Consent → Cookies. Until then visitors do not see them."
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1228
+msgid "ADDED AUTOMATICALLY"
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1235
+msgid "OTHER THIRD-PARTY RESOURCES (not blocked)"
+msgstr ""
+
+#. translators: 1: email addresses, 2: time of day
+#: includes/class-sccm-scanner.php:1274
+#, php-format
+msgid "Sent by Smart Cookie Consent Manager to %1$s. This email is sent once a day at %2$s, only when something changed. The website's administrator can change this in WordPress under Cookie Consent → Settings."
+msgstr ""
+
+#. translators: 1: number of cookies, 2: count per category, e.g. "Necessary 3 · Statistics 2"
+#: includes/class-sccm-scanner.php:1289
+#, php-format
+msgid "Your cookie banner now lists %1$d cookie (%2$s)."
+msgid_plural "Your cookie banner now lists %1$d cookies (%2$s)."
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %d: number of items
+#: includes/class-sccm-scanner.php:1344
+#, php-format
+msgid "…and %d more. See the full list in the plugin."
+msgstr ""
+
+#: includes/class-sccm-settings.php:130
+msgid "This website uses cookies"
+msgstr ""
+
+#: includes/class-sccm-settings.php:131
+msgid "We use cookies to make this website work. With your consent, we also use cookies to understand how the site is used and to support our marketing. Choose which cookies you allow, or accept or reject them all. You can change your choice at any time."
+msgstr ""
+
+#: includes/class-sccm-settings.php:132
+msgid "Consent"
+msgstr ""
+
+#: includes/class-sccm-settings.php:133
+msgid "Details"
+msgstr ""
+
+#: includes/class-sccm-settings.php:134
+msgid "About"
+msgstr ""
+
+#: includes/class-sccm-settings.php:135
+msgid "Allow all"
+msgstr ""
+
+#: includes/class-sccm-settings.php:136
+msgid "Deny"
+msgstr ""
+
+#: includes/class-sccm-settings.php:137
+msgid "Allow selection"
+msgstr ""
+
+#: includes/class-sccm-settings.php:138
+msgid "Customize"
+msgstr ""
+
+#: includes/class-sccm-settings.php:139
+msgid "Cookies are small text files that websites store in your browser. The law says we may only store cookies that are strictly necessary for the website to work. For all other types of cookies we need your permission. Some cookies are placed by third-party services that appear on our pages. You can change or withdraw your consent at any time with the cookie settings button."
+msgstr ""
+
+#: includes/class-sccm-settings.php:142
+#: includes/data/services.php:29
+#: includes/data/services.php:38
+#: includes/data/services.php:51
+#: includes/data/services.php:106
+#: includes/data/services.php:116
+#: includes/data/services.php:173
+#: includes/data/services.php:182
+#: includes/data/services.php:193
+#: includes/data/services.php:306
+#: includes/data/services.php:326
+msgid "This website"
+msgstr ""
+
+#: includes/class-sccm-settings.php:145
+msgid "Purpose"
+msgstr ""
+
+#: includes/class-sccm-settings.php:146
+msgid "Maximum storage duration"
+msgstr ""
+
+#: includes/class-sccm-settings.php:148
+msgid "HTTP Cookie"
+msgstr ""
+
+#: includes/class-sccm-settings.php:149
+msgid "HTML Local Storage"
+msgstr ""
+
+#: includes/class-sccm-settings.php:150
+msgid "HTML Session Storage"
+msgstr ""
+
+#: includes/class-sccm-settings.php:153
+msgid "Privacy Policy"
+msgstr ""
+
+#: includes/class-sccm-settings.php:154
+msgid "Cookie settings"
+msgstr ""
+
+#: includes/class-sccm-settings.php:156
+msgid "Close"
+msgstr ""
+
+#: includes/class-sccm-settings.php:158
+msgid "Your current choice"
+msgstr ""
+
+#: includes/class-sccm-settings.php:159
+msgid "Date"
+msgstr ""
+
+#: includes/class-sccm-settings.php:160
+msgid "Your consent ID"
+msgstr ""
+
+#: includes/class-sccm-settings.php:161
+msgid "You have not made a choice yet."
+msgstr ""
+
+#: includes/class-sccm-settings.php:162
+msgid "Copy"
+msgstr ""
+
+#: includes/class-sccm-settings.php:163
+msgid "Copied"
+msgstr ""
+
+#: includes/class-sccm-settings.php:164
+msgid "Allowed all cookies"
+msgstr ""
+
+#: includes/class-sccm-settings.php:165
+msgid "Denied non-essential cookies"
+msgstr ""
+
+#: includes/class-sccm-settings.php:167
+msgid "Browser privacy signal (GPC) honoured"
+msgstr ""
+
+#. translators: %s: list of cookie categories, e.g. "Statistics, Marketing".
+#: includes/class-sccm-settings.php:169
+#, php-format
+msgid "Your browser sent a Global Privacy Control (GPC) signal. We have honoured it, so the following cookies stay off: %s."
+msgstr ""
+
+#. translators: %s: cookie category name, e.g. "Marketing".
+#: includes/class-sccm-settings.php:172
+#, php-format
+msgid "This content is provided by a third party and may set %s cookies. It is blocked until you allow them."
+msgstr ""
+
+#: includes/class-sccm-settings.php:173
+msgid "Allow and load"
+msgstr ""
+
+#: includes/class-sccm-settings.php:417
+msgid "Allow all · Deny · Allow selection / Customize"
+msgstr ""
+
+#: includes/class-sccm-settings.php:418
+msgid "Deny · Allow all · Allow selection / Customize"
+msgstr ""
+
+#: includes/class-sccm-settings.php:419
+msgid "Allow all · Allow selection / Customize · Deny"
+msgstr ""
+
+#: includes/class-sccm-settings.php:420
+msgid "Deny · Allow selection / Customize · Allow all"
+msgstr ""
+
+#: includes/class-sccm-settings.php:473
+msgid "This file is not a valid Smart Cookie Consent Manager export."
+msgstr ""
+
+#. translators: %s: date
+#: includes/class-sccm-shortcodes.php:172
+#, php-format
+msgid "Cookie list last updated: %s"
+msgstr ""
+
+#: includes/data/services.php:33
+#: includes/data/services.php:45
+#: includes/data/services.php:67
+#: includes/data/services.php:100
+#: includes/data/services.php:177
+#: includes/data/services.php:197
+#: includes/data/services.php:288
+#: includes/data/services.php:290
+#: includes/data/services.php:291
+#: includes/data/services.php:300
+#: includes/data/services.php:344
+#: includes/data/services.php:366
+#: includes/data/services.php:407
+msgid "1 year"
+msgstr ""
+
+#: includes/data/services.php:33
+msgid "Stores your cookie consent choice."
+msgstr ""
+
+#: includes/data/services.php:42
+#: includes/data/services.php:43
+msgid "Session / 14 days"
+msgstr ""
+
+#: includes/data/services.php:42
+msgid "Keeps logged-in users signed in."
+msgstr ""
+
+#: includes/data/services.php:43
+msgid "Secures the login session."
+msgstr ""
+
+#: includes/data/services.php:44
+#: includes/data/services.php:46
+#: includes/data/services.php:55
+#: includes/data/services.php:56
+#: includes/data/services.php:68
+#: includes/data/services.php:79
+#: includes/data/services.php:90
+#: includes/data/services.php:120
+#: includes/data/services.php:129
+#: includes/data/services.php:140
+#: includes/data/services.php:187
+#: includes/data/services.php:207
+#: includes/data/services.php:320
+#: includes/data/services.php:330
+#: includes/data/services.php:419
+#: includes/data/services.php:455
+msgid "Session"
+msgstr ""
+
+#: includes/data/services.php:44
+msgid "Checks whether the browser accepts cookies."
+msgstr ""
+
+#: includes/data/services.php:45
+msgid "Stores dashboard preferences of logged-in users."
+msgstr ""
+
+#: includes/data/services.php:46
+msgid "Remembers the language chosen on the login screen."
+msgstr ""
+
+#: includes/data/services.php:55
+msgid "Tracks changes to the shopping cart."
+msgstr ""
+
+#: includes/data/services.php:56
+msgid "Knows whether the cart has items."
+msgstr ""
+
+#: includes/data/services.php:57
+msgid "2 days"
+msgstr ""
+
+#: includes/data/services.php:57
+msgid "Keeps the shopping session."
+msgstr ""
+
+#: includes/data/services.php:66
+#: includes/data/services.php:89
+#: includes/data/services.php:101
+#: includes/data/services.php:301
+#: includes/data/services.php:311
+#: includes/data/services.php:418
+msgid "30 minutes"
+msgstr ""
+
+#: includes/data/services.php:66
+msgid "Bot protection."
+msgstr ""
+
+#: includes/data/services.php:67
+msgid "Proves a security challenge was passed."
+msgstr ""
+
+#: includes/data/services.php:68
+msgid "Rate limiting and bot protection (Cloudflare)."
+msgstr ""
+
+#: includes/data/services.php:77
+msgid "Protects forms against spam and abuse."
+msgstr ""
+
+#: includes/data/services.php:78
+#: includes/data/services.php:110
+#: includes/data/services.php:138
+#: includes/data/services.php:139
+#: includes/data/services.php:226
+#: includes/data/services.php:458
+#: includes/data/services.php:459
+msgid "Persistent"
+msgstr ""
+
+#: includes/data/services.php:78
+#: includes/data/services.php:79
+msgid "Distinguishes humans from bots to protect forms."
+msgstr ""
+
+#: includes/data/services.php:89
+msgid "Distinguishes humans from bots (Cloudflare, used by Calendly)."
+msgstr ""
+
+#: includes/data/services.php:90
+msgid "Rate limiting and bot protection (Cloudflare, used by Calendly)."
+msgstr ""
+
+#: includes/data/services.php:91
+msgid "21 days"
+msgstr ""
+
+#: includes/data/services.php:91
+msgid "Keeps the Calendly booking session working."
+msgstr ""
+
+#: includes/data/services.php:100
+#: includes/data/services.php:101
+msgid "Fraud prevention for card payments."
+msgstr ""
+
+#: includes/data/services.php:110
+msgid "Stores page layout state for this website (Elementor page builder)."
+msgstr ""
+
+#: includes/data/services.php:115
+msgid "PHP session"
+msgstr ""
+
+#: includes/data/services.php:120
+msgid "Keeps your session on this website (for example forms and logins)."
+msgstr ""
+
+#: includes/data/services.php:129
+msgid "Shows whether the page was served from the speed-up cache. Contains no personal data."
+msgstr ""
+
+#: includes/data/services.php:138
+msgid "Stores the languages the website can be translated into."
+msgstr ""
+
+#: includes/data/services.php:139
+msgid "Remembers whether the language is chosen automatically from your browser."
+msgstr ""
+
+#: includes/data/services.php:140
+msgid "Remembers the language you chose."
+msgstr ""
+
+#: includes/data/services.php:159
+msgid "Remembers your Google preferences and is used for personalised ads."
+msgstr ""
+
+#: includes/data/services.php:168
+#: includes/data/services.php:235
+#: includes/data/services.php:236
+#: includes/data/services.php:266
+#: includes/data/services.php:267
+#: includes/data/services.php:277
+#: includes/data/services.php:355
+#: includes/data/services.php:398
+#: includes/data/services.php:428
+msgid "2 years"
+msgstr ""
+
+#: includes/data/services.php:168
+msgid "Collects statistics about the Vimeo videos you watch."
+msgstr ""
+
+#: includes/data/services.php:177
+#: includes/data/services.php:186
+#: includes/data/services.php:188
+msgid "Remembers the selected language."
+msgstr ""
+
+#: includes/data/services.php:186
+#: includes/data/services.php:188
+#: includes/data/services.php:289
+#: includes/data/services.php:345
+#: includes/data/services.php:367
+#: includes/data/services.php:388
+msgid "1 day"
+msgstr ""
+
+#: includes/data/services.php:187
+msgid "Checks whether cookies work, for the language redirect."
+msgstr ""
+
+#: includes/data/services.php:192
+msgid "WordPress comments"
+msgstr ""
+
+#: includes/data/services.php:197
+msgid "Remembers your name and email for the comment form (only if you ask it to)."
+msgstr ""
+
+#: includes/data/services.php:206
+msgid "Identifies the live chat visitor."
+msgstr ""
+
+#: includes/data/services.php:207
+msgid "Keeps the live chat connection."
+msgstr ""
+
+#: includes/data/services.php:216
+msgid "9 months"
+msgstr ""
+
+#: includes/data/services.php:216
+#: includes/data/services.php:235
+msgid "Identifies the chat visitor."
+msgstr ""
+
+#: includes/data/services.php:217
+#: includes/data/services.php:236
+msgid "Keeps the chat session."
+msgstr ""
+
+#: includes/data/services.php:226
+msgid "Keeps the live chat conversation."
+msgstr ""
+
+#: includes/data/services.php:245
+msgid "Keeps the live chat session."
+msgstr ""
+
+#: includes/data/services.php:266
+#: includes/data/services.php:277
+msgid "Distinguishes unique visitors."
+msgstr ""
+
+#: includes/data/services.php:267
+msgid "Keeps the session state."
+msgstr ""
+
+#: includes/data/services.php:278
+msgid "24 hours"
+msgstr ""
+
+#: includes/data/services.php:278
+msgid "Distinguishes visitors."
+msgstr ""
+
+#: includes/data/services.php:279
+msgid "1 minute"
+msgstr ""
+
+#: includes/data/services.php:279
+msgid "Limits the request rate."
+msgstr ""
+
+#: includes/data/services.php:288
+msgid "Stores the Clarity user ID."
+msgstr ""
+
+#: includes/data/services.php:289
+msgid "Connects page views into one session recording."
+msgstr ""
+
+#: includes/data/services.php:290
+msgid "Identifies the first time Clarity saw this browser."
+msgstr ""
+
+#: includes/data/services.php:291
+msgid "Microsoft user ID, used for analytics and ads."
+msgstr ""
+
+#: includes/data/services.php:300
+msgid "Stores a unique user ID."
+msgstr ""
+
+#: includes/data/services.php:301
+msgid "Holds current session data."
+msgstr ""
+
+#: includes/data/services.php:310
+#: includes/data/services.php:379
+#: includes/data/services.php:389
+#: includes/data/services.php:437
+msgid "13 months"
+msgstr ""
+
+#: includes/data/services.php:310
+msgid "Stores a unique visitor ID."
+msgstr ""
+
+#: includes/data/services.php:311
+msgid "Holds session data."
+msgstr ""
+
+#: includes/data/services.php:320
+msgid "Stores an anonymous visitor ID for statistics."
+msgstr ""
+
+#: includes/data/services.php:330
+msgid "Remembers how you arrived at the shop, to see which channels lead to orders."
+msgstr ""
+
+#: includes/data/services.php:343
+msgid "Stores ad-click information to measure conversions."
+msgstr ""
+
+#: includes/data/services.php:344
+msgid "Used by Google DoubleClick to show and measure ads."
+msgstr ""
+
+#: includes/data/services.php:345
+msgid "Checks whether your browser accepts cookies (Google DoubleClick)."
+msgstr ""
+
+#: includes/data/services.php:354
+msgid "Identifies browsers for advertising and analytics."
+msgstr ""
+
+#: includes/data/services.php:355
+msgid "Stores the last ad click."
+msgstr ""
+
+#: includes/data/services.php:356
+msgid "Used by Meta to deliver, measure and improve the relevance of ads."
+msgstr ""
+
+#: includes/data/services.php:365
+#: includes/data/services.php:369
+#: includes/data/services.php:370
+msgid "30 days"
+msgstr ""
+
+#: includes/data/services.php:365
+msgid "Measures LinkedIn ad conversions."
+msgstr ""
+
+#: includes/data/services.php:366
+msgid "LinkedIn browser identifier, used for ads and security."
+msgstr ""
+
+#: includes/data/services.php:367
+msgid "Selects the LinkedIn data centre."
+msgstr ""
+
+#: includes/data/services.php:368
+msgid "Stores your cookie choices for LinkedIn."
+msgstr ""
+
+#: includes/data/services.php:369
+msgid "Syncs LinkedIn ad IDs."
+msgstr ""
+
+#: includes/data/services.php:370
+msgid "Stores when LinkedIn last synced ad data."
+msgstr ""
+
+#: includes/data/services.php:379
+msgid "Measures TikTok ad performance."
+msgstr ""
+
+#: includes/data/services.php:388
+msgid "Measures Microsoft Ads conversions."
+msgstr ""
+
+#: includes/data/services.php:389
+msgid "Identifies returning visitors for Microsoft Ads."
+msgstr ""
+
+#: includes/data/services.php:398
+msgid "Measures X ad conversions."
+msgstr ""
+
+#: includes/data/services.php:407
+msgid "Measures Pinterest ad conversions."
+msgstr ""
+
+#: includes/data/services.php:416
+msgid "Tracks visitors for marketing."
+msgstr ""
+
+#: includes/data/services.php:417
+msgid "Identifies the visitor for HubSpot forms and marketing."
+msgstr ""
+
+#: includes/data/services.php:418
+msgid "Tracks sessions."
+msgstr ""
+
+#: includes/data/services.php:419
+msgid "Detects a new browser session."
+msgstr ""
+
+#: includes/data/services.php:428
+msgid "Identifies the visitor for email marketing."
+msgstr ""
+
+#: includes/data/services.php:437
+msgid "Measures Snapchat ad performance."
+msgstr ""
+
+#: includes/data/services.php:446
+msgid "Measures Reddit ad performance."
+msgstr ""
+
+#: includes/data/services.php:455
+msgid "Registers a unique ID to keep statistics of which YouTube videos you have seen."
+msgstr ""
+
+#: includes/data/services.php:456
+msgid "Estimates your bandwidth on pages with embedded YouTube videos."
+msgstr ""
+
+#: includes/data/services.php:457
+msgid "Stores your cookie choices for YouTube."
+msgstr ""
+
+#: includes/data/services.php:458
+msgid "Stores your YouTube video player preferences."
+msgstr ""
+
+#: includes/data/services.php:459
+msgid "Stores the last YouTube search or video for the embedded player."
+msgstr ""

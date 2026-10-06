@@ -3,20 +3,19 @@
 ## Automated checks (run before every commit)
 
 ```bash
-# PHP syntax (all files)
-find . -name "*.php" -not -path "./node_modules/*" -print0 | xargs -0 -n1 php -l
+npm install          # first time only (dev dependency: Playwright)
+npm test             # php -l on every PHP file, node --check on JS, PHP unit tests (tests/php/run.php)
 
-# JS syntax
-node --check assets/js/sccm-frontend.js
-node --check assets/js/sccm-admin.js
-
-# JS unit tests (consent logic, wildcard matching, GPC, cookie parsing)
-npm install   # first time only (dev dependency: jsdom)
-npm test
+# Need a development WordPress with the plugin active (see tests/e2e/README.md):
+SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 102 browser checks (visitor side)
+SCCM_WP=/path/to/wp npm run test:wp                              # 120 checks: cookie list, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent-record filters, CSV safety, banner HTML (WP-CLI)
+SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 44 checks of the admin screens, incl. a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
 ```
 
-End-to-end (optional, local): `tests/e2e/README.md` explains how to run WordPress locally
-with SQLite and drive it with Playwright.
+`test:wp` and `e2e:admin` reset the cookie list and settings of the site they run on: dev sites only.
+
+Release check: WordPress.org **Plugin Check** on the files of the zip (`git archive`): only the
+`mailto:` Author URI is reported.
 
 ## Manual test checklist (staging)
 
@@ -39,20 +38,46 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 - [ ] C2 Consent Log row: choice `reject_all`, categories = necessary only.
 
 ### D. Manage Preferences (features 3, 10)
-- [ ] D1 Necessary switch on + disabled; all others off.
+- [ ] D1 Necessary switch on + disabled; all others off (in the banner and in the window).
 - [ ] D2 Expanding a category lists its cookies.
+- [ ] D0 Default (compact) banner: Allow all, Deny, Customize. Customize opens the window with
+      the tabs and Allow selection; Esc/close without choosing shows the banner again.
+- [ ] D5 Banner style "Detailed": banner has Consent / Details / About tabs; Consent shows Necessary / Preferences /
+      Statistics / Marketing switches; "Allow selection" releases only the ticked ones; the three
+      buttons look identical; Banner tab → Button order changes the order (four orders; "Allow
+      selection" / "Customize" share a place). No separate "Show details" link (the Details tab
+      is the way in).
+- [ ] D7 Choose "Allow all", then Banner tab → "Preview the banner": the preview looks like a
+      first visit (no category switched on; About says you have not made a choice yet).
+- [ ] D8 Button texts stay on one line in every position (bottom/top bar, corners, centre) on
+      desktop and phone; in a wide bottom/top bar the buttons of the detailed style sit on the
+      right at a natural width.
+- [ ] D10 Compact banner at the bottom or top: the three buttons are stacked vertically (right of
+      the text on desktop/tablet, under it on phones), all the same width.
+- [ ] D9 Theme look does not leak in: on a site whose theme styles buttons (e.g. Elementor
+      global buttons) the banner buttons keep the plugin's size, font and colours, also on hover.
+- [ ] D6 Details tab: each category opens to providers, each provider to cookie cards (name,
+      purpose, maximum storage duration, type). About tab: choice, date and consent ID; Copy works.
 - [ ] D3 Enable Analytics only → only analytics tags load; log row `custom` with `analytics`.
 - [ ] D4 Tab/Shift+Tab stay inside the modal; Esc closes without saving.
 
 ### E. Change / withdraw (feature 4)
+- [ ] E0 After updating the plugin on a site with NitroPack/CDN: purge once, then a private
+      window shows the same banner as a logged-in browser (script URL is
+      `…/uploads/sccm-assets/sccm-frontend.<hash>.js`).
 - [ ] E1 Floating button, `[sccm_cookie_settings]` and a menu link to `#sccm-preferences`
-      all open the preferences window.
+      all open the cookie settings dialog.
+- [ ] E3 Banner tab → cookie settings button: try all five positions. Corners show a round icon;
+      bottom centre / left edge / right edge show a "Cookies" tab attached to the edge; no
+      horizontal scrolling on mobile.
 - [ ] E2 After Accept All, switch Analytics off and save → `_ga*` cookies deleted, page
       reloads, analytics no longer loads, new log row.
 
 ### F. Remember & re-ask (feature 6)
 - [ ] F1 Reload/other pages → no banner, choice applied.
 - [ ] F2 Admin → Tools → "Ask everyone again" → banner shows again on next page view.
+- [ ] F5 Settings → "Remember the choice for": pick "Until the browser is closed" → the
+      `sccm_consent` cookie is a session cookie; pick 3 months → it expires in about 90 days.
 - [ ] F3 Add/approve a new cookie in the registry → banner shows again (if setting on).
 - [ ] F4 Set consent period to 1 day, change system clock or edit cookie `t` → banner returns.
 
@@ -64,14 +89,47 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
       `consent update` after a choice.
 
 ### H. Consent records (feature 8)
-- [ ] H1 Visitor's Consent ID (preferences window) matches the log row.
+- [ ] H1 Visitor's Consent ID (About tab) matches the log row.
 - [ ] H2 CSV export contains consent ID, choice, categories, date/time, GPC, version, URL.
 - [ ] H3 IP shown as anonymised/hashed according to the setting.
 
 ### I. Scanner (feature 9)
-- [ ] I1 Add a test script that sets `test_unknown_cookie` → it appears as Pending.
-- [ ] I2 Scanner tab → "Scan now" lists detected services and cookies.
-- [ ] I3 Email digest received (check with a mail-logging plugin on staging).
+- [ ] I1 Add a test script that sets `test_unknown_cookie`; browse the site with two different
+      browsers/devices (logged out) → after both, it appears under **Needs review**. A single
+      browser, or a logged-in admin, never adds it.
+- [ ] I2 Cookies tab → "Scan now": the progress shows step 1 (server) and step 2 (each page in
+      your browser). Afterwards cookies set by scripts (e.g. `_ga`, HubSpot) and third-party
+      cookies of embedded services (e.g. YouTube, Calendly) are listed in the right category.
+      Compare the totals with Cookiebot's report for the same site.
+- [ ] I3 Settings → Cookie scan and email alerts → add two addresses → "Send me a sample email":
+      both receive a readable HTML email (check spam folder and a mail-logging plugin).
+- [ ] I4 Approving a cookie needs a category choice; "Ignore all" empties the review list.
+- [ ] I5 After updating the plugin, the admin screens look right without clearing any cache
+      (assets are versioned by file time).
+- [ ] I7 Settings → "Daily check at": pick a time. After a change (approve nothing; run "Scan now"
+      on a site where it finds something), the email arrives once at that time, at the site admin
+      and every listed address, without links into WordPress. A day without changes sends nothing.
+      (To test without waiting: WP Crontrol → run "sccm_daily_event" now.)
+- [ ] I9 Cookies → "Scan now" on a website with many pages: "Step 1 of 2 … (x of y)", then
+      "Step 2 of 2: opening page x of y" with y = all pages for a small site, 40–80 for a big one;
+      the main menu pages and some sub pages of each section are among them. The page must stay
+      open until it finishes (one to two minutes).
+- [ ] I10 During "Scan now", switch to another browser tab for a minute: the scan keeps counting
+      pages. Click another Cookie Consent tab mid-scan: the browser asks "Leave site?"; after
+      leaving, the new screen shows "Cookie scan: continuing where it stopped…" and finishes.
+- [ ] I8 Settings shows "Last email: … handed to your server". "Last email failed" means the host
+      cannot send mail: install an SMTP plugin (e.g. WP Mail SMTP).
+- [ ] I6 Open the sample email in a mail app in dark mode (Outlook, Gmail app, Apple Mail):
+      readable, header not inverted into a light block, the "Review and approve" button has
+      its padding.
+
+### L. Cookie Policy page (feature 10)
+- [ ] L1 On a dark theme the list is readable and uses the theme font; no words split in the
+      middle ("Provider", "YouTube").
+- [ ] L2 No widget sidebar on the page (Banner → Links → "Hide the sidebar"); with the option
+      off the theme sidebar is back.
+- [ ] L3 Approve a cookie (or run a scan that adds one) with NitroPack / WP Engine cache on: the
+      page shows it after a reload without clearing the cache by hand.
 
 ### J. GPC (feature 11)
 - [ ] J1 Enable GPC in the browser (Firefox: Settings → Privacy → "Tell websites not to sell
@@ -89,3 +147,6 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 - [ ] K2 Language switcher / translation plugin translates banner text.
 - [ ] K3 Mobile (375px): banner and modal usable, no horizontal scroll.
 - [ ] K4 Export settings on site A → import on site B → same configuration.
+- [ ] K5 With Cookiebot (or another consent plugin) still active, the Dashboard warns about it.
+      Deactivate it so visitors see one banner.
+- [ ] K6 AMP pages (official AMP plugin) show no banner and no rewritten scripts.

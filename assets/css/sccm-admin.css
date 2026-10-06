@@ -1,0 +1,703 @@
+/* Smart Cookie Consent Manager — admin. */
+.sccm-admin {
+	max-width: 1100px;
+}
+
+.sccm-admin .sccm-tab {
+	margin-top: 16px;
+}
+
+/* ---------------------------------------------------------------- Header + help */
+
+.sccm-header {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+}
+
+.sccm-header h1 {
+	margin: 0;
+	padding: 0;
+}
+
+.sccm-header .sccm-help-toggle {
+	align-items: center;
+	display: inline-flex;
+	gap: 4px;
+	margin: 0;
+}
+
+/* Help button in the top right corner of the header. */
+.sccm-header .sccm-header__help {
+	margin-inline-start: auto;
+}
+
+.sccm-help-toggle .dashicons {
+	font-size: 18px;
+	height: 18px;
+	width: 18px;
+}
+
+.sccm-pill {
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+	padding: 2px 10px;
+}
+
+.sccm-pill--on {
+	background: #edfaef;
+	color: #1a6b2a;
+}
+
+.sccm-pill--off {
+	background: #fcf0f1;
+	color: #a1262e;
+}
+
+.sccm-help {
+	background: #fff;
+	border: 1px solid #2271b1;
+	border-radius: 6px;
+	margin: 16px 0;
+	padding: 4px 22px 18px;
+}
+
+.sccm-help[hidden] {
+	display: none;
+}
+
+.sccm-help__head {
+	align-items: center;
+	display: flex;
+	justify-content: space-between;
+}
+
+.sccm-help__flow {
+	counter-reset: step;
+	list-style: none;
+	margin: 8px 0 16px;
+	padding: 0;
+}
+
+.sccm-help__flow li {
+	counter-increment: step;
+	margin: 0 0 10px;
+	padding-inline-start: 38px;
+	position: relative;
+}
+
+.sccm-help__flow li::before {
+	background: #2271b1;
+	border-radius: 50%;
+	color: #fff;
+	content: counter(step);
+	font-size: 13px;
+	font-weight: 600;
+	height: 26px;
+	inset-inline-start: 0;
+	line-height: 26px;
+	position: absolute;
+	text-align: center;
+	top: -1px;
+	width: 26px;
+}
+
+.sccm-help__flow strong {
+	display: block;
+}
+
+.sccm-help__section {
+	border-top: 1px solid #dcdcde;
+	padding: 8px 0;
+}
+
+.sccm-help__section summary {
+	cursor: pointer;
+	font-weight: 600;
+}
+
+.sccm-help dl {
+	margin: 8px 0 0;
+}
+
+.sccm-help dt {
+	font-weight: 600;
+	margin-top: 10px;
+}
+
+.sccm-help dd {
+	color: #3c434a;
+	margin: 2px 0 0;
+}
+
+/* ---------------------------------------------------------------- Panels, cards */
+
+.sccm-cards {
+	display: grid;
+	gap: 16px;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	margin: 16px 0;
+}
+
+.sccm-card,
+.sccm-panel {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 6px;
+	padding: 16px 20px;
+}
+
+.sccm-panel {
+	margin-bottom: 16px;
+}
+
+.sccm-panel > h2:first-child,
+.sccm-card h3 {
+	margin-top: 0;
+}
+
+.sccm-panel--attention {
+	background: #fffbeb;
+	border-color: #dba617;
+}
+
+.sccm-panel__head,
+.sccm-scanstrip,
+.sccm-listhead {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+	justify-content: space-between;
+}
+
+.sccm-panel__head h2 {
+	margin: 0;
+}
+
+.sccm-listhead {
+	margin-top: 24px;
+}
+
+.sccm-listhead h2 {
+	margin: 0;
+}
+
+.sccm-listhead .description {
+	margin: 0;
+}
+
+.sccm-scanstrip form {
+	margin: 0;
+}
+
+.sccm-scanstate {
+	font-size: 13px;
+	margin: 6px 0 0;
+}
+
+.sccm-scanstate--ok {
+	color: #1a6b2a;
+}
+
+.sccm-scanstate--warn {
+	color: #8a5a00;
+}
+
+.sccm-big {
+	font-size: 34px;
+	font-weight: 600;
+	line-height: 1.1;
+	margin: 4px 0 8px;
+}
+
+.sccm-big--text {
+	font-size: 22px;
+}
+
+/* ---------------------------------------------------------------- Dashboard */
+
+.sccm-hero {
+	align-items: center;
+	background: #edfaef;
+	border: 1px solid #68de7c;
+	border-radius: 6px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 18px;
+	padding: 18px 22px;
+}
+
+.sccm-hero--off {
+	background: #fcf0f1;
+	border-color: #f86368;
+}
+
+.sccm-hero__icon {
+	color: #1a6b2a;
+	font-size: 38px;
+	height: 38px;
+	width: 38px;
+}
+
+.sccm-hero--off .sccm-hero__icon {
+	color: #a1262e;
+}
+
+.sccm-hero__text {
+	flex: 1 1 320px;
+}
+
+.sccm-hero__text h2 {
+	margin: 0 0 4px;
+}
+
+.sccm-hero__text p {
+	margin: 0;
+}
+
+.sccm-hero__actions {
+	align-items: center;
+	display: flex;
+	gap: 8px;
+}
+
+.sccm-hero__actions form {
+	margin: 0;
+}
+
+.sccm-allgood {
+	color: #1a6b2a;
+	font-weight: 600;
+	margin: 0;
+}
+
+.sccm-todo {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.sccm-todo li {
+	align-items: center;
+	border-top: 1px solid #f0f0f1;
+	display: flex;
+	gap: 12px;
+	padding: 12px 0;
+}
+
+.sccm-todo li:first-child {
+	border-top: 0;
+}
+
+.sccm-todo__text {
+	flex: 1 1 auto;
+}
+
+.sccm-todo form {
+	margin: 0;
+}
+
+.sccm-todo--warn .dashicons {
+	color: #b45309;
+}
+
+.sccm-todo--info .dashicons {
+	color: #2271b1;
+}
+
+.sccm-legend,
+.sccm-bars {
+	list-style: none;
+	margin: 0 0 10px;
+	padding: 0;
+}
+
+.sccm-legend li {
+	margin: 3px 0;
+}
+
+.sccm-bars li {
+	align-items: center;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: 9em 1fr 2.5em;
+	margin: 4px 0;
+}
+
+.sccm-bars__track {
+	background: #f0f0f1;
+	border-radius: 999px;
+	display: block;
+	height: 8px;
+	overflow: hidden;
+}
+
+.sccm-bars__fill {
+	background: #2271b1;
+	display: block;
+	height: 100%;
+}
+
+.sccm-steps {
+	display: grid;
+	gap: 14px;
+	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+	list-style: none;
+	margin: 0 0 12px;
+	padding: 0;
+}
+
+.sccm-steps li {
+	background: #f6f7f7;
+	border-radius: 6px;
+	padding: 12px 14px;
+}
+
+.sccm-steps strong,
+.sccm-steps span {
+	display: block;
+}
+
+.sccm-steps span {
+	color: #50575e;
+	font-size: 13px;
+	margin-top: 4px;
+}
+
+/* ---------------------------------------------------------------- Category colours */
+
+.sccm-dot {
+	border-radius: 50%;
+	display: inline-block;
+	height: 10px;
+	margin-inline-end: 4px;
+	width: 10px;
+}
+
+.sccm-dot--necessary {
+	background: #6b7280;
+}
+
+.sccm-dot--functional {
+	background: #2563eb;
+}
+
+.sccm-dot--analytics {
+	background: #16a34a;
+}
+
+.sccm-dot--marketing {
+	background: #ea580c;
+}
+
+.sccm-count,
+.sccm-badge-count {
+	background: #f0f0f1;
+	border-radius: 999px;
+	color: #3c434a;
+	font-size: 12px;
+	font-weight: 600;
+	padding: 1px 8px;
+}
+
+.sccm-badge-count {
+	background: #d63638;
+	color: #fff;
+}
+
+/* ---------------------------------------------------------------- Cookies tab */
+
+.sccm-inbox td {
+	vertical-align: middle;
+}
+
+.sccm-inbox__name small {
+	color: #646970;
+	display: block;
+	margin-top: 2px;
+}
+
+.sccm-approve {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	justify-content: flex-end;
+	margin: 0;
+}
+
+.sccm-catblock {
+	margin: 18px 0;
+}
+
+.sccm-catblock h3 {
+	margin: 0 0 8px;
+}
+
+.sccm-table-admin td {
+	vertical-align: top;
+}
+
+.sccm-row-actions {
+	white-space: nowrap;
+}
+
+.sccm-row-actions form {
+	display: inline-block;
+	margin: 0 0 0 4px;
+}
+
+.sccm-inline-form,
+.sccm-inline-forms form {
+	display: inline-block;
+	margin: 0 8px 12px 0;
+}
+
+.sccm-inline-forms {
+	margin: 12px 0 20px;
+}
+
+.sccm-filters {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 12px 0;
+}
+
+.sccm-tag {
+	background: #eef4fa;
+	border-radius: 4px;
+	color: #135e96;
+	font-size: 11px;
+	padding: 1px 6px;
+}
+
+.sccm-break {
+	word-break: break-all;
+}
+
+.sccm-services td,
+.sccm-services th {
+	vertical-align: middle;
+}
+
+.sccm-list li {
+	margin-bottom: 4px;
+}
+
+/* ---------------------------------------------------------------- Collapsible sections */
+
+.sccm-fold {
+	padding: 0;
+}
+
+.sccm-fold > summary {
+	cursor: pointer;
+	font-size: 15px;
+	font-weight: 600;
+	padding: 14px 20px;
+}
+
+.sccm-fold[open] > summary {
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.sccm-fold > :not(summary) {
+	margin-inline: 20px;
+}
+
+/* Full-width content keeps the same 20px gap on the right as on the left. */
+.sccm-fold > table,
+.sccm-fold > .notice,
+.sccm-fold > div {
+	box-sizing: border-box;
+	margin-inline: 20px;
+	width: calc(100% - 40px);
+}
+
+.sccm-fold > :last-child {
+	margin-bottom: 18px;
+}
+
+.sccm-scan-status {
+	align-items: center;
+	display: flex;
+	font-weight: 600;
+	gap: 6px;
+}
+
+.sccm-scan-status .spinner {
+	float: none;
+	margin: 0;
+}
+
+.sccm-expiry-days {
+	margin-inline-start: 6px;
+}
+
+/* ---------------------------------------------------------------- Position pickers */
+
+.sccm-picker {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 14px;
+	margin: 10px 0 6px;
+}
+
+.sccm-pos {
+	cursor: pointer;
+	display: block;
+	position: relative;
+	text-align: center;
+	width: 118px;
+}
+
+.sccm-pos input {
+	opacity: 0;
+	position: absolute;
+}
+
+.sccm-pos__screen {
+	background: #f0f0f1;
+	border: 2px solid #c3c4c7;
+	border-radius: 6px;
+	display: block;
+	height: 74px;
+	overflow: hidden;
+	position: relative;
+}
+
+.sccm-pos input:checked + .sccm-pos__screen {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.sccm-pos input:focus-visible + .sccm-pos__screen {
+	outline: 2px solid #2271b1;
+	outline-offset: 2px;
+}
+
+.sccm-pos__label {
+	display: block;
+	font-size: 12px;
+	margin-top: 5px;
+}
+
+.sccm-pos__ui {
+	background: #50575e;
+	display: block;
+	position: absolute;
+}
+
+.sccm-picker--banner .sccm-pos__ui {
+	border-radius: 3px;
+}
+
+.sccm-picker--banner .sccm-pos__ui--bottom,
+.sccm-picker--banner .sccm-pos__ui--top {
+	height: 16px;
+	left: 6px;
+	right: 6px;
+}
+
+.sccm-picker--banner .sccm-pos__ui--bottom {
+	bottom: 6px;
+}
+
+.sccm-picker--banner .sccm-pos__ui--top {
+	top: 6px;
+}
+
+.sccm-picker--banner .sccm-pos__ui--bottom-left,
+.sccm-picker--banner .sccm-pos__ui--bottom-right {
+	bottom: 6px;
+	height: 26px;
+	width: 46px;
+}
+
+.sccm-picker--banner .sccm-pos__ui--bottom-left {
+	left: 6px;
+}
+
+.sccm-picker--banner .sccm-pos__ui--bottom-right {
+	right: 6px;
+}
+
+.sccm-picker--banner .sccm-pos__ui--center {
+	height: 34px;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: 58px;
+}
+
+.sccm-picker--widget .sccm-pos__ui {
+	border-radius: 50%;
+	height: 16px;
+	width: 16px;
+}
+
+.sccm-picker--widget .sccm-pos__ui--bottom-left {
+	bottom: 6px;
+	left: 6px;
+}
+
+.sccm-picker--widget .sccm-pos__ui--bottom-right {
+	bottom: 6px;
+	right: 6px;
+}
+
+.sccm-picker--widget .sccm-pos__ui--bottom-center {
+	border-radius: 4px 4px 0 0;
+	bottom: 0;
+	height: 9px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 30px;
+}
+
+.sccm-picker--widget .sccm-pos__ui--left-center,
+.sccm-picker--widget .sccm-pos__ui--right-center {
+	height: 30px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 9px;
+}
+
+.sccm-picker--widget .sccm-pos__ui--left-center {
+	border-radius: 0 4px 4px 0;
+	left: 0;
+}
+
+.sccm-picker--widget .sccm-pos__ui--right-center {
+	border-radius: 4px 0 0 4px;
+	right: 0;
+}
+
+@media (max-width: 782px) {
+	.sccm-todo li {
+		align-items: flex-start;
+		flex-wrap: wrap;
+	}
+
+	.sccm-bars li {
+		grid-template-columns: 7em 1fr 2em;
+	}
+}
+
+/* Settings → email alerts: result of the last email */
+.sccm-mail-status {
+	border-left: 4px solid #00a32a;
+	margin: 10px 0 0;
+	max-width: 720px;
+	padding: 4px 10px;
+}
+
+.sccm-mail-status--error {
+	background: #fcf0f1;
+	border-left-color: #d63638;
+}

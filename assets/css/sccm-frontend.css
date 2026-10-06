@@ -1,0 +1,869 @@
+/* Smart Cookie Consent Manager — front end.
+ * Colours come from CSS variables printed by the plugin (Banner settings).
+ * Override any variable in your theme: .sccm-root { --sccm-radius: 0; }
+ *
+ * Theme isolation: the banner, the settings window and the widget live in <div id="sccm-app">
+ * at the end of <body>, and their rules start with #sccm-app. Theme rules such as
+ * ".elementor-kit-5 button:hover" or "button { padding: 20px }" are less specific, so the
+ * banner looks the same on every site. The Cookie Policy list (.sccm-policy) is the opposite:
+ * it is part of the page and takes its fonts and colours from the theme.
+ */
+.sccm-root {
+	--sccm-bg: #ffffff;
+	--sccm-text: #1f2937;
+	--sccm-btn-bg: #1f2937;
+	--sccm-btn-text: #ffffff;
+	--sccm-link: #1d4ed8;
+	--sccm-toggle: #15803d;
+	--sccm-radius: 8px;
+	--sccm-muted: rgba(31, 41, 55, 0.72);
+	--sccm-border: rgba(31, 41, 55, 0.18);
+	--sccm-soft: rgba(31, 41, 55, 0.06);
+	--sccm-slider-off: rgba(31, 41, 55, 0.32);
+}
+
+#sccm-app .sccm-root {
+	box-sizing: border-box;
+	color: var(--sccm-text);
+	direction: inherit;
+	font-family: inherit;
+	font-size: 15px;
+	font-style: normal;
+	font-weight: 400;
+	letter-spacing: normal;
+	line-height: 1.5;
+	text-align: start;
+	text-transform: none;
+	z-index: 2147483000;
+}
+
+#sccm-app .sccm-root *,
+#sccm-app .sccm-root *::before,
+#sccm-app .sccm-root *::after {
+	box-sizing: border-box;
+}
+
+#sccm-app [hidden] {
+	display: none !important;
+}
+
+/* Neutral starting point for elements that themes like to style. */
+#sccm-app p,
+#sccm-app label {
+	color: inherit;
+	font-size: inherit;
+	letter-spacing: inherit;
+	line-height: inherit;
+	margin: 0;
+	padding: 0;
+	text-transform: none;
+}
+
+#sccm-app button {
+	-webkit-appearance: none;
+	appearance: none;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	color: inherit;
+	cursor: pointer;
+	float: none;
+	font-family: inherit;
+	font-size: inherit;
+	font-style: normal;
+	font-weight: inherit;
+	height: auto;
+	letter-spacing: normal;
+	line-height: inherit;
+	margin: 0;
+	max-width: none;
+	min-height: 0;
+	min-width: 0;
+	padding: 0;
+	text-decoration: none;
+	text-shadow: none;
+	text-transform: none;
+	width: auto;
+}
+
+#sccm-app a {
+	box-shadow: none;
+	color: var(--sccm-link);
+	font-weight: inherit;
+	text-decoration: underline;
+}
+
+#sccm-app code {
+	background: none;
+	color: inherit;
+	padding: 0;
+}
+
+/* ---------------------------------------------------------------- Buttons */
+
+/* Deny, Allow selection and Allow all always look exactly the same (fair consent). */
+#sccm-app .sccm-btn,
+.sccm-placeholder .sccm-btn.sccm-btn,
+a.sccm-open-preferences.sccm-btn {
+	-webkit-appearance: none;
+	appearance: none;
+	align-items: center;
+	background: var(--sccm-btn-bg);
+	border: 2px solid var(--sccm-btn-bg);
+	border-radius: var(--sccm-radius);
+	box-shadow: none;
+	color: var(--sccm-btn-text);
+	cursor: pointer;
+	display: inline-flex;
+	font-family: inherit;
+	font-size: 15px;
+	font-weight: 600;
+	justify-content: center;
+	letter-spacing: normal;
+	line-height: 1.25;
+	margin: 0;
+	min-height: 46px;
+	padding: 10px 18px;
+	text-align: center;
+	text-decoration: none;
+	text-transform: none;
+	transition: opacity 0.15s ease;
+	white-space: nowrap;
+}
+
+#sccm-app .sccm-btn:hover,
+#sccm-app .sccm-btn:focus,
+.sccm-placeholder .sccm-btn.sccm-btn:hover,
+a.sccm-open-preferences.sccm-btn:hover {
+	background: var(--sccm-btn-bg);
+	color: var(--sccm-btn-text);
+	opacity: 0.88;
+}
+
+/* "Customize" (compact banner) is a secondary action; Allow all and Deny always share one style. */
+#sccm-app .sccm-btn--customize,
+#sccm-app .sccm-btn--customize:hover,
+#sccm-app .sccm-btn--customize:focus {
+	background: transparent;
+	color: var(--sccm-btn-bg);
+}
+
+/* Three equal buttons in a row; stacked (still equal) when they do not fit, see fitButtons(). */
+#sccm-app .sccm-actions {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+#sccm-app .sccm-actions--stack {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+#sccm-app .sccm-btn:focus-visible,
+#sccm-app .sccm-close:focus-visible,
+#sccm-app .sccm-tab:focus-visible,
+#sccm-app .sccm-acc__toggle:focus-visible,
+#sccm-app .sccm-prov__toggle:focus-visible,
+#sccm-app .sccm-copy:focus-visible,
+#sccm-app .sccm-floating:focus-visible,
+#sccm-app a:focus-visible,
+#sccm-app .sccm-switch input:focus-visible + .sccm-slider {
+	outline: 3px solid var(--sccm-link);
+	outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- Dialog */
+
+#sccm-app .sccm-dialog {
+	position: fixed;
+}
+
+#sccm-app .sccm-dialog__box {
+	background: var(--sccm-bg);
+	border-radius: var(--sccm-radius);
+	box-shadow: 0 12px 48px rgba(0, 0, 0, 0.22);
+	display: flex;
+	flex-direction: column;
+	margin: 0;
+	max-height: calc(100vh - 32px);
+	overflow: hidden;
+	position: relative;
+	width: 100%;
+}
+
+#sccm-app .sccm-dialog__box:focus {
+	outline: none;
+}
+
+#sccm-app .sccm-dialog__head {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+	justify-content: space-between;
+	padding: 18px 24px 12px;
+}
+
+#sccm-app .sccm-title {
+	font-size: 1.15em;
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+#sccm-app .sccm-close {
+	border-radius: var(--sccm-radius);
+	flex: 0 0 auto;
+	font-size: 28px;
+	height: 40px;
+	line-height: 1;
+	width: 40px;
+}
+
+#sccm-app .sccm-tabs {
+	border-bottom: 1px solid var(--sccm-border);
+	border-top: 1px solid var(--sccm-border);
+	display: flex;
+}
+
+#sccm-app .sccm-tab {
+	border-bottom: 3px solid transparent;
+	color: var(--sccm-muted);
+	flex: 1 1 0;
+	font-weight: 600;
+	padding: 12px 8px 9px;
+	text-align: center;
+}
+
+#sccm-app .sccm-tab[aria-selected="true"] {
+	border-bottom-color: var(--sccm-link);
+	color: var(--sccm-link);
+}
+
+#sccm-app .sccm-dialog__body {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	padding: 18px 24px;
+}
+
+#sccm-app .sccm-dialog__foot {
+	border-top: 1px solid var(--sccm-border);
+	padding: 14px 24px 16px;
+}
+
+#sccm-app .sccm-text {
+	font-size: 0.95em;
+}
+
+#sccm-app .sccm-text p + p {
+	margin-top: 8px;
+}
+
+#sccm-app .sccm-links {
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.9em;
+	gap: 6px 16px;
+	margin-top: 10px;
+}
+
+#sccm-app .sccm-muted {
+	color: var(--sccm-muted);
+	font-size: 0.9em;
+}
+
+/* Bars at the bottom or top */
+#sccm-app .sccm-pos-bottom,
+#sccm-app .sccm-pos-top {
+	left: 0;
+	padding: 12px;
+	right: 0;
+}
+
+#sccm-app .sccm-pos-bottom {
+	bottom: 0;
+}
+
+#sccm-app .sccm-pos-top {
+	top: 0;
+}
+
+#sccm-app .sccm-pos-bottom .sccm-dialog__box,
+#sccm-app .sccm-pos-top .sccm-dialog__box {
+	margin: 0 auto;
+	max-height: min(80vh, 640px);
+	max-width: 1100px;
+}
+
+/* Boxes in a corner */
+#sccm-app .sccm-pos-bottom-left,
+#sccm-app .sccm-pos-bottom-right {
+	bottom: 16px;
+	max-width: 460px;
+	width: calc(100% - 32px);
+}
+
+#sccm-app .sccm-pos-bottom-left {
+	left: 16px;
+}
+
+#sccm-app .sccm-pos-bottom-right {
+	right: 16px;
+}
+
+/* Window in the centre (also used when the dialog is reopened) */
+#sccm-app .sccm-pos-center {
+	align-items: center;
+	display: flex;
+	inset: 0;
+	justify-content: center;
+	padding: 16px;
+}
+
+#sccm-app .sccm-pos-center .sccm-dialog__box {
+	max-height: min(88vh, 780px);
+	max-width: 720px;
+}
+
+#sccm-app .sccm-overlay {
+	background: rgba(0, 0, 0, 0.5);
+	inset: 0;
+	position: fixed;
+}
+
+/* Wide bars, detailed style: three equal buttons at the right of the footer (not 1/3 of the bar each). */
+@media (min-width: 1000px) {
+	#sccm-app .sccm-pos-bottom .sccm-dialog__foot .sccm-actions:not(.sccm-actions--stack),
+	#sccm-app .sccm-pos-top .sccm-dialog__foot .sccm-actions:not(.sccm-actions--stack) {
+		grid-template-columns: repeat(3, minmax(170px, 1fr));
+		margin-inline-start: auto;
+		width: max-content;
+	}
+}
+
+/* ---------------------------------------------------------------- Compact banner (default first layer) */
+
+#sccm-app .sccm-compact .sccm-dialog__box {
+	gap: 18px;
+	padding: 22px 24px;
+}
+
+#sccm-app .sccm-compact .sccm-title {
+	margin-bottom: 6px;
+}
+
+/* Compact banner at the top or bottom: the three buttons stacked vertically, all equally wide. */
+#sccm-app .sccm-compact.sccm-pos-bottom .sccm-compact__actions,
+#sccm-app .sccm-compact.sccm-pos-top .sccm-compact__actions {
+	grid-template-columns: minmax(0, 1fr);
+	gap: 8px;
+}
+
+/* Wider screens: text on the left, the button column on the right, centred vertically. */
+@media (min-width: 700px) {
+	#sccm-app .sccm-compact.sccm-pos-bottom .sccm-dialog__box,
+	#sccm-app .sccm-compact.sccm-pos-top .sccm-dialog__box {
+		align-items: center;
+		flex-direction: row;
+		gap: 32px;
+		padding: 20px 28px;
+	}
+
+	#sccm-app .sccm-compact.sccm-pos-bottom .sccm-compact__content,
+	#sccm-app .sccm-compact.sccm-pos-top .sccm-compact__content {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	#sccm-app .sccm-compact.sccm-pos-bottom .sccm-compact__actions,
+	#sccm-app .sccm-compact.sccm-pos-top .sccm-compact__actions {
+		flex: 0 0 auto;
+		/* One column, as wide as the longest button text. */
+		grid-template-columns: minmax(190px, max-content);
+	}
+}
+
+/* ---------------------------------------------------------------- Consent tab: category switches */
+
+#sccm-app .sccm-toggles {
+	background: var(--sccm-border);
+	border: 1px solid var(--sccm-border);
+	border-radius: var(--sccm-radius);
+	display: grid;
+	gap: 1px;
+	grid-template-columns: repeat(var(--sccm-n, 4), 1fr);
+	margin-top: 18px;
+	overflow: hidden;
+}
+
+#sccm-app .sccm-toggle {
+	align-items: center;
+	background: var(--sccm-bg);
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	font-size: 0.92em;
+	font-weight: 600;
+	gap: 8px;
+	justify-content: center;
+	padding: 12px 6px;
+	text-align: center;
+}
+
+/* Corner boxes: two per row, full width */
+#sccm-app .sccm-pos-bottom-left .sccm-toggles,
+#sccm-app .sccm-pos-bottom-right .sccm-toggles {
+	grid-template-columns: repeat(2, 1fr);
+}
+
+#sccm-app .sccm-pos-bottom-left .sccm-toggle,
+#sccm-app .sccm-pos-bottom-right .sccm-toggle {
+	flex-direction: row;
+	justify-content: space-between;
+	padding: 12px 14px;
+	text-align: start;
+}
+
+/* ---------------------------------------------------------------- Switch */
+
+#sccm-app .sccm-switch {
+	display: inline-block;
+	flex: 0 0 auto;
+	height: 26px;
+	position: relative;
+	width: 48px;
+}
+
+#sccm-app .sccm-switch input {
+	-webkit-appearance: none;
+	appearance: none;
+	cursor: pointer;
+	height: 100%;
+	left: 0;
+	margin: 0;
+	opacity: 0;
+	position: absolute;
+	top: 0;
+	width: 100%;
+	z-index: 1;
+}
+
+#sccm-app .sccm-slider {
+	background: var(--sccm-slider-off);
+	border-radius: 999px;
+	inset: 0;
+	pointer-events: none;
+	position: absolute;
+	transition: background 0.15s ease;
+}
+
+#sccm-app .sccm-slider::before {
+	background: #fff;
+	border-radius: 50%;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+	content: "";
+	height: 20px;
+	left: 3px;
+	position: absolute;
+	top: 3px;
+	transition: transform 0.15s ease;
+	width: 20px;
+}
+
+#sccm-app .sccm-switch input:checked + .sccm-slider {
+	background: var(--sccm-toggle);
+}
+
+#sccm-app .sccm-switch input:checked + .sccm-slider::before {
+	transform: translateX(22px);
+}
+
+#sccm-app .sccm-switch input:disabled {
+	cursor: not-allowed;
+}
+
+#sccm-app .sccm-switch input:disabled + .sccm-slider {
+	opacity: 0.55;
+}
+
+/* ---------------------------------------------------------------- Details tab: accordions and cookie cards */
+
+#sccm-app .sccm-notice {
+	background: var(--sccm-soft);
+	border-inline-start: 4px solid var(--sccm-toggle);
+	border-radius: 4px;
+	font-size: 0.92em;
+	margin-bottom: 8px;
+	padding: 10px 12px;
+}
+
+#sccm-app .sccm-acc {
+	border-bottom: 1px solid var(--sccm-border);
+}
+
+#sccm-app .sccm-acc__head,
+#sccm-app .sccm-prov__head {
+	align-items: center;
+	display: flex;
+	gap: 12px;
+}
+
+#sccm-app .sccm-acc__head {
+	padding: 10px 0;
+}
+
+#sccm-app .sccm-acc__toggle,
+#sccm-app .sccm-prov__toggle {
+	align-items: center;
+	display: flex;
+	flex: 1 1 auto;
+	gap: 10px;
+	padding: 6px 0;
+	text-align: start;
+}
+
+#sccm-app .sccm-acc__toggle {
+	font-weight: 700;
+}
+
+#sccm-app .sccm-prov__toggle {
+	font-weight: 600;
+	padding: 12px 14px;
+}
+
+#sccm-app .sccm-chev {
+	border-bottom: 2px solid currentColor;
+	border-right: 2px solid currentColor;
+	flex: 0 0 auto;
+	height: 8px;
+	margin: 0 4px;
+	transform: rotate(-45deg);
+	transition: transform 0.15s ease;
+	width: 8px;
+}
+
+#sccm-app [aria-expanded="true"] > .sccm-chev {
+	transform: rotate(45deg);
+}
+
+#sccm-app .sccm-count {
+	background: var(--sccm-soft);
+	border-radius: 999px;
+	font-size: 0.78em;
+	font-weight: 600;
+	min-width: 24px;
+	padding: 1px 8px;
+	text-align: center;
+}
+
+#sccm-app .sccm-acc__panel {
+	padding: 0 0 16px 26px;
+}
+
+#sccm-app .sccm-acc__desc {
+	color: var(--sccm-muted);
+	font-size: 0.92em;
+	margin-bottom: 4px;
+}
+
+#sccm-app .sccm-prov {
+	border: 1px solid var(--sccm-border);
+	border-radius: var(--sccm-radius);
+	margin-top: 10px;
+}
+
+#sccm-app .sccm-prov__panel {
+	display: grid;
+	gap: 10px;
+	padding: 0 14px 14px;
+}
+
+#sccm-app .sccm-ck {
+	background: var(--sccm-soft);
+	border-radius: var(--sccm-radius);
+	padding: 12px 14px;
+}
+
+#sccm-app .sccm-ck__name {
+	font-weight: 700;
+	overflow-wrap: anywhere;
+}
+
+#sccm-app .sccm-ck__purpose {
+	font-size: 0.92em;
+	margin-top: 4px;
+}
+
+#sccm-app .sccm-ck__meta {
+	border-top: 1px solid var(--sccm-border);
+	color: var(--sccm-muted);
+	display: flex;
+	flex-wrap: wrap;
+	font-size: 0.85em;
+	gap: 4px 28px;
+	margin-top: 10px;
+	padding-top: 8px;
+}
+
+/* ---------------------------------------------------------------- About tab: the visitor's consent */
+
+#sccm-app .sccm-status {
+	background: var(--sccm-soft);
+	border-radius: var(--sccm-radius);
+	font-size: 0.9em;
+	margin-top: 14px;
+	padding: 10px 14px;
+}
+
+#sccm-app .sccm-status__row {
+	margin: 2px 0;
+	overflow-wrap: anywhere;
+}
+
+#sccm-app .sccm-status code {
+	font-size: 0.95em;
+	margin-inline-end: 8px;
+}
+
+#sccm-app .sccm-copy {
+	border: 1px solid var(--sccm-border);
+	border-radius: 999px;
+	font-size: 0.85em;
+	padding: 1px 10px;
+}
+
+/* ---------------------------------------------------------------- Small screens */
+
+@media (max-width: 600px) {
+	#sccm-app .sccm-pos-bottom,
+	#sccm-app .sccm-pos-top {
+		padding: 8px;
+	}
+
+	#sccm-app .sccm-pos-bottom-left,
+	#sccm-app .sccm-pos-bottom-right {
+		bottom: 8px;
+		left: 8px;
+		max-width: none;
+		right: 8px;
+		width: auto;
+	}
+
+	#sccm-app .sccm-dialog__head,
+	#sccm-app .sccm-dialog__body,
+	#sccm-app .sccm-dialog__foot,
+	#sccm-app .sccm-compact .sccm-dialog__box {
+		padding-left: 16px;
+		padding-right: 16px;
+	}
+
+	#sccm-app .sccm-toggles {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	#sccm-app .sccm-actions {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	#sccm-app .sccm-acc__panel {
+		padding-left: 8px;
+	}
+}
+
+/* ---------------------------------------------------------------- Cookie settings button */
+
+#sccm-app .sccm-floating {
+	align-items: center;
+	background: var(--sccm-btn-bg);
+	border: 0;
+	border-radius: 50%;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+	color: var(--sccm-btn-text);
+	display: flex;
+	height: 46px;
+	justify-content: center;
+	padding: 0;
+	position: fixed;
+	transition: transform 0.2s ease;
+	width: 46px;
+}
+
+#sccm-app .sccm-floating:hover,
+#sccm-app .sccm-floating:focus {
+	background: var(--sccm-btn-bg);
+	color: var(--sccm-btn-text);
+}
+
+#sccm-app .sccm-floating__icon {
+	display: flex;
+}
+
+/* Corners: a round icon button */
+#sccm-app .sccm-floating--bottom-left {
+	bottom: 16px;
+	left: 16px;
+}
+
+#sccm-app .sccm-floating--bottom-right {
+	bottom: 16px;
+	right: 16px;
+}
+
+/*
+ * Bottom centre and the middle of a side: a slim tab with a text label, attached to the edge
+ * of the screen. It sits slightly tucked in and comes out a little when hovered or focused.
+ */
+#sccm-app .sccm-floating--tab {
+	font-size: 13px;
+	font-weight: 700;
+	gap: 7px;
+	height: auto;
+	line-height: 1;
+	width: auto;
+}
+
+#sccm-app .sccm-floating--tab .sccm-floating__icon svg {
+	height: 16px;
+	width: 16px;
+}
+
+#sccm-app .sccm-floating--bottom-center {
+	border-radius: 10px 10px 0 0;
+	bottom: 0;
+	left: 50%;
+	padding: 9px 16px 10px;
+	transform: translate(-50%, 3px);
+}
+
+#sccm-app .sccm-floating--bottom-center:hover,
+#sccm-app .sccm-floating--bottom-center:focus-visible {
+	transform: translate(-50%, 0);
+}
+
+#sccm-app .sccm-floating--left-center,
+#sccm-app .sccm-floating--right-center {
+	padding: 16px 9px;
+	top: 50%;
+	writing-mode: vertical-rl;
+}
+
+/* Reads bottom-to-top on the left edge, top-to-bottom on the right edge. */
+#sccm-app .sccm-floating--left-center {
+	border-radius: 10px 0 0 10px;
+	left: 0;
+	transform: translate(-3px, -50%) rotate(180deg);
+}
+
+#sccm-app .sccm-floating--left-center:hover,
+#sccm-app .sccm-floating--left-center:focus-visible {
+	transform: translate(0, -50%) rotate(180deg);
+}
+
+#sccm-app .sccm-floating--right-center {
+	border-radius: 10px 0 0 10px;
+	right: 0;
+	transform: translate(3px, -50%);
+}
+
+#sccm-app .sccm-floating--right-center:hover,
+#sccm-app .sccm-floating--right-center:focus-visible {
+	transform: translate(0, -50%);
+}
+
+html.sccm-noscroll {
+	overflow: hidden;
+}
+
+/* ---------------------------------------------------------------- Blocked iframe placeholder */
+
+.sccm-placeholder.sccm-root {
+	align-items: center;
+	background: #f3f4f6;
+	border: 1px dashed #9ca3af;
+	border-radius: 8px;
+	box-sizing: border-box;
+	color: #1f2937;
+	display: flex;
+	flex-direction: column;
+	font-size: 15px;
+	gap: 12px;
+	justify-content: center;
+	line-height: 1.5;
+	min-height: 180px;
+	padding: 20px;
+	text-align: center;
+	width: 100%;
+}
+
+.sccm-placeholder.sccm-root p {
+	color: inherit;
+	margin: 0;
+}
+
+/* ---------------------------------------------------------------- Cookie policy shortcode
+ * Part of the page: fonts, colours, headings and links come from the theme. Lines use the
+ * text colour (currentColor), so the table works on light and dark themes alike.
+ */
+
+.sccm-policy .sccm-table {
+	border-collapse: collapse;
+	margin: 1em 0;
+	width: 100%;
+}
+
+.sccm-policy .sccm-table th,
+.sccm-policy .sccm-table td {
+	border-bottom: 1px solid rgba(128, 128, 128, 0.35);
+	border-bottom: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+	padding: 0.6em 0.75em;
+	text-align: start;
+	vertical-align: top;
+	word-break: normal;
+}
+
+.sccm-policy .sccm-table th {
+	font-weight: 600;
+}
+
+/* Only long cookie names may break anywhere; words (Provider, YouTube…) stay whole. */
+.sccm-policy .sccm-table code {
+	overflow-wrap: anywhere;
+	word-break: break-all;
+}
+
+.sccm-policy__empty,
+.sccm-policy__updated {
+	opacity: 0.75;
+}
+
+@media (max-width: 600px) {
+	.sccm-policy .sccm-table thead {
+		display: none;
+	}
+
+	.sccm-policy .sccm-table tr {
+		border-bottom: 1px solid rgba(128, 128, 128, 0.35);
+		border-bottom: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+		display: block;
+		padding: 0.5em 0;
+	}
+
+	.sccm-policy .sccm-table td {
+		border: 0;
+		display: block;
+		padding: 0.15em 0;
+	}
+
+	.sccm-policy .sccm-table td::before {
+		content: attr(data-label) ": ";
+		font-weight: 600;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	#sccm-app *,
+	#sccm-app *::before {
+		transition: none !important;
+	}
+}

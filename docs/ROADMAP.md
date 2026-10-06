@@ -7,46 +7,67 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - [x] Project docs: AGENTS.md, CLAUDE.md, FEATURES.md, ROADMAP.md, PROGRESS.md, TESTING.md
 
 ## Phase 1 — Core (MVP foundations)
-- [ ] Plugin bootstrap, constants, activation/deactivation, uninstall
-- [ ] Install: DB tables `sccm_cookies`, `sccm_consent_log`; default options; upgrade routine
-- [ ] Settings class with defaults, sanitising, import/export JSON
-- [ ] Categories class (4 fixed keys, labels, Consent Mode mapping)
-- [ ] Cookie registry (CRUD, wildcard matching, pending items, version bump on change)
-- [ ] Service library (GA4, GTM, Google Ads, Meta Pixel, LinkedIn, TikTok, Hotjar, Clarity,
+- [x] Plugin bootstrap, constants, activation/deactivation, uninstall
+- [x] Install: DB tables `sccm_cookies`, `sccm_consent_log`; default options; upgrade routine
+- [x] Settings class with defaults, sanitising, import/export JSON
+- [x] Categories class (4 fixed keys, labels, Consent Mode mapping)
+- [x] Cookie registry (CRUD, wildcard matching, pending items, version bump on change)
+- [x] Service library (GA4, GTM, Google Ads, Meta Pixel, LinkedIn, TikTok, Hotjar, Clarity,
       HubSpot, YouTube, Vimeo, Google Maps, Google Fonts, reCAPTCHA, WordPress core, WooCommerce)
 
 ## Phase 2 — Visitor side (features 1–6, 10–12)
-- [ ] Head boot script: Consent Mode default + returning-visitor update + config JSON
-- [ ] Banner (3 layouts: bar, box, modal), equal buttons, accessible
-- [ ] Preferences modal with toggles, cookie lists, consent ID, GPC notice
-- [ ] Release engine (scripts sequential, iframes, links), placeholder for iframes
-- [ ] Cookie/localStorage cleanup for denied categories; reload on withdrawal
-- [ ] Re-ask logic (version, expiry, reject grace period)
-- [ ] Floating settings button, `#sccm-preferences` links, `[sccm_cookie_settings]`
-- [ ] GPC detection + scope setting
-- [ ] Optimiser-exclusion attributes on own scripts
+- [x] Head boot script: Consent Mode default + returning-visitor update + config JSON
+- [x] Banner (3 layouts: bar, box, modal), equal buttons, accessible
+- [x] Preferences modal with toggles, cookie lists, consent ID, GPC notice
+- [x] Release engine (scripts sequential, iframes, links), placeholder for iframes
+- [x] Cookie/localStorage cleanup for denied categories; reload on withdrawal
+- [x] Re-ask logic (version, expiry, reject grace period)
+- [x] Floating settings button, `#sccm-preferences` links, `[sccm_cookie_settings]`
+- [x] GPC detection + scope setting
+- [x] Optimiser-exclusion attributes on own scripts
 
 ## Phase 3 — Server side (features 7–9)
-- [ ] Output-buffer blocker for script/iframe/link tags (rules from settings + services)
-- [ ] Optional GTM / GA4 loader by ID
-- [ ] REST `/sccm/v1/consent` → consent log (validation, rate limit, IP anonymise/hash)
-- [ ] REST `/sccm/v1/report` → pending cookies (validation, rate limit)
-- [ ] Server scanner (cron + manual) + service detection
-- [ ] Email digest for new items (max 1/day)
-- [ ] Log retention purge (daily cron)
+- [x] Output-buffer blocker for script/iframe/link tags (rules from settings + services)
+- [x] Optional GTM / GA4 loader by ID
+- [x] REST `/sccm/v1/consent` → consent log (validation, rate limit, IP anonymise/hash)
+- [x] REST `/sccm/v1/report` → pending cookies (validation, rate limit)
+- [x] Server scanner (cron + manual) + service detection
+- [x] Daily change email for new items (at a chosen time, only when something changed)
+- [x] Log retention purge (daily cron)
 
 ## Phase 4 — Admin
-- [ ] Menu + tabs: General, Appearance, Categories, Cookies, Blocking, Scanner, Consent Log, Tools
-- [ ] Cookies tab: list, add/edit/delete, approve pending, add from library
-- [ ] Consent Log tab: list, search, date filter, CSV export, purge
-- [ ] Tools tab: export/import settings JSON, "Ask everyone again", create Cookie Policy page
-- [ ] `[sccm_cookie_policy]` shortcode
+- [x] Menu + tabs: General, Appearance, Texts, Categories, Cookies, Blocking, Scanner, Consent Log, Tools
+      (v0.1.0; **simplified in Phase 5b to Dashboard, Cookies, Banner, Settings, Consent Records, Tools**)
+- [x] Cookies tab: list, add/edit/delete, approve pending, add from library
+- [x] Consent Log tab: list, search, date filter, CSV export, purge
+- [x] Tools tab: export/import settings JSON, "Ask everyone again", create Cookie Policy page
+- [x] `[sccm_cookie_policy]` shortcode
 
 ## Phase 5 — Quality
-- [ ] Automated checks: `php -l`, `node --check`, JS unit tests (`npm test`)
-- [ ] Local WordPress end-to-end run of TESTING.md (all 12 features)
-- [ ] readme.txt, CHANGELOG, `.pot` file
-- [ ] Release 1.0.0 (tag + zip)
+- [x] Automated checks: `php -l`, `node --check`, PHP unit tests (`npm test`)
+- [x] Local WordPress end-to-end run of TESTING.md (all 12 features)
+- [x] readme.txt, CHANGELOG
+- [x] `.pot` translation template (`languages/smart-cookie-consent-manager.pot`; regenerate with `wp i18n make-pot . languages/smart-cookie-consent-manager.pot --exclude=node_modules,tests,docs,.github`)
+- [ ] Staging test on a real site with the TESTING.md checklist (incl. Compliance review)
+- [ ] Release 1.2.0 (merge to `main`, tag + zip) after the staging test
+
+## Phase 5b — Pre-staging changes requested after v0.1.0 (2026-10-05)
+- [x] Simpler admin: Dashboard (status, to-do, key numbers), 6 tabs, Help panel
+- [x] Cookiebot-style category names; category switches in the banner; consent status/ID/date
+- [x] Quiet scanner: short accurate cookie list, Needs review inbox, upgrade clean-up
+- [x] Optional consent expiry (presets, custom days, session); five widget positions incl. edge tabs
+- [x] Round 2 (owner feedback): cache-busted assets, Cookiebot-style tabbed dialog (Consent /
+      Details / About), button order, "Cookies" edge tabs, browser scan + third-party cookie library
+- [x] Round 3 (owner feedback): compact banner style (default) + Customize, hashed asset files
+      (cache-proof on NitroPack/CDNs), NitroPack/GTranslate/chat/pixel services, menu pages
+      in the scan, scan diagnostics, Help button alignment
+- [x] HTML alert email, several recipients, sample email
+- [x] Round 4 (owner feedback, session 6): Cookie Policy page follows the theme + no sidebar +
+      cache refresh after scans, four button orders, theme-proof banner (#sccm-app scope, no
+      wrapping buttons), first-visit preview, no "Show details" link, dark-mode-safe email,
+      automatic page-cache clearing, other-CMP warning, AMP/page-builder exclusions, .pot
+- [x] Performance review (see `PERFORMANCE.md`)
+- [ ] Review against the live Cookiebot banner and account (not reachable from the build environment)
 
 ## Later (not in scope for 1.0)
 - Geo-targeting (different banner per region)
@@ -55,3 +76,4 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - Block editor block for the cookie policy
 - Consent sharing across subdomains
 - "Do Not Sell or Share" link mode for US state laws
+- Server-set consent cookie (Safari caps JavaScript-set cookies at 7 days)
