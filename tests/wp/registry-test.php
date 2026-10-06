@@ -196,6 +196,8 @@ SCCM_Consent_Log::insert( array( 'consent_id' => $ids[1], 'choice' => 'reject_al
 SCCM_Consent_Log::insert( array( 'consent_id' => $ids[2], 'choice' => 'reject_all', 'url' => home_url( '/' ) ) );
 $all = SCCM_Consent_Log::query( array() );
 sccm_check( 'records: no filter returns everything', 3 === $all['total'] && 3 === count( $all['rows'] ) );
+// MySQL in strict mode (WP Engine) refuses to compare a DATETIME column with '' (MariaDB allows it).
+sccm_check( 'records: the list query never compares a date with an empty value (MySQL strict mode)', false === strpos( $wpdb->last_query, "''" . ' OR created_at' ) && 1 === preg_match( "/created_at >= '1000-01-01 00:00:00'/", $wpdb->last_query ), $wpdb->last_query );
 $f = SCCM_Consent_Log::query( array( 'choice' => 'reject_all' ) );
 sccm_check( 'records: choice filter', 2 === $f['total'] );
 $f = SCCM_Consent_Log::query( array( 'search' => 'bbbbbbbb' ) );
@@ -217,7 +219,7 @@ sccm_check( 'records: a missing table is recreated and the record saved', ! is_w
 SCCM_Consent_Log::delete_all();
 // Why a visitor's record was refused is remembered for the Consent Records tab.
 delete_option( SCCM_REST::CONSENT_PROBLEM_OPTION );
-$refused = SCCM_REST::store_consent( null );
+$refused = SCCM_REST::store_consent( null, false );
 $problem = get_option( SCCM_REST::CONSENT_PROBLEM_OPTION );
 sccm_check( 'records: an unreadable record is refused and the reason is kept for the admin', is_wp_error( $refused ) && is_array( $problem ) && false !== strpos( $problem['message'], 'unreadable' ) );
 delete_option( SCCM_REST::CONSENT_PROBLEM_OPTION );

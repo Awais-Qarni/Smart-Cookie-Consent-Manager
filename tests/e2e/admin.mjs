@@ -162,7 +162,7 @@ check('X2 logged-out requests are refused', anon.status() !== 200 && anon.status
 
 // Consent records end to end: a visitor's choice is stored and listed, also when the REST API is blocked.
 {
-	wp('eval', `SCCM_Consent_Log::delete_all(); delete_option( SCCM_REST::REST_PROBLEM_OPTION );`);
+	wp('eval', `SCCM_Consent_Log::delete_all(); delete_option( SCCM_REST::REST_PROBLEM_OPTION ); global $wpdb; $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_%sccm\_rl\_%' OR option_name LIKE '\_transient\_timeout\_sccm\_rl\_%'" ); wp_cache_flush();`);
 	const count = () => parseInt(wp('eval', `echo SCCM_Consent_Log::query( array() )['total'];`), 10);
 	const visitor = async (blockRest) => {
 		const ctx2 = await browser.newContext();

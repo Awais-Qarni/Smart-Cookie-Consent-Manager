@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-06T20:33:34+00:00\n"
+"POT-Creation-Date: 2026-10-06T21:00:38+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: smart-cookie-consent-manager\n"
@@ -255,54 +255,54 @@ msgstr ""
 msgid "Database: OK, a record was saved."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:794
+#: includes/admin/class-sccm-admin.php:798
 msgid "Visitor route (admin-ajax.php): OK."
 msgstr ""
 
 #. translators: 1: HTTP status or 0, 2: reply
-#: includes/admin/class-sccm-admin.php:798
+#: includes/admin/class-sccm-admin.php:802
 #, php-format
 msgid "Visitor route (admin-ajax.php) from the server: HTTP %1$d, %2$s. A password-protected staging site or a firewall that blocks requests from the server itself can cause this test to fail even when visitors get through."
 msgstr ""
 
 #. translators: %d: rows
-#: includes/admin/class-sccm-admin.php:825
+#: includes/admin/class-sccm-admin.php:829
 #, php-format
 msgid "%d old record(s) deleted."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:835
+#: includes/admin/class-sccm-admin.php:839
 msgid "All consent records deleted."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:858
+#: includes/admin/class-sccm-admin.php:862
 msgid "Please choose a file."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:865
+#: includes/admin/class-sccm-admin.php:869
 msgid "Settings imported."
 msgstr ""
 
 #. translators: %d: version
-#: includes/admin/class-sccm-admin.php:876
+#: includes/admin/class-sccm-admin.php:880
 #, php-format
 msgid "Consent version is now %d. Every visitor will be asked again (clear your page cache)."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:887
+#: includes/admin/class-sccm-admin.php:891
 #: includes/class-sccm-settings.php:152
 msgid "Cookie Policy"
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:888
+#: includes/admin/class-sccm-admin.php:892
 msgid "This page explains which cookies this website uses and why. You can change your choice at any time."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:898
+#: includes/admin/class-sccm-admin.php:902
 msgid "Cookie Policy page created and linked in the banner."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:910
+#: includes/admin/class-sccm-admin.php:914
 msgid "Settings reset to defaults."
 msgstr ""
 
@@ -2134,11 +2134,11 @@ msgstr ""
 msgid "unknown error"
 msgstr ""
 
-#: includes/class-sccm-rest.php:129
+#: includes/class-sccm-rest.php:131
 msgid "Too many records from one IP address within an hour (60). If all visitors reach your server with the same IP address (a proxy or CDN), use the sccm_client_ip filter to read the real visitor IP."
 msgstr ""
 
-#: includes/class-sccm-rest.php:132
+#: includes/class-sccm-rest.php:134
 msgid "The record arrived unreadable (a security plugin or firewall may change the data sent by the browser)."
 msgstr ""
 

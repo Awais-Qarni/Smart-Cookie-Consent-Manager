@@ -106,33 +106,27 @@ class SCCM_Consent_Log {
 		$page                                = max( 1, absint( $args['page'] ?? 1 ) );
 		$offset                              = ( $page - 1 ) * $per_page;
 
-		// One fixed statement: an empty filter ('' = '') switches its condition off.
+		// One fixed statement: filters that are not set match every record (see filters()).
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery
 		$total = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM %i WHERE (%s = '' OR consent_id LIKE %s) AND (%s = '' OR choice = %s) AND (%s = '' OR created_at >= %s) AND (%s = '' OR created_at <= %s)",
+				"SELECT COUNT(*) FROM %i WHERE consent_id LIKE %s AND (%s = '' OR choice = %s) AND created_at >= %s AND created_at <= %s",
 				$table,
 				$search,
-				$search,
 				$choice,
 				$choice,
 				$from,
-				$from,
-				$to,
 				$to
 			)
 		);
 		$rows  = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM %i WHERE (%s = '' OR consent_id LIKE %s) AND (%s = '' OR choice = %s) AND (%s = '' OR created_at >= %s) AND (%s = '' OR created_at <= %s) ORDER BY id DESC LIMIT %d OFFSET %d",
+				"SELECT * FROM %i WHERE consent_id LIKE %s AND (%s = '' OR choice = %s) AND created_at >= %s AND created_at <= %s ORDER BY id DESC LIMIT %d OFFSET %d",
 				$table,
 				$search,
-				$search,
 				$choice,
 				$choice,
 				$from,
-				$from,
-				$to,
 				$to,
 				$per_page,
 				$offset
@@ -167,15 +161,12 @@ class SCCM_Consent_Log {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM %i WHERE (%s = '' OR consent_id LIKE %s) AND (%s = '' OR choice = %s) AND (%s = '' OR created_at >= %s) AND (%s = '' OR created_at <= %s) ORDER BY id ASC LIMIT %d OFFSET %d",
+					"SELECT * FROM %i WHERE consent_id LIKE %s AND (%s = '' OR choice = %s) AND created_at >= %s AND created_at <= %s ORDER BY id ASC LIMIT %d OFFSET %d",
 					$table,
 					$search,
-					$search,
 					$choice,
 					$choice,
 					$from,
-					$from,
-					$to,
 					$to,
 					$batch,
 					$offset
@@ -350,17 +341,19 @@ class SCCM_Consent_Log {
 	}
 
 	/**
-	 * Filter values for the record queries, validated; '' means "no filter".
+	 * Filter values for the record queries, validated. Without a filter: the search matches every
+	 * ID ('%'), the choice is '' (switched off in the query) and the dates span every record. Real
+	 * dates are used on purpose: MySQL in strict mode refuses to compare a date column with ''.
 	 *
 	 * @param array $args search, choice, from (Y-m-d), to (Y-m-d).
 	 * @return array array( search LIKE pattern, choice, from datetime, to datetime ).
 	 */
 	private static function filters( array $args ) {
 		global $wpdb;
-		$search = ! empty( $args['search'] ) ? '%' . $wpdb->esc_like( sanitize_text_field( $args['search'] ) ) . '%' : '';
+		$search = ! empty( $args['search'] ) ? '%' . $wpdb->esc_like( sanitize_text_field( $args['search'] ) ) . '%' : '%';
 		$choice = ! empty( $args['choice'] ) && in_array( $args['choice'], self::CHOICES, true ) ? $args['choice'] : '';
-		$from   = ! empty( $args['from'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $args['from'] ) ? $args['from'] . ' 00:00:00' : '';
-		$to     = ! empty( $args['to'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $args['to'] ) ? $args['to'] . ' 23:59:59' : '';
+		$from   = ! empty( $args['from'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $args['from'] ) ? $args['from'] . ' 00:00:00' : '1000-01-01 00:00:00';
+		$to     = ! empty( $args['to'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $args['to'] ) ? $args['to'] . ' 23:59:59' : '9999-12-31 23:59:59';
 		return array( $search, $choice, $from, $to );
 	}
 }

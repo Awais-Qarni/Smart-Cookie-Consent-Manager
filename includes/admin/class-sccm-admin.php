@@ -764,8 +764,11 @@ class SCCM_Admin {
 			$messages[] = __( 'Database: OK, a record was saved.', 'smart-cookie-consent-manager' );
 		}
 
-		// 2. The route visitors' browsers use when the REST API is blocked.
-		$id       = wp_generate_uuid4();
+		// 2. The route visitors' browsers use when the REST API is blocked (with a one-time pass,
+		// so the test is not stopped by the per-IP limit meant for visitors).
+		$id   = wp_generate_uuid4();
+		$pass = strtolower( wp_generate_password( 20, false, false ) );
+		set_transient( 'sccm_record_test_' . $pass, 1, MINUTE_IN_SECONDS );
 		$response = wp_remote_post(
 			admin_url( 'admin-ajax.php' ),
 			array(
@@ -773,6 +776,7 @@ class SCCM_Admin {
 				'sslverify' => (bool) apply_filters( 'sccm_scan_sslverify', true ),
 				'body'      => array(
 					'action'       => 'sccm_consent',
+					'sccm_test'    => $pass,
 					'payload'      => wp_json_encode(
 						array(
 							'consent_id' => $id,

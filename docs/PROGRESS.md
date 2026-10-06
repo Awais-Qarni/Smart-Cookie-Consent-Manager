@@ -11,7 +11,7 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); staging test and release are next
 - **Last updated:** 2026-10-06 (session 6)
-- **Tests:** unit 33, WP-CLI 122, visitor e2e 102, admin e2e 53, all passing; WordPress.org
+- **Tests:** unit 33, WP-CLI 123, visitor e2e 102, admin e2e 53, all passing; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
 
 ---
@@ -98,6 +98,16 @@ work on Windows (output path, `SCCM_WP` pointing at `wp-cli.phar`).
 - GA4-by-ID uses Google's snippet (no raw script tag); new admin e2e check for Strict/Advanced.
 - Dead-code sweep: no unused PHP functions or texts; removed `.sccm-linkbtn` CSS, `.gitkeep`.
 - Tests: unit 33/33, WP-CLI 120/120, e2e 102/102, admin e2e 41/41, no PHP notices with WP_DEBUG.
+
+**Round 11 (same day): the real cause — MySQL strict mode**
+- The new diagnostics showed it: "Test record saving" → Database OK, admin-ajax OK, but the list
+  said "Incorrect DATETIME value: ''". Records WERE saved; the list query (rewritten in round 6
+  as one fixed statement) compared `created_at` with '' for unset date filters. MySQL 8 strict
+  mode (WP Engine) refuses that; local MariaDB accepts it, so the tests passed.
+- Fix: unset filters use match-everything values (LIKE '%', 1000-01-01 … 9999-12-31); WP-CLI
+  check on the generated SQL; tests reset the per-IP limit counters; the test button's
+  loopback carries a one-time pass past the visitor rate limit.
+- Lesson: the local stack is MariaDB; consider a MySQL 8 test database for SQL changes.
 
 **Round 10 (same day): records still empty; REST API blocked on purpose by the owner**
 - The owner's notice (REST 401) proves the admin-ajax fallback reached the plugin, so the record

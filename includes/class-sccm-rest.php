@@ -80,11 +80,12 @@ class SCCM_REST {
 	/**
 	 * Validate and store a consent record (REST and admin-ajax).
 	 *
-	 * @param mixed $data Decoded JSON payload.
+	 * @param mixed $data  Decoded JSON payload.
+	 * @param bool  $limit Apply the per-IP rate limit.
 	 * @return array|WP_Error array( ok, logged ) or an error with an HTTP status.
 	 */
-	public static function store_consent( $data ) {
-		$result = self::save_consent( $data );
+	public static function store_consent( $data, $limit = true ) {
+		$result = self::save_consent( $data, $limit );
 		if ( is_wp_error( $result ) ) {
 			self::note_consent_problem( $result );
 		}
@@ -115,17 +116,18 @@ class SCCM_REST {
 	/**
 	 * Validate and insert.
 	 *
-	 * @param mixed $data Decoded payload.
+	 * @param mixed $data  Decoded payload.
+	 * @param bool  $limit Apply the per-IP rate limit.
 	 * @return array|WP_Error
 	 */
-	private static function save_consent( $data ) {
+	private static function save_consent( $data, $limit = true ) {
 		if ( ! SCCM_Settings::get( 'log_enabled' ) ) {
 			return array(
 				'ok'     => true,
 				'logged' => false,
 			);
 		}
-		if ( self::rate_limited( 'consent', 60 ) ) {
+		if ( $limit && self::rate_limited( 'consent', 60 ) ) {
 			return new WP_Error( 'sccm_rate_limited', __( 'Too many records from one IP address within an hour (60). If all visitors reach your server with the same IP address (a proxy or CDN), use the sccm_client_ip filter to read the real visitor IP.', 'smart-cookie-consent-manager' ), array( 'status' => 429 ) );
 		}
 		if ( ! is_array( $data ) ) {
@@ -207,7 +209,16 @@ class SCCM_REST {
 	 * rate limit as the REST route.
 	 */
 	public static function ajax_consent() {
-		self::respond( self::store_consent( self::ajax_payload() ) );
+		// The admin's "Test record saving" request carries a one-time pass: it does not count
+		// against (or get stopped by) the per-IP limit meant for visitors.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked against a one-time stored value.
+		$pass  = isset( $_POST['sccm_test'] ) ? sanitize_key( wp_unslash( $_POST['sccm_test'] ) ) : '';
+		$limit = true;
+		if ( '' !== $pass && get_transient( 'sccm_record_test_' . $pass ) ) {
+			delete_transient( 'sccm_record_test_' . $pass );
+			$limit = false;
+		}
+		self::respond( self::store_consent( self::ajax_payload(), $limit ) );
 	}
 
 	/**

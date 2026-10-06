@@ -43,6 +43,11 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
 - Translation template `languages/smart-cookie-consent-manager.pot`.
 
 ### Fixed (consent records)
+- **The Consent Records list stayed empty on MySQL 8 (WP Engine)** although records were saved:
+  the list query compared the date column with an empty value when no date filter was set,
+  which MySQL in strict mode refuses ("Incorrect DATETIME value"); MariaDB accepts it, so local
+  tests passed. Unset filters now use real values (every date, every ID).
+- "Test record saving" is no longer stopped by the per-IP limit meant for visitors.
 - **Consent records were not saved on some sites** (reported on a WP Engine staging site): the
   banner sent the record without the browser's credentials, so password-protected sites (staging
   behind a login prompt) refused it, and the address could point to another domain or http/https

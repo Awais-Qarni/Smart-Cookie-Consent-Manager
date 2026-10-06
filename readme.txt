@@ -42,6 +42,7 @@ Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 == Changelog ==
 
 = 1.2.0 =
+* Fixed: the Consent Records list stayed empty on MySQL 8 hosts (e.g. WP Engine) although records were saved.
 * Consent records are saved on password-protected (staging) sites, from cached pages on another domain, and when the REST API is blocked (admin-ajax fallback); the Consent Records tab explains problems and has a "Test record saving" button.
 * Scans adapt to the size of the website: small sites completely, bigger ones 40–80 pages (main pages, then sub and sub-sub pages of every section), in short steps that never hit time limits.
 * Compact top/bottom banner: buttons stacked vertically.

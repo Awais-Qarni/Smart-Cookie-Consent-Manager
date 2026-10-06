@@ -201,7 +201,9 @@ predictable. Labels/descriptions are editable; categories can be hidden if unuse
   Messages after an action are kept in a per-user transient (`sccm_notice_{user}`), never read
   from the URL.
 - SQL: every query goes through `$wpdb->prepare()`, table names with `%i` (WordPress 6.2+);
-  record filters are one fixed statement (`'' = ''` switches a filter off).
+  record filters are one fixed statement; unset filters use values that match everything
+  (`LIKE '%'`, dates from 1000-01-01 to 9999-12-31) because MySQL in strict mode refuses to
+  compare a DATETIME column with `''` (MariaDB allows it; a WP-CLI check guards this).
 - CSV export: `SCCM_Consent_Log::csv_cell()` prefixes values starting with = + - @ (CSV injection).
 - Texts shown as HTML in the banner are passed through `wp_kses` (links/emphasis) right before
   they go to the browser; all other texts are inserted as plain text.
