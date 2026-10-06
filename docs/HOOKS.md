@@ -13,7 +13,8 @@
 | `sccm_texts` | `array $texts` | Visitor-facing texts (e.g. for multilingual plugins). |
 | `sccm_frontend_config` | `array $config` | Everything passed to the browser as `window.SCCM_CONFIG`. |
 | `sccm_client_ip` | `string $ip` | Client IP (e.g. read a trusted proxy header). |
-| `sccm_scan_urls` | `array $urls` | Pages fetched by the server-side scanner. |
+| `sccm_scan_urls` | `array $urls, int $budget` | Pages a scan visits, in order (server part and "Scan now" in the browser). At most 100 are used. |
+| `sccm_scan_budget` | `int $budget, int $total` | How many pages a scan visits (default: all up to 40 pages, then 40 + 2·√(pages − 40), at most 80). |
 | `sccm_scan_sslverify` | `bool $verify` | Set to `false` for staging with self-signed certificates. |
 | `sccm_async_css` | `bool $async` | Return `false` to load the front-end stylesheet the usual (render-blocking) way. |
 | `sccm_versioned_asset_files` | `bool $copy` | Return `false` to serve CSS/JS from the plugin folder with `?ver=` instead of hashed copies in `uploads/sccm-assets/`. |

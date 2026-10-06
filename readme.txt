@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
 Requires at least: 6.0
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -41,7 +41,9 @@ Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 == Changelog ==
 
-= Unreleased =
+= 1.2.0 =
+* Scans adapt to the size of the website: small sites completely, bigger ones 40–80 pages (main pages, then sub and sub-sub pages of every section), in short steps that never hit time limits.
+* Compact top/bottom banner: buttons stacked vertically.
 * One email a day at a time you choose, only when something changed in the last 24 hours, to the site admin and the listed addresses; no admin links in the email; delivery status shown in Settings.
 * Button order: four choices, incl. Allow all · Deny · Allow selection (new default) and Deny · Allow all · Allow selection.
 * Banner looks the same on every theme (theme button/link styles no longer leak in); button texts never wrap.

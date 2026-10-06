@@ -205,6 +205,27 @@
 		};
 		say(A.scanServer);
 
+		/** Server part: one request per step until every planned page was checked. */
+		function serverSteps(data) {
+			if (data.total) {
+				say(A.scanServerProgress.replace('%1$d', data.done).replace('%2$d', data.total));
+			}
+			if (data.finished) {
+				return Promise.resolve();
+			}
+			return new Promise(function (resolve, reject) {
+				$.post(A.ajaxUrl, { action: 'sccm_browser_scan_server', _ajax_nonce: A.scanNonce }).done(function (response) {
+					if (response && response.success) {
+						resolve(serverSteps(response.data));
+					} else {
+						reject(response && response.data && response.data.message);
+					}
+				}).fail(function (xhr) {
+					reject(xhr && xhr.status ? 'HTTP ' + xhr.status : '');
+				});
+			});
+		}
+
 		$.post(A.ajaxUrl, { action: 'sccm_browser_scan_start', _ajax_nonce: A.scanNonce }).done(function (response) {
 			if (!response || !response.success) {
 				fail(response && response.data && response.data.message);
@@ -214,37 +235,47 @@
 			var found = { cookies: {}, storage: {}, resources: {} };
 			var pages = 0;
 			var blocked = 0;
-			var chain = Promise.resolve();
-			urls.forEach(function (url, i) {
-				chain = chain.then(function () {
-					say(A.scanPage.replace('%1$d', i + 1).replace('%2$d', urls.length));
-					return scanPage(url).then(function (result) {
-						pages++;
-						if (!result) {
-							blocked++;
-							return;
-						}
-						result.cookies.forEach(function (name) {
-							found.cookies[name] = true;
-						});
-						// A key is the site's own when the page wrote it during the scan, or when the
-						// browser did not have it before the scan started.
-						[['localStorage', result.local], ['sessionStorage', result.session]].forEach(function (pair) {
-							pair[1].forEach(function (name) {
-								var own = !!result.written[pair[0]][name] || baseline[pair[0]].indexOf(name) === -1;
-								var key = pair[0] + ':' + name;
-								found.storage[key] = { n: name, t: pair[0], new: own || !!(found.storage[key] && found.storage[key].new) };
-							});
-						});
-						result.resources.forEach(function (resource) {
-							if (/^https?:/.test(resource)) {
-								found.resources[resource.split('#')[0].slice(0, 500)] = true;
-							}
-						});
+			var next = 0;
+			// Three pages at a time: a big scan takes a minute or two instead of several.
+			function worker() {
+				if (next >= urls.length) {
+					return Promise.resolve();
+				}
+				var url = urls[next++];
+				return scanPage(url).then(function (result) {
+					pages++;
+					say(A.scanPage.replace('%1$d', pages).replace('%2$d', urls.length));
+					collect(result);
+					return worker();
+				});
+			}
+			function collect(result) {
+				if (!result) {
+					blocked++;
+					return;
+				}
+				result.cookies.forEach(function (name) {
+					found.cookies[name] = true;
+				});
+				// A key is the site's own when the page wrote it during the scan, or when the
+				// browser did not have it before the scan started.
+				[['localStorage', result.local], ['sessionStorage', result.session]].forEach(function (pair) {
+					pair[1].forEach(function (name) {
+						var own = !!result.written[pair[0]][name] || baseline[pair[0]].indexOf(name) === -1;
+						var key = pair[0] + ':' + name;
+						found.storage[key] = { n: name, t: pair[0], new: own || !!(found.storage[key] && found.storage[key].new) };
 					});
 				});
-			});
-			chain.then(function () {
+				result.resources.forEach(function (resource) {
+					if (/^https?:/.test(resource)) {
+						found.resources[resource.split('#')[0].slice(0, 500)] = true;
+					}
+				});
+			}
+			serverSteps(response.data).then(function () {
+				say(A.scanPage.replace('%1$d', 1).replace('%2$d', urls.length));
+				return Promise.all([worker(), worker(), worker()]);
+			}).then(function () {
 				say(A.scanSaving);
 				var data = {
 					pages: pages,
@@ -264,6 +295,8 @@
 				}).fail(function () {
 					fail('');
 				});
+			}, function (message) {
+				fail(message);
 			});
 		}).fail(function (xhr) {
 			fail(xhr && xhr.status ? 'HTTP ' + xhr.status : '');

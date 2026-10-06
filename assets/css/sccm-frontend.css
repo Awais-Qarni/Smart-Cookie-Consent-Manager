@@ -361,8 +361,15 @@ a.sccm-open-preferences.sccm-btn:hover {
 	margin-bottom: 6px;
 }
 
-/* Bars on wide screens: text on the left, the three buttons on the right, centred vertically. */
-@media (min-width: 1000px) {
+/* Compact banner at the top or bottom: the three buttons stacked vertically, all equally wide. */
+#sccm-app .sccm-compact.sccm-pos-bottom .sccm-compact__actions,
+#sccm-app .sccm-compact.sccm-pos-top .sccm-compact__actions {
+	grid-template-columns: minmax(0, 1fr);
+	gap: 8px;
+}
+
+/* Wider screens: text on the left, the button column on the right, centred vertically. */
+@media (min-width: 700px) {
 	#sccm-app .sccm-compact.sccm-pos-bottom .sccm-dialog__box,
 	#sccm-app .sccm-compact.sccm-pos-top .sccm-dialog__box {
 		align-items: center;
@@ -380,8 +387,8 @@ a.sccm-open-preferences.sccm-btn:hover {
 	#sccm-app .sccm-compact.sccm-pos-bottom .sccm-compact__actions,
 	#sccm-app .sccm-compact.sccm-pos-top .sccm-compact__actions {
 		flex: 0 0 auto;
-		/* Equal columns, as wide as the longest button text. */
-		grid-template-columns: repeat(3, minmax(140px, 1fr));
+		/* One column, as wide as the longest button text. */
+		grid-template-columns: minmax(190px, max-content);
 	}
 }
 

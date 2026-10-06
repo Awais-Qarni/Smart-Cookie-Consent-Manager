@@ -29,6 +29,32 @@ class SCCM_Scanner {
 	const MAIL_OPTION = 'sccm_last_mail';
 
 	/**
+	 * Work in progress of a scan (plan, pages done, results so far).
+	 */
+	const STATE_OPTION = 'sccm_scan_state';
+
+	/**
+	 * Cron hook: the next step of a scheduled scan.
+	 */
+	const CONTINUE_EVENT = 'sccm_scan_continue_event';
+
+	/**
+	 * Seconds of scanning per request for scheduled scans and "Scan now" (hosts stop requests
+	 * after 30–60 s).
+	 */
+	const STEP_SECONDS = 20;
+
+	/**
+	 * Websites with up to this many pages are scanned completely.
+	 */
+	const BASE_PAGES = 40;
+
+	/**
+	 * Most pages a scan visits (bigger websites get between BASE_PAGES and this).
+	 */
+	const MAX_PAGES = 80;
+
+	/**
 	 * Daily WP-Cron hook: the change email (at the hour chosen in the settings) and log clean-up.
 	 */
 	const DAILY_EVENT = 'sccm_daily_event';
@@ -37,7 +63,8 @@ class SCCM_Scanner {
 	 * Register hooks.
 	 */
 	public static function init() {
-		add_action( 'sccm_scan_event', array( __CLASS__, 'run' ) );
+		add_action( 'sccm_scan_event', array( __CLASS__, 'run_cron' ) );
+		add_action( self::CONTINUE_EVENT, array( __CLASS__, 'continue_cron' ) );
 		add_action( self::DAILY_EVENT, array( __CLASS__, 'daily' ) );
 	}
 
@@ -83,43 +110,144 @@ class SCCM_Scanner {
 	}
 
 	/**
-	 * Run a server-side scan.
+	 * Run a whole server-side scan (scan plan → all pages → result).
 	 *
-	 * @param bool $manual True for "Scan now" (fewer pages and shorter timeouts, so the admin
-	 *                     request cannot run into the PHP time limit).
+	 * Used by tests and by "Scan now" without JavaScript. Scheduled scans use run_cron() instead,
+	 * which works in short steps so a big site never runs into the PHP time limit.
+	 *
+	 * @param bool $manual True for "Scan now" (shorter timeouts per page).
 	 * @return array Results (also stored in the sccm_last_scan option).
 	 */
 	public static function run( $manual = false ) {
-		$first   = false === get_option( self::RESULT_OPTION );
-		$results = array(
-			'time'         => time(),
-			'pages'        => array(),
-			'services'     => array(),
-			'unclassified' => array(),
-			'cookies'      => array(),
-			'notes'        => array(),
-		);
-		$urls    = self::urls();
-		if ( $manual ) {
-			$urls = array_slice( $urls, 0, 10 );
-			if ( function_exists( 'set_time_limit' ) ) {
-				@set_time_limit( 120 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, Squiz.PHP.DiscouragedFunctions.Discouraged
-			}
+		if ( function_exists( 'set_time_limit' ) ) {
+			@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, Squiz.PHP.DiscouragedFunctions.Discouraged
 		}
-
-		// Changes found by a scan ask visitors again at most once, and not at all on the very
-		// first scan (nobody has consented to an older list yet).
+		$state = self::begin( $manual );
+		// One "ask visitors again" at most for the whole scan (steps inside do not bump on their own).
 		SCCM_Cookies::bulk(
-			function () use ( &$results, $urls, $manual ) {
-				self::scan_pages( $urls, $manual ? 10 : 20, $results );
+			static function () {
+				while ( ! self::step( 0 ) ) {
+					// step( 0 ) scans one page per call until the plan is done.
+				}
+			},
+			empty( $state['first'] )
+		);
+		return self::finish();
+	}
 
+	/**
+	 * Scheduled scan (WP-Cron): start, then work in steps of STEP_SECONDS; what is left continues
+	 * in a follow-up cron run, so no single request runs long.
+	 */
+	public static function run_cron() {
+		self::begin( false );
+		self::continue_cron();
+	}
+
+	/**
+	 * Cron: the next step of a scheduled scan.
+	 */
+	public static function continue_cron() {
+		if ( ! get_option( self::STATE_OPTION ) ) {
+			return;
+		}
+		if ( self::step( self::STEP_SECONDS ) ) {
+			self::finish();
+			return;
+		}
+		wp_schedule_single_event( time() + 30, self::CONTINUE_EVENT );
+	}
+
+	/**
+	 * Start a scan: plan the pages and keep the work in progress in an option.
+	 *
+	 * @param bool $manual "Scan now" (true) or scheduled (false).
+	 * @return array State: urls, done, manual, first, results.
+	 */
+	public static function begin( $manual = false ) {
+		wp_clear_scheduled_hook( self::CONTINUE_EVENT );
+		$state = array(
+			'urls'    => self::urls(),
+			'done'    => 0,
+			'manual'  => (bool) $manual,
+			'first'   => false === get_option( self::RESULT_OPTION ),
+			'total'   => self::count_pages(),
+			'results' => array(
+				'time'         => time(),
+				'pages'        => array(),
+				'services'     => array(),
+				'unclassified' => array(),
+				'cookies'      => array(),
+				'notes'        => array(),
+			),
+		);
+		update_option( self::STATE_OPTION, $state, false );
+		return $state;
+	}
+
+	/**
+	 * Scan the next pages of the plan.
+	 *
+	 * @param int $seconds Time budget; 0 = exactly one page.
+	 * @return bool True when every page of the plan was scanned.
+	 */
+	public static function step( $seconds ) {
+		$state = get_option( self::STATE_OPTION );
+		if ( ! is_array( $state ) || empty( $state['urls'] ) || $state['done'] >= count( $state['urls'] ) ) {
+			return true;
+		}
+		$start   = time();
+		$results = $state['results'];
+		$results['cookies'] = array_fill_keys( (array) $results['cookies'], true );
+
+		// Changes found by a scan ask visitors again at most once per step, and not at all on the
+		// very first scan (nobody has consented to an older list yet).
+		SCCM_Cookies::bulk(
+			function () use ( &$state, &$results, $start, $seconds ) {
+				do {
+					$url = $state['urls'][ $state['done'] ];
+					self::scan_pages( array( $url ), $state['manual'] ? 10 : 15, $results );
+					++$state['done'];
+				} while ( $seconds > 0 && $state['done'] < count( $state['urls'] ) && time() - $start < $seconds );
 				self::add_detected_services( $results );
 			},
-			! $first
+			empty( $state['first'] )
 		);
 
-		$results['cookies']      = array_keys( $results['cookies'] );
-		$results['unclassified'] = array_values( $results['unclassified'] );
+		$results['cookies'] = array_keys( $results['cookies'] );
+		$state['results']   = $results;
+		update_option( self::STATE_OPTION, $state, false );
+		return $state['done'] >= count( $state['urls'] );
+	}
+
+	/**
+	 * Progress of the scan in progress.
+	 *
+	 * @return array done, total (pages planned).
+	 */
+	public static function progress() {
+		$state = get_option( self::STATE_OPTION );
+		return array(
+			'done'  => is_array( $state ) ? (int) $state['done'] : 0,
+			'total' => is_array( $state ) ? count( (array) $state['urls'] ) : 0,
+		);
+	}
+
+	/**
+	 * Finish the scan: store the result and report new third-party resources.
+	 *
+	 * @return array Results.
+	 */
+	public static function finish() {
+		$state = get_option( self::STATE_OPTION );
+		if ( ! is_array( $state ) ) {
+			$last = get_option( self::RESULT_OPTION );
+			return is_array( $last ) ? $last : array();
+		}
+		$results                 = $state['results'];
+		$results['cookies']      = array_values( (array) $results['cookies'] );
+		$results['unclassified'] = array_values( (array) $results['unclassified'] );
+		$results['site_pages']   = (int) $state['total'];
 		// Report only resources that are new since the last scan (not the same list every time).
 		$previous = get_option( self::RESULT_OPTION );
 		$known    = is_array( $previous ) && ! empty( $previous['unclassified'] ) ? array_column( (array) $previous['unclassified'], 'host' ) : array();
@@ -129,6 +257,7 @@ class SCCM_Scanner {
 			}
 		}
 		update_option( self::RESULT_OPTION, $results, false );
+		delete_option( self::STATE_OPTION );
 		return $results;
 	}
 
@@ -295,7 +424,7 @@ class SCCM_Scanner {
 				'first'  => (bool) $first,
 				'counts' => $counts,
 			),
-			15 * MINUTE_IN_SECONDS
+			30 * MINUTE_IN_SECONDS
 		);
 		return $token;
 	}
@@ -315,14 +444,16 @@ class SCCM_Scanner {
 	}
 
 	/**
-	 * Pages the browser scan opens (the first 10 of the scan pages).
+	 * Pages the browser scan opens (the same plan as the server part, see urls()).
 	 *
 	 * @param string $token Scan-mode token.
 	 * @return array
 	 */
 	public static function browser_scan_urls( $token ) {
 		$urls = array();
-		foreach ( array_slice( self::urls(), 0, 10 ) as $url ) {
+		$state = get_option( self::STATE_OPTION );
+		$plan  = is_array( $state ) && ! empty( $state['urls'] ) ? $state['urls'] : self::urls();
+		foreach ( $plan as $url ) {
 			$urls[] = add_query_arg( 'sccm_scan', $token, $url );
 		}
 		return $urls;
@@ -469,45 +600,230 @@ class SCCM_Scanner {
 	}
 
 	/**
-	 * Pages to scan: home, cookie policy, the pages in your menus (where contact forms, booking
-	 * widgets and maps usually are), then the latest pages and posts.
+	 * Number of published, public pages and posts of the website (all public post types).
 	 *
-	 * @return array At most 15 URLs (the browser scan opens the first 10).
+	 * @return int
+	 */
+	public static function count_pages() {
+		$total = 0;
+		foreach ( get_post_types( array( 'public' => true ) ) as $type ) {
+			if ( 'attachment' === $type ) {
+				continue;
+			}
+			$counts = wp_count_posts( $type );
+			$total += isset( $counts->publish ) ? (int) $counts->publish : 0;
+		}
+		return $total;
+	}
+
+	/**
+	 * How many pages a scan visits, from the size of the website: small sites are scanned
+	 * completely (up to 40 pages); bigger sites get a few more pages the bigger they are
+	 * (100 pages → 55, 300 → 72), never more than 80.
+	 *
+	 * @param int $total Published pages and posts (count_pages()).
+	 * @return int
+	 */
+	public static function scan_budget( $total ) {
+		$total  = max( 0, (int) $total );
+		$budget = $total <= self::BASE_PAGES ? $total + 2 : self::BASE_PAGES + (int) round( 2 * sqrt( $total - self::BASE_PAGES ) );
+		/**
+		 * Number of pages a scan visits.
+		 *
+		 * @param int $budget Pages (before the 1–100 limit).
+		 * @param int $total  Published pages and posts of the website.
+		 */
+		$budget = (int) apply_filters( 'sccm_scan_budget', min( self::MAX_PAGES, $budget ), $total );
+		return max( 1, min( 100, $budget ) );
+	}
+
+	/**
+	 * The pages to scan, in order:
+	 *  1. every main page: home, Cookie Policy, blog page, top-level menu items, top-level pages;
+	 *  2. one recent item of each other content type (posts, products…: other templates, other
+	 *     scripts);
+	 *  3. sub pages and sub-sub pages (menu levels 2 and 3, child and grandchild pages), half the
+	 *     remaining budget each, taken from every parent in turn rather than all from one;
+	 *  4. if pages are left in the budget: recently updated content.
+	 * Small websites are scanned completely. Only pages of this website, no files or admin pages.
+	 *
+	 * @return string[] URLs.
 	 */
 	public static function urls() {
-		$urls   = array( home_url( '/' ) );
+		$budget = self::scan_budget( self::count_pages() );
+		$host   = wp_parse_url( home_url(), PHP_URL_HOST );
+		$main   = array();
+		$sub    = array(); // parent => urls.
+		$subsub = array(); // parent => urls.
+		$types  = array();
+		$recent = array();
+
+		$main[] = home_url( '/' );
 		$policy = SCCM_Frontend::policy_url();
 		if ( $policy ) {
-			$urls[] = $policy;
+			$main[] = $policy;
 		}
-		$host = wp_parse_url( home_url(), PHP_URL_HOST );
+		$blog = (int) get_option( 'page_for_posts' );
+		if ( $blog ) {
+			$main[] = get_permalink( $blog );
+		}
+
+		// Menus: level 1 = main, level 2 = sub, level 3+ = sub-sub.
 		foreach ( get_nav_menu_locations() as $menu_id ) {
-			foreach ( (array) wp_get_nav_menu_items( $menu_id ) as $item ) {
-				$url = isset( $item->url ) ? strtok( (string) $item->url, '#' ) : '';
-				if ( $url && wp_parse_url( $url, PHP_URL_HOST ) === $host ) {
-					$urls[] = $url;
+			$items  = (array) wp_get_nav_menu_items( $menu_id );
+			$parent = array();
+			foreach ( $items as $item ) {
+				$parent[ (int) $item->ID ] = (int) $item->menu_item_parent;
+			}
+			foreach ( $items as $item ) {
+				$depth = 0;
+				$id    = (int) $item->ID;
+				while ( ! empty( $parent[ $id ] ) && $depth < 5 ) {
+					$id = $parent[ $id ];
+					++$depth;
+				}
+				$url = isset( $item->url ) ? (string) $item->url : '';
+				if ( 0 === $depth ) {
+					$main[] = $url;
+				} elseif ( 1 === $depth ) {
+					$sub[ 'm' . $item->menu_item_parent ][] = $url;
+				} else {
+					$subsub[ 'm' . $item->menu_item_parent ][] = $url;
 				}
 			}
 		}
-		$posts = get_posts(
+
+		// Page tree: top-level pages are main pages, children sub pages, grandchildren sub-sub pages.
+		$pages = get_posts(
 			array(
-				'post_type'      => array( 'page', 'post' ),
+				'post_type'      => 'page',
 				'post_status'    => 'publish',
-				'posts_per_page' => 8,
+				'posts_per_page' => 500,
+				'orderby'        => array(
+					'menu_order' => 'ASC',
+					'title'      => 'ASC',
+				),
+				'fields'         => 'id=>parent',
+				'has_password'   => false,
+			)
+		);
+		foreach ( $pages as $page_id => $parent_id ) {
+			$depth = 0;
+			$up    = (int) $parent_id;
+			while ( $up && $depth < 5 ) {
+				++$depth;
+				$up = isset( $pages[ $up ] ) ? (int) $pages[ $up ] : 0;
+			}
+			if ( 0 === $depth ) {
+				$main[] = get_permalink( $page_id );
+			} elseif ( 1 === $depth ) {
+				$sub[ 'p' . $parent_id ][] = get_permalink( $page_id );
+			} else {
+				$subsub[ 'p' . $parent_id ][] = get_permalink( $page_id );
+			}
+		}
+
+		// One recent item of every other public content type, then recently updated content.
+		foreach ( get_post_types( array( 'public' => true ) ) as $type ) {
+			if ( in_array( $type, array( 'page', 'attachment' ), true ) ) {
+				continue;
+			}
+			$latest = get_posts(
+				array(
+					'post_type'      => $type,
+					'post_status'    => 'publish',
+					'posts_per_page' => 1,
+					'fields'         => 'ids',
+					'has_password'   => false,
+				)
+			);
+			if ( $latest ) {
+				$types[] = get_permalink( $latest[0] );
+			}
+		}
+		$recent_ids = get_posts(
+			array(
+				'post_type'      => array_values( array_diff( get_post_types( array( 'public' => true ) ), array( 'attachment' ) ) ),
+				'post_status'    => 'publish',
+				'posts_per_page' => $budget,
 				'orderby'        => 'modified',
 				'fields'         => 'ids',
 				'has_password'   => false,
 			)
 		);
-		foreach ( $posts as $post_id ) {
-			$urls[] = get_permalink( $post_id );
+		foreach ( $recent_ids as $post_id ) {
+			$recent[] = get_permalink( $post_id );
 		}
+
+		// Fill the budget level by level.
+		$plan = array();
+		$add  = static function ( $url ) use ( &$plan, $budget, $host ) {
+			$url = self::clean_url( (string) $url, $host );
+			if ( $url && count( $plan ) < $budget ) {
+				$plan[ $url ] = true;
+			}
+		};
+		array_map( $add, $main );
+		array_map( $add, $types );
+		$left     = $budget - count( $plan );
+		$sub_list = self::round_robin( $sub );
+		$deep     = self::round_robin( $subsub );
+		$deep_len = count( $deep );
+		$sub_take = $deep_len ? (int) ceil( $left / 2 ) : $left;
+		array_map( $add, array_slice( $sub_list, 0, $sub_take ) );
+		array_map( $add, $deep );
+		array_map( $add, $sub_list ); // A level with fewer pages leaves its share to the others.
+		array_map( $add, $recent );
+
 		/**
-		 * Filter the URLs the scanner fetches.
+		 * Filter the pages a scan visits.
 		 *
-		 * @param array $urls URLs.
+		 * @param array $urls   URLs, in order.
+		 * @param int   $budget Number of pages the scan is meant to visit.
 		 */
-		return array_slice( array_values( array_unique( array_filter( apply_filters( 'sccm_scan_urls', $urls ) ) ) ), 0, 15 );
+		$urls = (array) apply_filters( 'sccm_scan_urls', array_keys( $plan ), $budget );
+		$urls = array_values( array_unique( array_filter( array_map( 'strval', $urls ) ) ) );
+		return array_slice( $urls, 0, 100 );
+	}
+
+	/**
+	 * Take one item from each group in turn ("every parent gets a turn").
+	 *
+	 * @param array $groups Group => list.
+	 * @return array
+	 */
+	private static function round_robin( array $groups ) {
+		$out    = array();
+		$groups = array_values( array_filter( array_map( 'array_values', $groups ) ) );
+		for ( $i = 0; $groups; $i++ ) {
+			foreach ( $groups as $key => $list ) {
+				if ( isset( $list[ $i ] ) ) {
+					$out[] = $list[ $i ];
+				} else {
+					unset( $groups[ $key ] );
+				}
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * A URL of this website that is worth scanning (no fragment, files, feeds or admin), or ''.
+	 *
+	 * @param string $url  URL.
+	 * @param string $host This website's host.
+	 * @return string
+	 */
+	private static function clean_url( $url, $host ) {
+		$url = (string) strtok( $url, '#' );
+		if ( '' === $url || wp_parse_url( $url, PHP_URL_HOST ) !== $host ) {
+			return '';
+		}
+		$path = (string) wp_parse_url( $url, PHP_URL_PATH );
+		if ( preg_match( '#/(wp-admin|wp-login\.php|wp-json|feed)(/|$)|\.(pdf|jpe?g|png|gif|webp|svg|zip|docx?|xlsx?|pptx?|mp4|mp3|xml|txt|css|js)$#i', $path ) ) {
+			return '';
+		}
+		return $url;
 	}
 
 	/**

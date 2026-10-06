@@ -2,8 +2,16 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
-## [Unreleased]
+## [1.2.0] - 2026-10-06
 ### Added
+- **Scans adapt to the size of the website** (was: at most 10 pages for "Scan now", 15 for
+  scheduled scans). Up to 40 pages: everything is scanned. Bigger websites get more pages the
+  bigger they are (100 pages → 55, 300 → 72, at most 80). Order: every main page (home, Cookie
+  Policy, top-level menu items and pages), one item of each content type, then sub pages and
+  sub-sub pages from every section in turn. Filters `sccm_scan_budget` and `sccm_scan_urls`.
+- **Scans never run into time limits**: the server part works in steps of about 20 seconds
+  ("Scan now" one request per step, scheduled scans continue in the background), and "Scan now"
+  opens three pages at a time in the browser (60 pages ≈ 1¾ minutes).
 - **Daily change email at a time you choose** (Settings → "Daily check at", default 9:00 site
   time): once a day the plugin checks whether anything changed in the last 24 hours (cookies
   added to the banner, cookies waiting for review, new third-party services) and sends one email
@@ -33,6 +41,11 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
 - **Warning when another consent plugin is active** (Cookiebot, Complianz, CookieYes, Borlabs,
   Real Cookie Banner, iubenda, Cookie Notice, Termly…): two banners would conflict.
 - Translation template `languages/smart-cookie-consent-manager.pot`.
+
+### Changed
+- **Compact banner at the top or bottom: the three buttons are stacked vertically**, all the
+  same width, on the right of the text (under it on phones).
+- Plugin author link: `mailto:reachoutawais@gmail.com`. Version 1.2.0.
 
 ### Fixed
 - **Cookie Policy page did not follow the theme**: it forced the banner's dark text colour,

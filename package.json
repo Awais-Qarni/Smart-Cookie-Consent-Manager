@@ -1,6 +1,6 @@
 {
   "name": "smart-cookie-consent-manager",
-  "version": "0.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Development tooling for the Smart Cookie Consent Manager WordPress plugin (not needed to run the plugin).",
   "license": "GPL-2.0-or-later",

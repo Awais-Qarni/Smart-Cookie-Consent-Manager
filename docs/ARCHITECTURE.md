@@ -74,9 +74,10 @@ browser. To stay self-hosted, the plugin borrows the administrator's browser:
 
 ```
 Admin clicks "Scan now"  (assets/js/sccm-admin.js → browserScan)
-  1. AJAX sccm_browser_scan_start: server scan (SCCM_Scanner::run) + one-time token (15 min,
-     bound to the admin user) + up to 6 page URLs with ?sccm_scan=<token>
-  2. Each page opens in a hidden <iframe sandbox="allow-scripts allow-same-origin">.
+  1. AJAX sccm_browser_scan_start: plans the scan (SCCM_Scanner::begin → urls()), first server
+     step, one-time token (30 min, bound to the admin user), the planned URLs with
+     ?sccm_scan=<token>. AJAX sccm_browser_scan_server: next server step (≈ 20 s) until done.
+  2. Each page opens in a hidden <iframe sandbox="allow-scripts allow-same-origin">, three at a time.
      SCCM_Frontend::is_scan_mode() = valid token AND manage_options → config.scanMode = true:
        boot: every category granted, Storage.setItem is watched; front end: everything released,
        nothing shown, stored, logged or reported; page sent with no-cache headers.
@@ -90,6 +91,23 @@ Admin clicks "Scan now"  (assets/js/sccm-admin.js → browserScan)
 
 If a security header forbids framing the site, the scan reports it and the server scan result
 stands.
+
+## Scan plan (which pages, how many)
+
+`SCCM_Scanner::urls()` → `scan_budget( count_pages() )` pages (all published items of public
+post types): up to 40 → all (+2 for home and policy page); more → 40 + 2·√(pages − 40), at most
+80 (100 pages → 55, 300 → 72). Order: (1) every main page: home, Cookie Policy, blog page,
+top-level menu items, top-level pages; (2) one recent item of each other public content type;
+(3) half of what is left for sub pages (menu level 2, child pages), half for sub-sub pages (menu
+level 3+, grandchildren), each taken round-robin over their parents so every section is
+covered; a level with fewer pages leaves its share to the other; (4) recently updated content.
+Only this website's pages: no files, feeds, wp-admin, wp-login, wp-json. Filters:
+`sccm_scan_budget`, `sccm_scan_urls`.
+
+Work in progress lives in `sccm_scan_state` (plan, pages done, results so far): `begin()`,
+`step( $seconds )`, `finish()`. Scheduled scans: `run_cron()` + `sccm_scan_continue_event`
+every 30 s until done; "Scan now": one AJAX request per step; `run()` (tests, no-JS fallback
+uses begin + one 40 s step + background continuation) scans everything in one call.
 
 ## Consent dialog
 

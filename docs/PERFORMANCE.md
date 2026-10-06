@@ -40,16 +40,18 @@ Everything is the same for every visitor, so full-page caches and CDNs serve it 
    when nothing is refused. The `known` list sent to the browser is plain names, cookies only.
 5. **Idle-time reporting**: the visitor-side scanner runs in `requestIdleCallback`, only once
    per session for the same set of names, and not at all for logged-in users.
-6. **Scan limits**: "Scan now" fetches at most 10 pages with 10-second timeouts (it used to be
-   up to 15 pages × 20 s inside one admin request, which could hit the PHP time limit).
-   Scheduled scans keep the larger limits and run in the background (cron).
+6. **Scans in steps**: a scan plans 1–80 pages (see ARCHITECTURE → Scan plan) and the server
+   part works in steps of about 20 seconds (`SCCM_Scanner::step()`): "Scan now" asks for one
+   step per AJAX request, scheduled scans continue in follow-up cron runs. No request runs long,
+   whatever the size of the website (tested: 60 pages on a slow host = 4 cron runs of ≤ 21 s).
 7. **Fewer writes**: a known cookie reported by a browser no longer writes `last_seen` to the
    database; flooding is capped (50 waiting items, 100 candidates).
 
 ## The browser scan
 
-"Scan now" opens up to 10 pages (menu pages first), one after another, in a hidden frame in the administrator's
-browser (about 5–10 seconds per page: it waits until the page stops loading files). This costs
+"Scan now" opens the planned pages (up to 80) in hidden frames in the administrator's browser,
+three at a time (each 3–10 s: it waits until the page stops loading files); 60 pages took
+about 1 min 45 s in the test. This costs
 nothing for visitors: it only happens in the admin's browser, the scan-mode pages are never
 cached, and the scheduled (cron) scan stays server-only.
 

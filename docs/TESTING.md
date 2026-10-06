@@ -7,8 +7,8 @@ npm install          # first time only (dev dependency: Playwright)
 npm test             # php -l on every PHP file, node --check on JS, PHP unit tests (tests/php/run.php)
 
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
-SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 99 browser checks (visitor side)
-SCCM_WP=/path/to/wp npm run test:wp                              # 101 checks: cookie list, browser-scan rules, settings, daily change email (only with changes, time, delivery status), policy page, cache clearing (WP-CLI)
+SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 102 browser checks (visitor side)
+SCCM_WP=/path/to/wp npm run test:wp                              # 111 checks: cookie list, scan plan (budget, main → sub → sub-sub pages, steps), browser-scan rules, settings, daily change email, policy page, cache clearing (WP-CLI)
 SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 38 checks of the admin screens, incl. a real browser scan and the daily email about it
 ```
 
@@ -49,6 +49,8 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 - [ ] D8 Button texts stay on one line in every position (bottom/top bar, corners, centre) on
       desktop and phone; in a wide bottom/top bar the buttons of the detailed style sit on the
       right at a natural width.
+- [ ] D10 Compact banner at the bottom or top: the three buttons are stacked vertically (right of
+      the text on desktop/tablet, under it on phones), all the same width.
 - [ ] D9 Theme look does not leak in: on a site whose theme styles buttons (e.g. Elementor
       global buttons) the banner buttons keep the plugin's size, font and colours, also on hover.
 - [ ] D6 Details tab: each category opens to providers, each provider to cookie cards (name,
@@ -105,6 +107,10 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
       on a site where it finds something), the email arrives once at that time, at the site admin
       and every listed address, without links into WordPress. A day without changes sends nothing.
       (To test without waiting: WP Crontrol → run "sccm_daily_event" now.)
+- [ ] I9 Cookies → "Scan now" on a website with many pages: "Step 1 of 2 … (x of y)", then
+      "Step 2 of 2: opening page x of y" with y = all pages for a small site, 40–80 for a big one;
+      the main menu pages and some sub pages of each section are among them. The page must stay
+      open until it finishes (one to two minutes).
 - [ ] I8 Settings shows "Last email: … handed to your server". "Last email failed" means the host
       cannot send mail: install an SMTP plugin (e.g. WP Mail SMTP).
 - [ ] I6 Open the sample email in a mail app in dark mode (Outlook, Gmail app, Apple Mail):

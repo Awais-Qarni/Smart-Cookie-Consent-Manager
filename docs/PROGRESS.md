@@ -7,7 +7,7 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 0.1.0 (feature-complete for the 12 features, not yet staging-tested on a real site)
+- **Version:** 1.2.0 (set at the owner's request; not yet staging-tested on a real site)
 - **Branch:** `feature/v1-build` (pull request to `main`)
 - **Phase:** 5b, pre-staging changes done (see `ROADMAP.md`); staging test is next
 - **Last updated:** 2026-10-06 (session 6)
@@ -69,6 +69,19 @@ work on Windows (output path, `SCCM_WP` pointing at `wp-cli.phar`).
   preview, hostile theme CSS, one-line buttons, long translation stacking, wide-bar width,
   policy on a dark theme), admin e2e 38/38 (was 35; daily email after a scan, delivery status). All suites also run with `WP_DEBUG` on: no PHP
   warnings, notices or deprecations from the plugin (WordPress 7.1, PHP 8.3).
+
+**Round 5 (same day): adaptive scan, version 1.2.0, vertical bar buttons**
+- Scan plan (`SCCM_Scanner::urls()`): budget from the number of published pages (≤ 40 → all;
+  else 40 + 2·√(n − 40), max 80), main pages → one per content type → sub / sub-sub pages
+  round-robin per parent → recent content. Scans run in steps (`begin/step/finish`, state in
+  `sccm_scan_state`): "Scan now" one AJAX step at a time + browser frames 3 in parallel;
+  scheduled scans continue via `sccm_scan_continue_event`; no-JS "Scan now" 40 s + background.
+  Tested for real: 143-page site → 60-page plan, Scan now 104 s; slow host (0.7 s/page) cron
+  scan = 4 runs of ≤ 21 s.
+- Compact top/bottom bar: buttons in one vertical column (right of the text from 700 px).
+- Version 1.2.0 (header, `SCCM_VERSION`, readme Stable tag, package.json); Author URI
+  `mailto:reachoutawais@gmail.com`; CHANGELOG `[Unreleased]` → `[1.2.0] - 2026-10-06`.
+- Tests: WP-CLI 111/111, e2e 102/102, admin e2e 38/38.
 
 **Next**
 1. Owner: update the plugin on staging (purge NitroPack + WP Engine once more for this update),

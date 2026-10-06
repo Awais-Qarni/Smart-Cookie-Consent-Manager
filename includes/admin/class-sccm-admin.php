@@ -32,6 +32,7 @@ class SCCM_Admin {
 		}
 		add_action( 'wp_ajax_sccm_browser_scan_start', array( __CLASS__, 'ajax_scan_start' ) );
 		add_action( 'wp_ajax_sccm_browser_scan_report', array( __CLASS__, 'ajax_scan_report' ) );
+		add_action( 'wp_ajax_sccm_browser_scan_server', array( __CLASS__, 'ajax_scan_server' ) );
 	}
 
 	/**
@@ -106,6 +107,8 @@ class SCCM_Admin {
 				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
 				'scanNonce'  => wp_create_nonce( 'sccm_browser_scan' ),
 				'scanServer' => __( 'Step 1 of 2: checking your pages on the server…', 'smart-cookie-consent-manager' ),
+				/* translators: 1: pages checked so far, 2: pages planned */
+				'scanServerProgress' => __( 'Step 1 of 2: checking your pages on the server (%1$d of %2$d)…', 'smart-cookie-consent-manager' ),
 				/* translators: 1: page number, 2: number of pages */
 				'scanPage'   => __( 'Step 2 of 2: opening page %1$d of %2$d in your browser to see the cookies its scripts set…', 'smart-cookie-consent-manager' ),
 				'scanSaving' => __( 'Saving what was found…', 'smart-cookie-consent-manager' ),
@@ -545,7 +548,16 @@ class SCCM_Admin {
 	 */
 	public static function handle_scan_now() {
 		self::guard( 'sccm_scan_now' );
-		$results = SCCM_Scanner::run( true );
+		SCCM_Scanner::begin( true );
+		// One request can only scan for so long (hosts stop requests after 30–60 s): the rest
+		// continues in the background.
+		if ( ! SCCM_Scanner::step( 2 * SCCM_Scanner::STEP_SECONDS ) ) {
+			$progress = SCCM_Scanner::progress();
+			wp_schedule_single_event( time() + 30, SCCM_Scanner::CONTINUE_EVENT );
+			/* translators: 1: pages checked, 2: pages planned */
+			self::back( 'cookies', sprintf( __( 'Scan started: %1$d of %2$d page(s) checked. The rest is scanned in the background in the next minutes.', 'smart-cookie-consent-manager' ), $progress['done'], $progress['total'] ) );
+		}
+		$results = SCCM_Scanner::finish();
 		/* translators: 1: pages, 2: services */
 		self::back( 'cookies', sprintf( __( 'Scan finished: %1$d page(s) checked, %2$d service(s) detected.', 'smart-cookie-consent-manager' ), count( $results['pages'] ), count( $results['services'] ) ) );
 	}
@@ -560,14 +572,38 @@ class SCCM_Admin {
 		check_ajax_referer( 'sccm_browser_scan' );
 		$first   = false === get_option( SCCM_Scanner::RESULT_OPTION );
 		$counts  = SCCM_Cookies::counts();
-		$results = SCCM_Scanner::run( true );
-		$token   = SCCM_Scanner::scan_token( $first, $counts );
-		wp_send_json_success(
-			array(
-				'token' => $token,
-				'urls'  => SCCM_Scanner::browser_scan_urls( $token ),
-				'pages' => count( $results['pages'] ),
-			)
+		SCCM_Scanner::begin( true );
+		$token = SCCM_Scanner::scan_token( $first, $counts );
+		$urls  = SCCM_Scanner::browser_scan_urls( $token );
+		wp_send_json_success( array_merge( array( 'token' => $token, 'urls' => $urls ), self::scan_server_step() ) );
+	}
+
+	/**
+	 * AJAX: the next server step of "Scan now" (the browser calls it until the server part is done).
+	 */
+	public static function ajax_scan_server() {
+		if ( ! current_user_can( self::CAP ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to do this.', 'smart-cookie-consent-manager' ) ), 403 );
+		}
+		check_ajax_referer( 'sccm_browser_scan' );
+		wp_send_json_success( self::scan_server_step() );
+	}
+
+	/**
+	 * Scan the next pages on the server for about STEP_SECONDS; finish when all are done.
+	 *
+	 * @return array done, total, finished.
+	 */
+	private static function scan_server_step() {
+		$finished = SCCM_Scanner::step( SCCM_Scanner::STEP_SECONDS );
+		$progress = SCCM_Scanner::progress();
+		if ( $finished ) {
+			SCCM_Scanner::finish();
+		}
+		return array(
+			'done'     => $progress['done'],
+			'total'    => $progress['total'],
+			'finished' => $finished,
 		);
 	}
 

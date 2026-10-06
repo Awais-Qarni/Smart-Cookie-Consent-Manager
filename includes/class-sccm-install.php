@@ -52,6 +52,7 @@ class SCCM_Install {
 		wp_clear_scheduled_hook( 'sccm_scan_event' );
 		wp_clear_scheduled_hook( 'sccm_daily_event' );
 		wp_clear_scheduled_hook( 'sccm_purge_cache_event' );
+		wp_clear_scheduled_hook( 'sccm_scan_continue_event' );
 	}
 
 	/**
@@ -238,13 +239,14 @@ class SCCM_Install {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}sccm_consent_log" );
 
-		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge', 'sccm_last_mail' ) as $option ) {
+		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge', 'sccm_last_mail', 'sccm_scan_state' ) as $option ) {
 			delete_option( $option );
 		}
 
 		wp_clear_scheduled_hook( 'sccm_scan_event' );
 		wp_clear_scheduled_hook( 'sccm_daily_event' );
 		wp_clear_scheduled_hook( 'sccm_purge_cache_event' );
+		wp_clear_scheduled_hook( 'sccm_scan_continue_event' );
 
 		// Versioned copies of the plugin's CSS/JS (see SCCM_Plugin::asset()).
 		$uploads = wp_upload_dir( null, false );

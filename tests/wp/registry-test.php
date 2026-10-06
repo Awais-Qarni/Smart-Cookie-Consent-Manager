@@ -178,8 +178,6 @@ $m = SCCM_Services::match_cookie( 'nitroCachedPage' );
 sccm_check( 'NitroPack cache key is recognised', $m && 'nitropack' === $m['service'] );
 $m = SCCM_Services::match_cookie( 'PHPSESSID' );
 sccm_check( 'PHP session cookie is recognised as necessary', $m && 'necessary' === $m['category'] );
-$urls = SCCM_Scanner::urls();
-sccm_check( 'scan URLs start with the home page and are capped at 15', home_url( '/' ) === $urls[0] && count( $urls ) <= 15 );
 list( $asset_url, $asset_ver ) = SCCM_Plugin::asset( 'assets/js/sccm-frontend.js' );
 sccm_check( 'front-end script is served from a hashed copy (cache-proof)', (bool) preg_match( '#/sccm-assets/sccm-frontend\.[0-9a-f]{10}\.js$#', $asset_url ) && null === $asset_ver );
 $uploads = wp_upload_dir( null, false );
@@ -188,6 +186,70 @@ add_filter( 'sccm_versioned_asset_files', '__return_false' );
 list( $asset_url ) = SCCM_Plugin::asset( 'assets/js/sccm-frontend.js' );
 sccm_check( 'hashed copies can be switched off with a filter', 0 === strpos( $asset_url, SCCM_URL ) );
 remove_filter( 'sccm_versioned_asset_files', '__return_false' );
+
+/* ---------------------------------------------------------------- Scan plan (which pages, how many) */
+
+sccm_check( 'scan budget: small sites are scanned completely', 12 === SCCM_Scanner::scan_budget( 10 ) && 42 === SCCM_Scanner::scan_budget( 40 ) );
+sccm_check( 'scan budget grows with the site (100 → 55, 300 → 72) and stops at 80', 55 === SCCM_Scanner::scan_budget( 100 ) && 72 === SCCM_Scanner::scan_budget( 300 ) && 80 === SCCM_Scanner::scan_budget( 5000 ) );
+
+$small = SCCM_Scanner::urls();
+$all   = get_posts( array( 'post_type' => array_values( array_diff( get_post_types( array( 'public' => true ) ), array( 'attachment' ) ) ), 'post_status' => 'publish', 'posts_per_page' => -1, 'fields' => 'ids', 'has_password' => false ) );
+$miss  = array_diff( array_map( 'get_permalink', $all ), $small );
+sccm_check( 'small site: every published page and post is in the scan plan', home_url( '/' ) === $small[0] && ! $miss, implode( ', ', $miss ) );
+
+// A bigger site: 3 main pages, 10 sub pages each, 6 sub-sub pages under each sub page.
+$tree = array( 'main' => array(), 'sub' => array(), 'deep' => array() );
+for ( $m = 1; $m <= 3; $m++ ) {
+	$main_id          = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => "Plan main $m", 'menu_order' => $m ) );
+	$tree['main'][]   = $main_id;
+	for ( $c = 1; $c <= 10; $c++ ) {
+		$sub_id          = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => "Plan sub $m-$c", 'post_parent' => $main_id, 'menu_order' => $c ) );
+		$tree['sub'][]   = $sub_id;
+		for ( $g = 1; $g <= 6; $g++ ) {
+			$tree['deep'][] = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => "Plan deep $m-$c-$g", 'post_parent' => $sub_id ) );
+		}
+	}
+}
+$total  = SCCM_Scanner::count_pages();
+$budget = SCCM_Scanner::scan_budget( $total );
+$plan   = SCCM_Scanner::urls();
+$pos    = array_flip( $plan );
+$in     = function ( $ids ) use ( $pos ) {
+	return array_values( array_filter( array_map( 'get_permalink', $ids ), function ( $u ) use ( $pos ) { return isset( $pos[ $u ] ); } ) );
+};
+$mains = $in( $tree['main'] );
+$subs  = $in( $tree['sub'] );
+$deeps = $in( $tree['deep'] );
+sccm_check( "bigger site ($total pages): the plan has exactly the budget ($budget pages)", count( $plan ) === $budget && $budget > 40 && $budget <= 80 );
+sccm_check( 'every main page is in the plan, before any sub page', 3 === count( $mains ) && max( array_map( function ( $u ) use ( $pos ) { return $pos[ $u ]; }, $mains ) ) < min( array_map( function ( $u ) use ( $pos ) { return $pos[ $u ]; }, array_merge( $subs, $deeps ) ) ) );
+sccm_check( 'sub pages and sub-sub pages share the rest of the budget', count( $subs ) >= 10 && count( $deeps ) >= 10, count( $subs ) . ' sub, ' . count( $deeps ) . ' sub-sub' );
+usort( $subs, function ( $a, $b ) use ( $pos ) { return $pos[ $a ] - $pos[ $b ]; } );
+$parents = array_unique( array_map( function ( $u ) { return wp_get_post_parent_id( url_to_postid( $u ) ); }, array_slice( $subs, 0, 3 ) ) );
+sccm_check( 'sub pages are taken from every main page in turn', 3 === count( $parents ) );
+sccm_check( 'no duplicate, external, file or admin URLs in the plan', count( array_unique( $plan ) ) === count( $plan ) && ! preg_grep( '#wp-admin|wp-login|\.(pdf|jpg|png|xml)$#', $plan ) && ! preg_grep( '#^https?://(?!' . preg_quote( wp_parse_url( home_url(), PHP_URL_HOST ), '#' ) . ')#', $plan ) );
+foreach ( array_merge( $tree['deep'], $tree['sub'], $tree['main'] ) as $id ) {
+	wp_delete_post( $id, true );
+}
+
+// Scanning in steps (scheduled scans and "Scan now" never run long in one request).
+$three = function () {
+	return array( home_url( '/' ), home_url( '/?p=1' ), home_url( '/cookie-policy/' ) );
+};
+add_filter( 'sccm_scan_urls', $three );
+SCCM_Scanner::begin();
+$first_step = SCCM_Scanner::step( 0 );
+$progress   = SCCM_Scanner::progress();
+sccm_check( 'a scan step can stop after one page and remember where it was', ! $first_step && 1 === $progress['done'] && 3 === $progress['total'] );
+SCCM_Scanner::continue_cron();
+$scan = get_option( SCCM_Scanner::RESULT_OPTION );
+sccm_check( 'the next step finishes the scan and stores the result', ! get_option( SCCM_Scanner::STATE_OPTION ) && 3 === count( $scan['pages'] ) && ! wp_next_scheduled( SCCM_Scanner::CONTINUE_EVENT ) );
+remove_filter( 'sccm_scan_urls', $three );
+$budget_one = function () {
+	return 1;
+};
+add_filter( 'sccm_scan_budget', $budget_one );
+sccm_check( 'the number of pages can be changed with the sccm_scan_budget filter', 1 === count( SCCM_Scanner::urls() ) );
+remove_filter( 'sccm_scan_budget', $budget_one );
 
 /* ---------------------------------------------------------------- Settings */
 

@@ -172,7 +172,7 @@ SCCM_Admin::form_open( 'settings' );
 				'weekly' => __( 'Every week', 'smart-cookie-consent-manager' ),
 				'off'    => __( 'Never (only when I click "Scan now")', 'smart-cookie-consent-manager' ),
 			),
-			__( 'The scan opens your home page, cookie policy and latest pages and posts, and looks for cookies and third-party services.', 'smart-cookie-consent-manager' )
+			__( 'The scan looks for cookies and third-party services on your pages. Small websites (up to 40 pages) are scanned completely; bigger ones get more pages the bigger they are (100 pages → 55, 300 → 72, at most 80): every main page first, one item of each content type, then sub pages and sub-sub pages from every section in turn.', 'smart-cookie-consent-manager' )
 		);
 		SCCM_Admin::checkbox( 'scanner_client', __( 'Also learn from visitors', 'smart-cookie-consent-manager' ), $settings['scanner_client'], __( 'Catches cookies that only JavaScript sets, which a scan cannot see. Only cookie names are sent (never values), never from logged-in users, and a cookie is listed only after several different visitors reported it, so your list stays short.', 'smart-cookie-consent-manager' ) );
 		SCCM_Admin::checkbox( 'alerts_enabled', __( 'Email about cookie changes', 'smart-cookie-consent-manager' ), $settings['alerts_enabled'], __( 'Once a day the plugin checks whether anything changed in the last 24 hours (cookies added to the banner, cookies waiting for review, new third-party services). Only then it sends one email; no changes, no email.', 'smart-cookie-consent-manager' ) );

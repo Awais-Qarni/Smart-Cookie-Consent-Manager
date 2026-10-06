@@ -273,6 +273,23 @@ const browser = await launch();
 		}
 		await context.close();
 	}
+	// Compact banner at the bottom/top: the three buttons are stacked vertically (desktop, tablet, phone).
+	for (const [position, width] of [['bottom', 1440], ['top', 1024], ['bottom', 390]]) {
+		const { context, page } = await newPage(browser, { position, viewport: { width, height: 860 } });
+		await page.goto(BASE + '/');
+		await page.waitForSelector('#sccm-banner:not([hidden])');
+		const r = await page.evaluate(() => {
+			const bs = Array.from(document.querySelectorAll('#sccm-banner .sccm-actions .sccm-btn')).map((b) => b.getBoundingClientRect());
+			const text = document.querySelector('#sccm-banner .sccm-text').getBoundingClientRect();
+			return { xs: bs.map((b) => Math.round(b.left)), ys: bs.map((b) => Math.round(b.top)), ws: bs.map((b) => Math.round(b.width)), right: bs[0].left >= text.right };
+		});
+		const vertical = new Set(r.xs).size === 1 && new Set(r.ws).size === 1 && r.ys[0] < r.ys[1] && r.ys[1] < r.ys[2];
+		check(`B4 compact ${position} bar at ${width}px: buttons stacked vertically, equal width${width >= 700 ? ', right of the text' : ''}`, vertical && (width < 700 || r.right), JSON.stringify(r));
+		if (width === 1440) {
+			await page.screenshot({ path: OUT + 'banner-bar-vertical.png' });
+		}
+		await context.close();
+	}
 	// A long translation: the buttons stack, all equally wide, instead of wrapping their text.
 	const { context, page } = await newPage(browser, { layout: 'tabs', position: 'bottom-right', texts: { btn_selection: 'Only allow the cookies I selected above' } });
 	await page.goto(BASE + '/');
