@@ -105,7 +105,9 @@ class SCCM_Settings {
 			'scanner_client'       => 1,
 			'scan_schedule'        => 'weekly',   // daily | weekly | off.
 			'alerts_enabled'       => 1,
+			'alert_mode'           => 'every_scan', // every_scan (report after each scan) | changes (only when something new was found).
 			'alert_email'          => '',
+			'alert_include_admin'  => 1,          // Also send to the site admin email.
 
 			// Consent log.
 			'log_enabled'          => 1,
@@ -254,7 +256,7 @@ class SCCM_Settings {
 		$defaults = self::defaults();
 		$out      = $current;
 
-		$bools = array( 'enabled', 'floating_button', 'show_privacy_link', 'policy_hide_sidebar', 'reask_on_change', 'reload_on_withdraw', 'ads_data_redaction', 'url_passthrough', 'blocker_enabled', 'iframe_placeholder', 'gpc_enabled', 'scanner_client', 'alerts_enabled', 'log_enabled', 'delete_on_uninstall' );
+		$bools = array( 'enabled', 'floating_button', 'show_privacy_link', 'policy_hide_sidebar', 'reask_on_change', 'reload_on_withdraw', 'ads_data_redaction', 'url_passthrough', 'blocker_enabled', 'iframe_placeholder', 'gpc_enabled', 'scanner_client', 'alerts_enabled', 'alert_include_admin', 'log_enabled', 'delete_on_uninstall' );
 		foreach ( $bools as $key ) {
 			if ( array_key_exists( $key, $input ) ) {
 				$out[ $key ] = empty( $input[ $key ] ) ? 0 : 1;
@@ -269,6 +271,7 @@ class SCCM_Settings {
 			'consent_mode'      => array( 'basic', 'advanced', 'off' ),
 			'gpc_scope'         => array( 'all', 'marketing' ),
 			'scan_schedule'     => array( 'daily', 'weekly', 'off' ),
+			'alert_mode'        => array( 'every_scan', 'changes' ),
 			'ip_mode'           => array( 'anonymize', 'hash', 'none' ),
 		);
 		foreach ( $enums as $key => $allowed ) {
@@ -394,11 +397,13 @@ class SCCM_Settings {
 	 * @return array
 	 */
 	public static function alert_recipients() {
-		$list = self::parse_emails( (string) self::get( 'alert_email' ) );
-		if ( ! $list ) {
-			$list = self::parse_emails( (string) get_option( 'admin_email' ) );
+		$raw = (string) self::get( 'alert_email' );
+		$own = self::parse_emails( $raw );
+		// The site admin gets the email too (setting), and always when no address is listed.
+		if ( self::get( 'alert_include_admin' ) || ! $own ) {
+			$raw = get_option( 'admin_email' ) . "\n" . $raw;
 		}
-		return $list;
+		return self::parse_emails( $raw );
 	}
 
 	/**

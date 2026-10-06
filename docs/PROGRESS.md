@@ -57,15 +57,25 @@ work on Windows (output path, `SCCM_WP` pointing at `wp-cli.phar`).
 - Hardening: AMP pages skipped; more page-builder editors skipped; Dashboard warns when another
   consent plugin (Cookiebot, Complianz, CookieYes, Borlabs…) is active; `.pot` generated with
   translator comments for every placeholder; Custom CSS help names the real selectors.
-- Tests: unit 33/33, WP-CLI 85/85 (was 56), e2e 99/99 (was 76; new: four orders × two styles,
+- **Emails (owner: "no auto email arrives")**: root cause: mail was only sent by the daily
+  WP-Cron job, at most once per 23 h; scans never sent anything, listed addresses replaced the
+  admin, and failures were silent. Now: report after every scan (`scan_finished()`, called by
+  the scheduled scan, the browser part of "Scan now", and the no-JS "Scan now"; a fallback cron
+  event sends it if the browser part never finishes), setting `alert_mode` (every_scan default /
+  changes), changes between scans emailed after 15 min (`sccm_alert_event`, batched), recipients
+  = admin (`alert_include_admin`) + listed, last result in `sccm_last_mail` shown on Settings,
+  unclassified resources queued only when new.
+- Tests: unit 33/33, WP-CLI 100/100 (was 56), e2e 99/99 (was 76; new: four orders × two styles,
   preview, hostile theme CSS, one-line buttons, long translation stacking, wide-bar width,
-  policy on a dark theme), admin e2e 35/35. All suites also run with `WP_DEBUG` on: no PHP
+  policy on a dark theme), admin e2e 39/39 (was 35; scan report email, delivery status). All suites also run with `WP_DEBUG` on: no PHP
   warnings, notices or deprecations from the plugin (WordPress 7.1, PHP 8.3).
 
 **Next**
 1. Owner: update the plugin on staging (purge NitroPack + WP Engine once more for this update),
    deactivate Cookiebot there if it is still active (the Dashboard now says so), check the
    banner in a private window, the Cookie Policy page, and the sample email in dark mode.
+   Click "Send me a sample email" and look at the "Last email" line under it: if it failed, or
+   nothing arrives (also check spam), the host needs an SMTP plugin (e.g. WP Mail SMTP).
 2. Then Cookies → Scan now and compare with Cookiebot (as in session 5).
 3. Before a public release: run the official Plugin Check plugin and the test suites on PHP 7.4
    (minimum version; only PHP 8.3 was available here), then tag 1.0.0.

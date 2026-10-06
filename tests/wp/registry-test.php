@@ -208,7 +208,10 @@ sccm_check( 'unknown banner style falls back to compact', 'compact' === $s['bann
 
 $s = SCCM_Settings::update( array( 'alert_email' => "one@example.com, two@example.com\nnot-an-email  one@example.com;three@example.org" ) );
 sccm_check( 'several alert recipients are stored (invalid and duplicate dropped)', 'one@example.com, two@example.com, three@example.org' === $s['alert_email'] );
-sccm_check( 'alert_recipients() returns a list', array( 'one@example.com', 'two@example.com', 'three@example.org' ) === SCCM_Settings::alert_recipients() );
+sccm_check( 'alert_recipients(): the site admin plus the listed addresses', array( get_option( 'admin_email' ), 'one@example.com', 'two@example.com', 'three@example.org' ) === SCCM_Settings::alert_recipients() );
+SCCM_Settings::update( array( 'alert_include_admin' => 0 ) );
+sccm_check( 'alert_recipients(): only the listed addresses when "also the site admin" is off', array( 'one@example.com', 'two@example.com', 'three@example.org' ) === SCCM_Settings::alert_recipients() );
+SCCM_Settings::update( array( 'alert_include_admin' => 1 ) );
 SCCM_Settings::update( array( 'alert_email' => '' ) );
 sccm_check( 'no recipients falls back to the site admin email', array( get_option( 'admin_email' ) ) === SCCM_Settings::alert_recipients() );
 sccm_check( 'settings are autoloaded (no extra query per page)', in_array( SCCM_Settings::OPTION, array_keys( wp_load_alloptions() ), true ) );
@@ -231,6 +234,68 @@ sccm_check( 'email declares light and dark colour schemes', false !== strpos( $e
 sccm_check( 'email button gets its padding from the table cell (Outlook-safe)', 1 === preg_match( '/<td[^>]+bgcolor="#2563eb"[^>]+mso-padding-alt:12px 24px;[^>]*><a /', $email['html'] ) );
 sccm_check( 'email header is light (no dark block that dark mode inverts)', 0 === preg_match( '/style="[^"]*background:#(1f2937|111827)/', $email['html'] ) );
 file_put_contents( getenv( 'SCCM_EMAIL_PREVIEW' ) ?: sys_get_temp_dir() . '/sccm-email-preview.html', $email['html'] );
+
+/* ---------------------------------------------------------------- Emails after scans and cookie changes */
+
+$GLOBALS['sccm_mails'] = array();
+$capture               = function ( $null, $atts ) {
+	$GLOBALS['sccm_mails'][] = $atts;
+	return true;
+};
+add_filter( 'pre_wp_mail', $capture, 10, 2 );
+SCCM_Settings::update( array( 'alerts_enabled' => 1, 'alert_mode' => 'every_scan', 'alert_email' => 'team@example.com' ) );
+delete_option( 'sccm_pending_alert' );
+wp_clear_scheduled_hook( SCCM_Scanner::ALERT_EVENT );
+
+sccm_check( 'scan report after a scan with no changes (mode: every scan)', SCCM_Scanner::scan_finished() && 1 === count( $GLOBALS['sccm_mails'] ) );
+$mail = end( $GLOBALS['sccm_mails'] );
+sccm_check( '"no changes" report: subject, explanation and the banner\'s cookie count', false !== strpos( $mail['subject'], 'Cookie scan finished: no changes' ) && false !== strpos( $mail['message'], 'No new cookies or services were found' ) && false !== strpos( $mail['message'], 'Your cookie banner now lists' ) );
+sccm_check( 'report goes to the site admin and the listed address', array( get_option( 'admin_email' ), 'team@example.com' ) === $mail['to'] );
+
+SCCM_Settings::update( array( 'alert_mode' => 'changes' ) );
+sccm_check( 'no report for a scan without changes (mode: only changes)', ! SCCM_Scanner::scan_finished() && 1 === count( $GLOBALS['sccm_mails'] ) );
+
+SCCM_Cookies::queue_alert( 'new_tracker', 'cookie', 'pending', '' );
+$next = wp_next_scheduled( SCCM_Scanner::ALERT_EVENT );
+sccm_check( 'a change found outside a scan schedules an email about 15 minutes later', $next && $next > time() + 14 * MINUTE_IN_SECONDS && $next <= time() + 15 * MINUTE_IN_SECONDS );
+sccm_check( 'a scan that found something sends the report', SCCM_Scanner::scan_finished() && 2 === count( $GLOBALS['sccm_mails'] ) && false !== strpos( end( $GLOBALS['sccm_mails'] )['subject'], '1 cookie needs your review' ) );
+sccm_check( 'after the report the queue is empty and no extra email is scheduled', ! get_option( 'sccm_pending_alert' ) && ! wp_next_scheduled( SCCM_Scanner::ALERT_EVENT ) );
+
+SCCM_Cookies::queue_alert( '_clck', 'cookie', 'active', 'analytics' );
+do_action( SCCM_Scanner::ALERT_EVENT );
+sccm_check( 'the scheduled email for changes outside a scan is sent', 3 === count( $GLOBALS['sccm_mails'] ) && false !== strpos( end( $GLOBALS['sccm_mails'] )['subject'], 'added to your cookie banner' ) );
+$status = get_option( SCCM_Scanner::MAIL_OPTION );
+sccm_check( 'the result of the last email is recorded', ! empty( $status['ok'] ) && '' === $status['error'] && in_array( 'team@example.com', $status['to'], true ) );
+
+remove_filter( 'pre_wp_mail', $capture, 10 );
+$refuse = function () {
+	return false;
+};
+add_filter( 'pre_wp_mail', $refuse );
+SCCM_Settings::update( array( 'alert_mode' => 'every_scan' ) );
+sccm_check( 'a failed email is reported as failed', false === SCCM_Scanner::scan_finished() );
+$status = get_option( SCCM_Scanner::MAIL_OPTION );
+sccm_check( 'the failure and its reason are recorded (shown on the Settings tab)', empty( $status['ok'] ) && '' !== $status['error'] );
+remove_filter( 'pre_wp_mail', $refuse );
+
+add_filter( 'pre_wp_mail', $capture, 10, 2 );
+SCCM_Settings::update( array( 'alerts_enabled' => 0 ) );
+SCCM_Cookies::queue_alert( 'another_cookie', 'cookie', 'pending', '' );
+sccm_check( 'alerts off: no email and nothing scheduled', ! SCCM_Scanner::scan_finished() && ! wp_next_scheduled( SCCM_Scanner::ALERT_EVENT ) && 3 === count( $GLOBALS['sccm_mails'] ) );
+SCCM_Settings::update( array( 'alerts_enabled' => 1, 'alert_mode' => 'every_scan' ) );
+
+$before = count( $GLOBALS['sccm_mails'] );
+SCCM_Scanner::run_scheduled();
+sccm_check( 'a scheduled scan (WP-Cron) emails its report', count( $GLOBALS['sccm_mails'] ) === $before + 1 && false !== strpos( end( $GLOBALS['sccm_mails'] )['message'], 'Scan finished on' ) );
+$before = count( $GLOBALS['sccm_mails'] );
+delete_option( 'sccm_pending_alert' );
+SCCM_Scanner::run();
+sccm_check( 'third-party resources already reported are not reported again on the next scan', ! array_filter( (array) get_option( 'sccm_pending_alert', array() ), function ( $i ) { return 'unclassified' === $i['status']; } ) );
+remove_filter( 'pre_wp_mail', $capture, 10 );
+delete_option( 'sccm_pending_alert' );
+delete_option( SCCM_Scanner::MAIL_OPTION );
+wp_clear_scheduled_hook( SCCM_Scanner::ALERT_EVENT );
+SCCM_Settings::update( array( 'alert_email' => '' ) );
 
 /* ---------------------------------------------------------------- Button order */
 

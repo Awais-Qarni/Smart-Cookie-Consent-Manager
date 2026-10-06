@@ -42,6 +42,7 @@ Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 == Changelog ==
 
 = Unreleased =
+* Scan report email after every scan (Scan now and scheduled), to the site admin and the listed addresses; changes between scans are emailed within about 15 minutes; delivery status shown in Settings.
 * Button order: four choices, incl. Allow all · Deny · Allow selection (new default) and Deny · Allow all · Allow selection.
 * Banner looks the same on every theme (theme button/link styles no longer leak in); button texts never wrap.
 * Banner preview looks like a first visit; the redundant "Show details" link is gone.

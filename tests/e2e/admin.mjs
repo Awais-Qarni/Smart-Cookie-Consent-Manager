@@ -97,8 +97,11 @@ await page.locator('summary', { hasText: 'Cookie scan and email alerts' }).click
 if (fs.existsSync(CONTENT + '/mail-captured.json')) fs.unlinkSync(CONTENT + '/mail-captured.json');
 await Promise.all([page.waitForNavigation(), page.click('button:has-text("Send me a sample email")')]);
 const mail = JSON.parse(fs.readFileSync(CONTENT + '/mail-captured.json', 'utf8'));
-check('E1 sample email goes to both recipients as HTML', JSON.stringify(mail.to) === JSON.stringify(['owner@example.com', 'team@example.com']) && mail.has_html && JSON.stringify(mail.headers).includes('text/html'), JSON.stringify(mail.to));
+const adminEmail = wp('option', 'get', 'admin_email');
+check('E1 sample email goes to the site admin and both listed recipients, as HTML', JSON.stringify(mail.to) === JSON.stringify([adminEmail, 'owner@example.com', 'team@example.com']) && mail.has_html && JSON.stringify(mail.headers).includes('text/html'), JSON.stringify(mail.to));
 check('E1 sample email subject is marked as a sample', /^Sample: /.test(mail.subject), mail.subject);
+await page.locator('summary', { hasText: 'Cookie scan and email alerts' }).click();
+check('E2 Settings shows the result of the last email', /Last email: .*owner@example\.com/.test(await page.textContent('.sccm-mail-status--ok')));
 
 // Banner tab: pick positions
 await page.goto(admin('banner'));
@@ -127,6 +130,7 @@ await page.goto(admin('cookies'));
 await page.click('.sccm-scanstrip button');
 await page.waitForSelector('.sccm-scan-status');
 check('BS1 the scan shows its progress', /Step 1 of 2|Step 2 of 2/.test(await page.textContent('.sccm-scan-status')));
+if (fs.existsSync(CONTENT + '/mail-captured.json')) fs.unlinkSync(CONTENT + '/mail-captured.json');
 await page.waitForURL(/sccm_msg/, { timeout: 150000 });
 const listed = JSON.parse(wp('eval', `echo wp_json_encode( array_map( function ( $r ) { return $r['name'] . '|' . $r['status'] . '|' . $r['category']; }, SCCM_Cookies::all_rows() ) );`));
 check('BS2 a cookie set by JavaScript (_ga) is found and sorted as Statistics', listed.includes('_ga|active|analytics'), listed.join(', '));
@@ -135,6 +139,10 @@ check('BS2 an unknown cookie set by a script waits for review', listed.includes(
 check('BS2 an unknown local storage key set by a script waits for review', listed.includes('test_unknown_storage|pending|necessary'));
 check('BS2 no admin-only cookies are listed', !listed.some((x) => /^wordpress_|^wp-settings/.test(x)));
 check('BS3 the result message counts what was found', /Scan finished: \d+ page\(s\) opened in your browser\. [1-9]\d* new cookie/.test(await page.textContent('.notice')), (await page.textContent('.notice')).trim().slice(0, 140));
+const report = fs.existsSync(CONTENT + '/mail-captured.json') ? JSON.parse(fs.readFileSync(CONTENT + '/mail-captured.json', 'utf8')) : null;
+check('BS4 "Scan now" emails the scan report right away (admin + listed addresses)', report && /need(s)? your review|added to your cookie banner/.test(report.subject) && report.to.includes(adminEmail) && report.to.includes('owner@example.com'), report && report.subject);
+check('BS4 the result message says where the report went', /The scan report was emailed to/.test(await page.textContent('.notice')));
+check('BS4 no fallback report is left scheduled', wp('eval', 'echo (int) wp_next_scheduled( SCCM_Scanner::REPORT_EVENT );') === '0');
 const leftover = await page.evaluate(() => document.querySelectorAll('iframe[sandbox]').length);
 check('BS3 the hidden frames are removed afterwards', leftover === 0);
 

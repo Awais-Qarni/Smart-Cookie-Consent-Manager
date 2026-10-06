@@ -494,6 +494,8 @@ class SCCM_Cookies {
 			'time'     => time(),
 		);
 		update_option( 'sccm_pending_alert', array_slice( $queue, -100 ), false );
+		// Emailed with the scan report, or (found outside a scan) a few minutes later.
+		SCCM_Scanner::schedule_alert();
 	}
 
 	/**

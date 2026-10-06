@@ -680,3 +680,16 @@
 		grid-template-columns: 7em 1fr 2em;
 	}
 }
+
+/* Settings → email alerts: result of the last email */
+.sccm-mail-status {
+	border-left: 4px solid #00a32a;
+	margin: 10px 0 0;
+	max-width: 720px;
+	padding: 4px 10px;
+}
+
+.sccm-mail-status--error {
+	background: #fcf0f1;
+	border-left-color: #d63638;
+}

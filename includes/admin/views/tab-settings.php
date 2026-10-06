@@ -175,7 +175,16 @@ SCCM_Admin::form_open( 'settings' );
 			__( 'The scan opens your home page, cookie policy and latest pages and posts, and looks for cookies and third-party services.', 'smart-cookie-consent-manager' )
 		);
 		SCCM_Admin::checkbox( 'scanner_client', __( 'Also learn from visitors', 'smart-cookie-consent-manager' ), $settings['scanner_client'], __( 'Catches cookies that only JavaScript sets, which a scan cannot see. Only cookie names are sent (never values), never from logged-in users, and a cookie is listed only after several different visitors reported it, so your list stays short.', 'smart-cookie-consent-manager' ) );
-		SCCM_Admin::checkbox( 'alerts_enabled', __( 'Email me about new cookies', 'smart-cookie-consent-manager' ), $settings['alerts_enabled'], __( 'One summary email, at most once a day, only when something new was found.', 'smart-cookie-consent-manager' ) );
+		SCCM_Admin::checkbox( 'alerts_enabled', __( 'Email about scans and cookie changes', 'smart-cookie-consent-manager' ), $settings['alerts_enabled'], __( 'A report after each scan ("Scan now" and scheduled scans). Cookies learned from visitors between scans are emailed a few minutes after they are added to the banner.', 'smart-cookie-consent-manager' ) );
+		SCCM_Admin::select(
+			'alert_mode',
+			__( 'Scan report', 'smart-cookie-consent-manager' ),
+			$settings['alert_mode'],
+			array(
+				'every_scan' => __( 'After every scan, also when nothing changed', 'smart-cookie-consent-manager' ),
+				'changes'    => __( 'Only when a scan found something new', 'smart-cookie-consent-manager' ),
+			)
+		);
 		$sccm_recipients = str_replace( ', ', "\n", (string) $settings['alert_email'] );
 		SCCM_Admin::textarea(
 			'alert_email',
@@ -189,6 +198,16 @@ SCCM_Admin::form_open( 'settings' );
 			"name@example.com\nteam@example.com",
 			3
 		);
+		SCCM_Admin::checkbox(
+			'alert_include_admin',
+			__( 'Also send to the site admin', 'smart-cookie-consent-manager' ),
+			$settings['alert_include_admin'],
+			sprintf(
+				/* translators: %s: the site admin email address */
+				__( 'The admin email address from Settings → General: %s', 'smart-cookie-consent-manager' ),
+				'<code>' . esc_html( get_option( 'admin_email' ) ) . '</code>'
+			)
+		);
 		?>
 		<tr>
 			<th scope="row"><?php esc_html_e( 'Try it', 'smart-cookie-consent-manager' ); ?></th>
@@ -201,6 +220,25 @@ SCCM_Admin::form_open( 'settings' );
 					?>
 				</button>
 				<p class="description"><?php esc_html_e( 'Save your changes first. The sample goes to the addresses saved above.', 'smart-cookie-consent-manager' ); ?></p>
+				<?php $sccm_mail = get_option( SCCM_Scanner::MAIL_OPTION ); ?>
+				<?php if ( is_array( $sccm_mail ) ) : ?>
+					<?php $sccm_when = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $sccm_mail['time'] ); ?>
+					<?php if ( ! empty( $sccm_mail['ok'] ) ) : ?>
+						<p class="sccm-mail-status sccm-mail-status--ok">
+							<?php
+							/* translators: 1: date and time, 2: email addresses */
+							echo esc_html( sprintf( __( 'Last email: %1$s, handed to your server for %2$s. If it did not arrive, check the spam folder; some hosts need an SMTP plugin (e.g. WP Mail SMTP) to deliver mail.', 'smart-cookie-consent-manager' ), $sccm_when, implode( ', ', (array) $sccm_mail['to'] ) ) );
+							?>
+						</p>
+					<?php else : ?>
+						<p class="sccm-mail-status sccm-mail-status--error">
+							<?php
+							/* translators: 1: date and time, 2: error message */
+							echo esc_html( sprintf( __( 'Last email failed (%1$s): %2$s Your server could not send email. Install an SMTP plugin (e.g. WP Mail SMTP) or ask your host.', 'smart-cookie-consent-manager' ), $sccm_when, $sccm_mail['error'] ) );
+							?>
+						</p>
+					<?php endif; ?>
+				<?php endif; ?>
 			</td>
 		</tr>
 	</table>
