@@ -187,6 +187,40 @@ list( $asset_url ) = SCCM_Plugin::asset( 'assets/js/sccm-frontend.js' );
 sccm_check( 'hashed copies can be switched off with a filter', 0 === strpos( $asset_url, SCCM_URL ) );
 remove_filter( 'sccm_versioned_asset_files', '__return_false' );
 
+/* ---------------------------------------------------------------- Consent records: filters and CSV safety */
+
+SCCM_Consent_Log::delete_all();
+$ids = array( 'aaaaaaaa-1111-4111-8111-111111111111', 'bbbbbbbb-2222-4222-8222-222222222222', 'cccccccc-3333-4333-8333-333333333333' );
+SCCM_Consent_Log::insert( array( 'consent_id' => $ids[0], 'choice' => 'accept_all', 'categories' => array( 'analytics' ), 'url' => home_url( '/' ) ) );
+SCCM_Consent_Log::insert( array( 'consent_id' => $ids[1], 'choice' => 'reject_all', 'url' => home_url( '/' ) ) );
+SCCM_Consent_Log::insert( array( 'consent_id' => $ids[2], 'choice' => 'reject_all', 'url' => home_url( '/' ) ) );
+$all = SCCM_Consent_Log::query( array() );
+sccm_check( 'records: no filter returns everything', 3 === $all['total'] && 3 === count( $all['rows'] ) );
+$f = SCCM_Consent_Log::query( array( 'choice' => 'reject_all' ) );
+sccm_check( 'records: choice filter', 2 === $f['total'] );
+$f = SCCM_Consent_Log::query( array( 'search' => 'bbbbbbbb' ) );
+sccm_check( 'records: consent ID search', 1 === $f['total'] && $ids[1] === $f['rows'][0]['consent_id'] );
+$f = SCCM_Consent_Log::query( array( 'search' => "x' OR '1'='1" ) );
+sccm_check( 'records: search input cannot change the query (SQL injection attempt finds nothing)', 0 === $f['total'] );
+$f = SCCM_Consent_Log::query( array( 'from' => gmdate( 'Y-m-d', time() + DAY_IN_SECONDS ) ) );
+sccm_check( 'records: date filter', 0 === $f['total'] );
+$f = SCCM_Consent_Log::query( array( 'per_page' => 2, 'page' => 2 ) );
+sccm_check( 'records: paging', 3 === $f['total'] && 1 === count( $f['rows'] ) );
+sccm_check( 'CSV export never starts a cell with a formula (=, +, -, @)', "'=HYPERLINK(\"x\")" === SCCM_Consent_Log::csv_cell( '=HYPERLINK("x")' ) && "'@SUM(1)" === SCCM_Consent_Log::csv_cell( '@SUM(1)' ) && 'https://example.com/' === SCCM_Consent_Log::csv_cell( 'https://example.com/' ) );
+SCCM_Consent_Log::delete_all();
+sccm_check( 'records: delete all', 0 === SCCM_Consent_Log::query( array() )['total'] );
+
+/* ---------------------------------------------------------------- Banner texts sent to the browser */
+
+$html_filter = function ( $texts ) {
+	$texts['banner_text'] = 'Hi <a href="https://example.com/">policy</a><script>alert(1)</script><img src=x onerror=alert(1)>';
+	return $texts;
+};
+add_filter( 'sccm_texts', $html_filter );
+$sent = SCCM_Frontend::config()['texts']['banner_text'];
+remove_filter( 'sccm_texts', $html_filter );
+sccm_check( 'banner HTML is limited to links and emphasis whatever its source', false !== strpos( $sent, '<a href="https://example.com/">policy</a>' ) && false === strpos( $sent, '<script' ) && false === strpos( $sent, 'onerror' ) );
+
 /* ---------------------------------------------------------------- Scan plan (which pages, how many) */
 
 sccm_check( 'scan budget: small sites are scanned completely', 12 === SCCM_Scanner::scan_budget( 10 ) && 42 === SCCM_Scanner::scan_budget( 40 ) );

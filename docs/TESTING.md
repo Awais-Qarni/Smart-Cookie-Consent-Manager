@@ -8,11 +8,14 @@ npm test             # php -l on every PHP file, node --check on JS, PHP unit te
 
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
 SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 102 browser checks (visitor side)
-SCCM_WP=/path/to/wp npm run test:wp                              # 111 checks: cookie list, scan plan (budget, main → sub → sub-sub pages, steps), browser-scan rules, settings, daily change email, policy page, cache clearing (WP-CLI)
-SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 38 checks of the admin screens, incl. a real browser scan and the daily email about it
+SCCM_WP=/path/to/wp npm run test:wp                              # 120 checks: cookie list, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent-record filters, CSV safety, banner HTML (WP-CLI)
+SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 41 checks of the admin screens, incl. a real browser scan, the daily email, GA4 by ID, spoofed notices
 ```
 
 `test:wp` and `e2e:admin` reset the cookie list and settings of the site they run on: dev sites only.
+
+Release check: WordPress.org **Plugin Check** on the files of the zip (`git archive`): only the
+`mailto:` Author URI is reported.
 
 ## Manual test checklist (staging)
 

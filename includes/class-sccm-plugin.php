@@ -114,9 +114,11 @@ final class SCCM_Plugin {
 	}
 
 	/**
-	 * Load translations.
+	 * Load translations shipped in the plugin's languages folder (WordPress.org language packs
+	 * load by themselves; this covers copies installed from a zip).
 	 */
 	public function load_textdomain() {
+		// phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- needed outside WordPress.org.
 		load_plugin_textdomain( 'smart-cookie-consent-manager', false, dirname( SCCM_BASENAME ) . '/languages' );
 	}
 }

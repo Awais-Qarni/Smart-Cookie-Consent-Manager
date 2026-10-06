@@ -42,7 +42,29 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   Real Cookie Banner, iubenda, Cookie Notice, Termly…): two banners would conflict.
 - Translation template `languages/smart-cookie-consent-manager.pot`.
 
+### Security
+- **Consent records CSV export is safe to open in Excel**: values that visitors send (page URL,
+  browser) can no longer start with a formula (`=`, `+`, `-`, `@`), which spreadsheet programs
+  would run (CSV injection).
+- **Admin messages are no longer read from the URL**: a crafted link could show a made-up
+  message ("…visit this site") inside the plugin screens. Messages are now kept on the server
+  for the current user.
+- Every admin action checks the capability and its own nonce in the handler itself.
+- All database queries are fully prepared, including table names (`%i`); the consent-record
+  filters use one fixed statement instead of SQL assembled at runtime.
+- The banner and About texts sent to the browser are always limited to links and emphasis,
+  whatever their source (saved setting, translation file, `sccm_texts` filter).
+
 ### Changed
+- **Scans respect the PHP time limit of the host** (often 30 s): shorter steps and page timeouts
+  that fit, so a slow host can never stop a scan with a fatal error (tested: 43 pages, 2 s extra
+  per page, 30 s limit).
+- Google Analytics loaded by ID uses Google's own snippet (no separate script tag); Strict mode
+  still waits for consent, Advanced mode loads at once.
+- Requires WordPress 6.2 or later (for prepared table names).
+- WordPress.org Plugin Check: no findings on the release files except the `mailto:` author link
+  (WordPress.org would require a web address there).
+- Removed an unused stylesheet rule and the empty `languages/.gitkeep`; shorter readme summary.
 - **Compact banner at the top or bottom: the three buttons are stacked vertically**, all the
   same width, on the right of the text (under it on phones).
 - Plugin author link: `mailto:reachoutawais@gmail.com`. Version 1.2.0.

@@ -117,9 +117,9 @@ class SCCM_Install {
 		global $wpdb;
 		$table = SCCM_Cookies::table();
 
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE source = %s AND service = %s", 'default', 'wordpress' ) );
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE status = %s AND source = %s", 'pending', 'scanner' ) );
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE source = %s AND service = %s', $table, 'default', 'wordpress' ) );
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE status = %s AND source = %s', $table, 'pending', 'scanner' ) );
 		// phpcs:enable
 		delete_option( 'sccm_pending_alert' );
 
@@ -234,10 +234,11 @@ class SCCM_Install {
 	public static function remove_all_data() {
 		global $wpdb;
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
-		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}sccm_cookies" );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
-		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}sccm_consent_log" );
+		// Uninstall only, when the owner chose "delete all data": the plugin's own tables.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . 'sccm_cookies' ) );
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . 'sccm_consent_log' ) );
+		// phpcs:enable
 
 		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge', 'sccm_last_mail', 'sccm_scan_state' ) as $option ) {
 			delete_option( $option );

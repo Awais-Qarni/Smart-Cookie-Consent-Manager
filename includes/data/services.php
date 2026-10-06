@@ -61,7 +61,7 @@ return array(
 		'name'     => 'Cloudflare',
 		'provider' => 'Cloudflare, Inc.',
 		'category' => 'necessary',
-		'patterns' => array( 'challenges.cloudflare.com' ),
+		'patterns' => array( 'challenges.cloudflare.com' ), // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- detection patterns, nothing is loaded from here.
 		'cookies'  => array(
 			array( '__cf_bm', __( '30 minutes', 'smart-cookie-consent-manager' ), __( 'Bot protection.', 'smart-cookie-consent-manager' ) ),
 			array( 'cf_clearance', __( '1 year', 'smart-cookie-consent-manager' ), __( 'Proves a security challenge was passed.', 'smart-cookie-consent-manager' ) ),
@@ -72,7 +72,7 @@ return array(
 		'name'     => 'Google reCAPTCHA',
 		'provider' => 'Google LLC',
 		'category' => 'necessary',
-		'patterns' => array( 'google.com/recaptcha', 'gstatic.com/recaptcha', 'recaptcha.net' ),
+		'patterns' => array( 'google.com/recaptcha', 'gstatic.com/recaptcha', 'recaptcha.net' ), // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- detection patterns, nothing is loaded from here.
 		'cookies'  => array(
 			array( '_GRECAPTCHA', __( '6 months', 'smart-cookie-consent-manager' ), __( 'Protects forms against spam and abuse.', 'smart-cookie-consent-manager' ) ),
 			array( 'rc::a', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Distinguishes humans from bots to protect forms.', 'smart-cookie-consent-manager' ), 'localStorage' ),

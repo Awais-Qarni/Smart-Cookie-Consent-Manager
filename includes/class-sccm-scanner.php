@@ -200,15 +200,27 @@ class SCCM_Scanner {
 		$results = $state['results'];
 		$results['cookies'] = array_fill_keys( (array) $results['cookies'], true );
 
+		// Stay well inside the PHP time limit of this request (often 30 s): a shorter step, page
+		// timeouts that fit in what is left, and no new page when the next one might not fit.
+		$limit   = (int) ini_get( 'max_execution_time' );
+		$request = isset( $_SERVER['REQUEST_TIME'] ) ? (int) $_SERVER['REQUEST_TIME'] : $start;
+		if ( $seconds > 0 && $limit > 0 ) {
+			$seconds = max( 1, min( $seconds, (int) floor( $limit / 3 ) ) );
+		}
+
 		// Changes found by a scan ask visitors again at most once per step, and not at all on the
 		// very first scan (nobody has consented to an older list yet).
 		SCCM_Cookies::bulk(
-			function () use ( &$state, &$results, $start, $seconds ) {
+			function () use ( &$state, &$results, $start, $seconds, $limit, $request ) {
 				do {
+					$timeout = $state['manual'] ? 10 : 15;
+					if ( $limit > 0 ) {
+						$timeout = max( 2, min( $timeout, $limit - ( time() - $request ) - 8 ) );
+					}
 					$url = $state['urls'][ $state['done'] ];
-					self::scan_pages( array( $url ), $state['manual'] ? 10 : 15, $results );
+					self::scan_pages( array( $url ), $timeout, $results );
 					++$state['done'];
-				} while ( $seconds > 0 && $state['done'] < count( $state['urls'] ) && time() - $start < $seconds );
+				} while ( $seconds > 0 && $state['done'] < count( $state['urls'] ) && time() - $start < $seconds && ( $limit <= 0 || time() - $request + 18 < $limit ) );
 				self::add_detected_services( $results );
 			},
 			empty( $state['first'] )

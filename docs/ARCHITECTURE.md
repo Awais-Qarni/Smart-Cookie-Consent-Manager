@@ -187,7 +187,14 @@ Stable keys make Consent Mode mapping, blocking rules, exports and multi-site im
 predictable. Labels/descriptions are editable; categories can be hidden if unused.
 
 ## Security model
-- Admin: `manage_options` + nonces on every action (admin-post handlers).
+- Admin: `manage_options` + nonce checked in every admin-post handler and AJAX callback.
+  Messages after an action are kept in a per-user transient (`sccm_notice_{user}`), never read
+  from the URL.
+- SQL: every query goes through `$wpdb->prepare()`, table names with `%i` (WordPress 6.2+);
+  record filters are one fixed statement (`'' = ''` switches a filter off).
+- CSV export: `SCCM_Consent_Log::csv_cell()` prefixes values starting with = + - @ (CSV injection).
+- Texts shown as HTML in the banner are passed through `wp_kses` (links/emphasis) right before
+  they go to the browser; all other texts are inserted as plain text.
 - Public REST endpoints (needed because pages are cached, so no nonces): strict validation,
   size limits, per-IP-hash rate limiting via transients, names-only payloads.
 - Output escaped everywhere; SQL via `$wpdb->prepare()`.

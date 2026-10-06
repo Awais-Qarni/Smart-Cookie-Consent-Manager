@@ -4,7 +4,7 @@
  * Plugin URI:        https://github.com/Awais-Qarni/Smart-Cookie-Consent-Manager
  * Description:       Plug-and-play cookie consent: Accept / Reject / Manage Preferences banner, blocking until consent, Google Consent Mode v2, GPC, consent records, cookie scanner and an automatic cookie policy.
  * Version:           1.2.0
- * Requires at least: 6.0
+ * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            Muhammad Awais
  * Author URI:        mailto:reachoutawais@gmail.com

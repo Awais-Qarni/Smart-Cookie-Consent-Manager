@@ -5,7 +5,7 @@ compliant cookie banner, blocking of tracking until consent, consent records and
 scanner, with no coding and no subscription. All data stays on your own server.
 
 **Author:** Muhammad Awais, WordPress Developer · **License:** GPL-2.0-or-later ·
-**Requires:** WordPress 6.0+, PHP 7.4+
+**Requires:** WordPress 6.2+, PHP 7.4+
 
 ---
 

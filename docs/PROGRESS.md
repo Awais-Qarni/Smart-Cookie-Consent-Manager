@@ -83,6 +83,20 @@ work on Windows (output path, `SCCM_WP` pointing at `wp-cli.phar`).
   `mailto:reachoutawais@gmail.com`; CHANGELOG `[Unreleased]` → `[1.2.0] - 2026-10-06`.
 - Tests: WP-CLI 111/111, e2e 102/102, admin e2e 38/38.
 
+**Round 6 (same day): final review before going live**
+- WordPress.org Plugin Check (installed on the test site) on the release files: 155 findings on
+  the repo folder (mostly tests/docs/dotfiles, not shipped) → release files clean except the
+  owner's `mailto:` Author URI (WordPress.org requires a web URL there; kept on request).
+- Security: CSV injection in the records export fixed (`csv_cell`); admin notices moved from
+  `?sccm_msg=` to a per-user transient (no spoofed messages); nonce checked in every handler;
+  all SQL prepared with `%i` table names (Requires at least 6.2); record filters as one fixed
+  statement; banner HTML texts `wp_kses`'d before output whatever the source.
+- Bug found by WP_DEBUG: a scan step + a page timeout could exceed a 30 s PHP limit (fatal).
+  Steps now size themselves from `max_execution_time`; tested with a 2 s/page slow host.
+- GA4-by-ID uses Google's snippet (no raw script tag); new admin e2e check for Strict/Advanced.
+- Dead-code sweep: no unused PHP functions or texts; removed `.sccm-linkbtn` CSS, `.gitkeep`.
+- Tests: unit 33/33, WP-CLI 120/120, e2e 102/102, admin e2e 41/41, no PHP notices with WP_DEBUG.
+
 **Next**
 1. Owner: update the plugin on staging (purge NitroPack + WP Engine once more for this update),
    deactivate Cookiebot there if it is still active (the Dashboard now says so), check the

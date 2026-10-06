@@ -1,14 +1,14 @@
 === Smart Cookie Consent Manager ===
 Contributors: muhammadawais
 Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
-Requires at least: 6.0
+Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Plug-and-play cookie consent: banner, blocking until consent, Google Consent Mode v2, GPC, consent records, cookie scanner and automatic cookie policy.
+Cookie consent banner that blocks trackers until consent, with Google Consent Mode v2, GPC, consent records, a cookie scanner and cookie policy.
 
 == Description ==
 
@@ -44,6 +44,7 @@ Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 = 1.2.0 =
 * Scans adapt to the size of the website: small sites completely, bigger ones 40–80 pages (main pages, then sub and sub-sub pages of every section), in short steps that never hit time limits.
 * Compact top/bottom banner: buttons stacked vertically.
+* Security and quality: CSV export safe for spreadsheets, admin messages not taken from the URL, fully prepared queries, scans respect the host's PHP time limit; requires WordPress 6.2.
 * One email a day at a time you choose, only when something changed in the last 24 hours, to the site admin and the listed addresses; no admin links in the email; delivery status shown in Settings.
 * Button order: four choices, incl. Allow all · Deny · Allow selection (new default) and Deny · Allow all · Allow selection.
 * Banner looks the same on every theme (theme button/link styles no longer leak in); button texts never wrap.

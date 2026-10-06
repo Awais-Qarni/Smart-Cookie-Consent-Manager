@@ -158,9 +158,11 @@ class SCCM_Cache {
 			},
 			// LiteSpeed Cache, Breeze (Cloudways), Hummingbird: they listen to these actions.
 			static function () {
+				// phpcs:disable WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- the cache plugins' own hooks.
 				do_action( 'litespeed_purge_all' );
 				do_action( 'breeze_clear_all_cache' );
 				do_action( 'wphb_clear_page_cache' );
+				// phpcs:enable
 			},
 		);
 		foreach ( $calls as $call ) {

@@ -160,15 +160,7 @@ a.sccm-open-preferences.sccm-btn:hover {
 	grid-template-columns: minmax(0, 1fr);
 }
 
-#sccm-app .sccm-linkbtn {
-	color: var(--sccm-link);
-	font-weight: 600;
-	padding: 4px 0;
-	text-decoration: underline;
-}
-
 #sccm-app .sccm-btn:focus-visible,
-#sccm-app .sccm-linkbtn:focus-visible,
 #sccm-app .sccm-close:focus-visible,
 #sccm-app .sccm-tab:focus-visible,
 #sccm-app .sccm-acc__toggle:focus-visible,

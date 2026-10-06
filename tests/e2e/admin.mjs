@@ -131,7 +131,7 @@ await page.click('.sccm-scanstrip button');
 await page.waitForSelector('.sccm-scan-status');
 check('BS1 the scan shows its progress', /Step 1 of 2|Step 2 of 2/.test(await page.textContent('.sccm-scan-status')));
 if (fs.existsSync(CONTENT + '/mail-captured.json')) fs.unlinkSync(CONTENT + '/mail-captured.json');
-await page.waitForURL(/sccm_msg/, { timeout: 150000 });
+await page.waitForURL(/sccm_notice/, { timeout: 150000 });
 const listed = JSON.parse(wp('eval', `echo wp_json_encode( array_map( function ( $r ) { return $r['name'] . '|' . $r['status'] . '|' . $r['category']; }, SCCM_Cookies::all_rows() ) );`));
 check('BS2 a cookie set by JavaScript (_ga) is found and sorted as Statistics', listed.includes('_ga|active|analytics'), listed.join(', '));
 check('BS2 third-party cookies of an embedded service (YouTube YSC) are listed', listed.includes('YSC|active|marketing'));
@@ -159,6 +159,36 @@ const bad = await page.request.post(`${BASE}/wp-admin/admin-post.php`, { form: {
 check('X1 a bad nonce is refused', bad.status() === 403, String(bad.status()));
 const anon = await (await browser.newContext()).request.post(`${BASE}/wp-admin/admin-post.php`, { form: { action: 'sccm_scan_now' }, maxRedirects: 0 });
 check('X2 logged-out requests are refused', anon.status() !== 200 && anon.status() < 500, String(anon.status()));
+
+// Spoofed notices: a message in the URL is not shown (notices are kept on the server).
+await page.goto(admin('cookies') + '&sccm_msg=' + encodeURIComponent('Your licence expired, visit evil.example') + '&sccm_notice=1');
+check('X3 a message put in the URL is not shown', !(await page.evaluate(() => Array.from(document.querySelectorAll('.notice')).map((n) => n.textContent).join(' '))).includes('evil.example'));
+
+// Google Analytics loaded by ID: Strict mode waits for consent, Advanced mode loads at once.
+const ga = async (mode) => {
+	wp('eval', `SCCM_Settings::update(array('ga4_id' => 'G-TEST12345', 'consent_mode' => '${mode}'));`);
+	const ctx2 = await browser.newContext();
+	const seen = [];
+	await ctx2.route(/googletagmanager\.com|facebook\.net|youtube\.com|fonts\.g/, (route) => {
+		seen.push(route.request().url());
+		route.fulfill({ status: 200, contentType: 'application/javascript', body: '' });
+	});
+	const p = await ctx2.newPage();
+	await p.goto(BASE + '/');
+	await p.waitForTimeout(800);
+	const before = seen.some((u) => u.includes('gtag/js?id=G-TEST12345'));
+	await p.click('#sccm-banner .sccm-btn--accept');
+	await p.waitForTimeout(800);
+	const after = seen.some((u) => u.includes('gtag/js?id=G-TEST12345'));
+	const config = await p.evaluate(() => (window.dataLayer || []).some((e) => e && e[0] === 'config' && e[1] === 'G-TEST12345'));
+	await ctx2.close();
+	return { before, after, config };
+};
+const strict = await ga('basic');
+check('G3 GA4 by ID (Strict): not loaded before consent, loaded and configured after Allow all', !strict.before && strict.after && strict.config, JSON.stringify(strict));
+const advanced = await ga('advanced');
+check('G3 GA4 by ID (Advanced): loaded at once (Consent Mode handles the choice)', advanced.before && advanced.config, JSON.stringify(advanced));
+wp('eval', `SCCM_Settings::update(array('ga4_id' => '', 'consent_mode' => 'basic'));`);
 
 check('no JavaScript errors in the admin', errors.length === 0, errors.join(' | '));
 wp('eval', `SCCM_Settings::update(array_merge(SCCM_Settings::defaults(), array("policy_page_id" => SCCM_Settings::get("policy_page_id"))));`);

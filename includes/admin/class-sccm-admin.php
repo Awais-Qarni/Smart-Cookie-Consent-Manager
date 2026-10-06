@@ -137,11 +137,12 @@ class SCCM_Admin {
 		if ( ! $screen || 'toplevel_page_' . self::SLUG !== $screen->id ) {
 			return;
 		}
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended
-		if ( ! empty( $_GET['sccm_msg'] ) ) {
-			$type = ( ! empty( $_GET['sccm_err'] ) ) ? 'error' : 'success';
-			echo '<div class="notice notice-' . esc_attr( $type ) . ' is-dismissible"><p>' . esc_html( sanitize_text_field( wp_unslash( $_GET['sccm_msg'] ) ) ) . '</p></div>';
+		$notice = get_transient( 'sccm_notice_' . get_current_user_id() );
+		if ( is_array( $notice ) && '' !== $notice['msg'] ) {
+			delete_transient( 'sccm_notice_' . get_current_user_id() );
+			echo '<div class="notice notice-' . ( $notice['error'] ? 'error' : 'success' ) . ' is-dismissible"><p>' . esc_html( $notice['msg'] ) . '</p></div>';
 		}
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'dashboard';
 		// phpcs:enable
 		// The Dashboard and the Cookies tab already show what is waiting; elsewhere, remind.
@@ -419,15 +420,12 @@ class SCCM_Admin {
 	/* ------------------------------------------------------------------ Handlers */
 
 	/**
-	 * Verify capability + nonce.
-	 *
-	 * @param string $action Nonce action.
+	 * Stop unless the current user may manage the plugin (each handler then checks its nonce).
 	 */
-	private static function guard( $action ) {
+	private static function require_cap() {
 		if ( ! current_user_can( self::CAP ) ) {
 			wp_die( esc_html__( 'You are not allowed to do this.', 'smart-cookie-consent-manager' ), 403 );
 		}
-		check_admin_referer( $action );
 	}
 
 	/**
@@ -439,19 +437,36 @@ class SCCM_Admin {
 	 * @param array  $args  Extra args.
 	 */
 	private static function back( $tab, $msg, $error = false, array $args = array() ) {
-		$args['sccm_msg'] = rawurlencode( $msg );
-		if ( $error ) {
-			$args['sccm_err'] = 1;
-		}
+		self::flash( $msg, $error );
+		$args['sccm_notice'] = 1;
 		wp_safe_redirect( self::url( $tab, $args ) );
 		exit;
+	}
+
+	/**
+	 * Keep a message for the next admin page view of the current user. Messages are not put in
+	 * the URL, so a link cannot show a made-up message in the plugin screens.
+	 *
+	 * @param string $msg   Message.
+	 * @param bool   $error Error flag.
+	 */
+	private static function flash( $msg, $error = false ) {
+		set_transient(
+			'sccm_notice_' . get_current_user_id(),
+			array(
+				'msg'   => (string) $msg,
+				'error' => (bool) $error,
+			),
+			5 * MINUTE_IN_SECONDS
+		);
 	}
 
 	/**
 	 * Save settings of a tab.
 	 */
 	public static function handle_save() {
-		self::guard( 'sccm_save' );
+		self::require_cap();
+		check_admin_referer( 'sccm_save' );
 		$tab   = isset( $_POST['tab'] ) ? sanitize_key( wp_unslash( $_POST['tab'] ) ) : 'dashboard';
 		$input = isset( $_POST['sccm'] ) && is_array( $_POST['sccm'] ) ? wp_unslash( $_POST['sccm'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitised in SCCM_Settings::sanitize().
 
@@ -480,7 +495,8 @@ class SCCM_Admin {
 	 * Add or edit a registry row.
 	 */
 	public static function handle_cookie_save() {
-		self::guard( 'sccm_cookie_save' );
+		self::require_cap();
+		check_admin_referer( 'sccm_cookie_save' );
 		$id   = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
 		$data = isset( $_POST['cookie'] ) && is_array( $_POST['cookie'] ) ? wp_unslash( $_POST['cookie'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitised in SCCM_Cookies::save().
 		if ( ! $id ) {
@@ -497,7 +513,8 @@ class SCCM_Admin {
 	 * Delete a registry row.
 	 */
 	public static function handle_cookie_delete() {
-		self::guard( 'sccm_cookie_delete' );
+		self::require_cap();
+		check_admin_referer( 'sccm_cookie_delete' );
 		SCCM_Cookies::delete( isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0 );
 		self::back( 'cookies', __( 'Cookie deleted.', 'smart-cookie-consent-manager' ) );
 	}
@@ -506,7 +523,8 @@ class SCCM_Admin {
 	 * Approve (set category + active) or ignore a pending row.
 	 */
 	public static function handle_cookie_status() {
-		self::guard( 'sccm_cookie_status' );
+		self::require_cap();
+		check_admin_referer( 'sccm_cookie_status' );
 		$id       = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;
 		$status   = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : 'active';
 		$category = isset( $_POST['category'] ) ? sanitize_key( wp_unslash( $_POST['category'] ) ) : '';
@@ -526,7 +544,8 @@ class SCCM_Admin {
 	 * Ignore everything that waits for review.
 	 */
 	public static function handle_ignore_all() {
-		self::guard( 'sccm_ignore_all' );
+		self::require_cap();
+		check_admin_referer( 'sccm_ignore_all' );
 		$changed = SCCM_Cookies::bulk_status( 'pending', 'ignored' );
 		/* translators: %d: number of cookies */
 		self::back( 'cookies', sprintf( _n( '%d cookie ignored.', '%d cookies ignored.', $changed, 'smart-cookie-consent-manager' ), $changed ) );
@@ -536,7 +555,8 @@ class SCCM_Admin {
 	 * Add a library service's cookies to the registry.
 	 */
 	public static function handle_add_service() {
-		self::guard( 'sccm_add_service' );
+		self::require_cap();
+		check_admin_referer( 'sccm_add_service' );
 		$service = isset( $_POST['service'] ) ? sanitize_key( wp_unslash( $_POST['service'] ) ) : '';
 		$added   = SCCM_Cookies::add_service( $service, 'library' );
 		/* translators: %d: number of cookies */
@@ -547,7 +567,8 @@ class SCCM_Admin {
 	 * Run the scanner now.
 	 */
 	public static function handle_scan_now() {
-		self::guard( 'sccm_scan_now' );
+		self::require_cap();
+		check_admin_referer( 'sccm_scan_now' );
 		SCCM_Scanner::begin( true );
 		// One request can only scan for so long (hosts stop requests after 30–60 s): the rest
 		// continues in the background.
@@ -634,14 +655,16 @@ class SCCM_Admin {
 		if ( ! empty( $data['blocked'] ) && absint( $data['blocked'] ) >= absint( $data['pages'] ?? 0 ) ) {
 			$message .= ' ' . __( 'Your website did not allow itself to be opened in a frame (a security header), so only the server scan ran. Cookies set by scripts may be missing.', 'smart-cookie-consent-manager' );
 		}
-		wp_send_json_success( array( 'redirect' => self::url( 'cookies', array( 'sccm_msg' => rawurlencode( $message ) ) ) ) );
+		self::flash( $message );
+		wp_send_json_success( array( 'redirect' => self::url( 'cookies', array( 'sccm_notice' => 1 ) ) ) );
 	}
 
 	/**
 	 * Send the email digest now.
 	 */
 	public static function handle_send_digest() {
-		self::guard( 'sccm_send_digest' );
+		self::require_cap();
+		check_admin_referer( 'sccm_send_digest' );
 		$sent = SCCM_Scanner::send_digest();
 		self::back( 'settings', $sent ? __( 'Email sent.', 'smart-cookie-consent-manager' ) : __( 'Nothing to send, or the email could not be sent.', 'smart-cookie-consent-manager' ), ! $sent );
 	}
@@ -650,7 +673,8 @@ class SCCM_Admin {
 	 * Send a sample alert email to the configured recipients.
 	 */
 	public static function handle_send_test_email() {
-		self::guard( 'sccm_send_test_email' );
+		self::require_cap();
+		check_admin_referer( 'sccm_send_test_email' );
 		$sent = SCCM_Scanner::send_test();
 		if ( $sent ) {
 			/* translators: %s: email addresses */
@@ -663,8 +687,9 @@ class SCCM_Admin {
 	 * Download consent records as CSV.
 	 */
 	public static function handle_export_log() {
-		self::guard( 'sccm_export_log' );
-		$args = self::log_filters( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- verified in guard().
+		self::require_cap();
+		check_admin_referer( 'sccm_export_log' );
+		$args = self::log_filters( $_POST ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- unslashed and sanitized in log_filters().
 		nocache_headers();
 		header( 'Content-Type: text/csv; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename=consent-log-' . gmdate( 'Y-m-d' ) . '.csv' );
@@ -676,7 +701,8 @@ class SCCM_Admin {
 	 * Purge records older than the retention period.
 	 */
 	public static function handle_purge_log() {
-		self::guard( 'sccm_purge_log' );
+		self::require_cap();
+		check_admin_referer( 'sccm_purge_log' );
 		$deleted = SCCM_Consent_Log::purge( (int) SCCM_Settings::get( 'retention_months' ) );
 		/* translators: %d: rows */
 		self::back( 'records', sprintf( __( '%d old record(s) deleted.', 'smart-cookie-consent-manager' ), $deleted ) );
@@ -686,7 +712,8 @@ class SCCM_Admin {
 	 * Delete all consent records.
 	 */
 	public static function handle_delete_log() {
-		self::guard( 'sccm_delete_log' );
+		self::require_cap();
+		check_admin_referer( 'sccm_delete_log' );
 		SCCM_Consent_Log::delete_all();
 		self::back( 'records', __( 'All consent records deleted.', 'smart-cookie-consent-manager' ) );
 	}
@@ -695,7 +722,8 @@ class SCCM_Admin {
 	 * Download settings JSON.
 	 */
 	public static function handle_export_settings() {
-		self::guard( 'sccm_export_settings' );
+		self::require_cap();
+		check_admin_referer( 'sccm_export_settings' );
 		nocache_headers();
 		header( 'Content-Type: application/json; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename=cookie-consent-settings-' . gmdate( 'Y-m-d' ) . '.json' );
@@ -707,7 +735,8 @@ class SCCM_Admin {
 	 * Import settings JSON (upload).
 	 */
 	public static function handle_import_settings() {
-		self::guard( 'sccm_import_settings' );
+		self::require_cap();
+		check_admin_referer( 'sccm_import_settings' );
 		if ( empty( $_FILES['import_file']['tmp_name'] ) || ! is_uploaded_file( $_FILES['import_file']['tmp_name'] ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 			self::back( 'tools', __( 'Please choose a file.', 'smart-cookie-consent-manager' ), true );
 		}
@@ -723,7 +752,8 @@ class SCCM_Admin {
 	 * Ask every visitor again.
 	 */
 	public static function handle_bump_version() {
-		self::guard( 'sccm_bump_version' );
+		self::require_cap();
+		check_admin_referer( 'sccm_bump_version' );
 		$version = SCCM_Cookies::bump_version();
 		/* translators: %d: version */
 		self::back( 'tools', sprintf( __( 'Consent version is now %d. Every visitor will be asked again (clear your page cache).', 'smart-cookie-consent-manager' ), $version ) );
@@ -733,7 +763,8 @@ class SCCM_Admin {
 	 * Create a Cookie Policy page with the shortcode.
 	 */
 	public static function handle_create_policy_page() {
-		self::guard( 'sccm_create_policy_page' );
+		self::require_cap();
+		check_admin_referer( 'sccm_create_policy_page' );
 		$page_id = wp_insert_post(
 			array(
 				'post_title'   => __( 'Cookie Policy', 'smart-cookie-consent-manager' ),
@@ -754,7 +785,8 @@ class SCCM_Admin {
 	 * Reset all settings to defaults (registry and log are kept).
 	 */
 	public static function handle_reset_settings() {
-		self::guard( 'sccm_reset_settings' );
+		self::require_cap();
+		check_admin_referer( 'sccm_reset_settings' );
 		update_option( SCCM_Settings::OPTION, SCCM_Settings::defaults(), false );
 		SCCM_Settings::flush();
 		SCCM_Install::schedule_events();
@@ -765,7 +797,8 @@ class SCCM_Admin {
 	 * Add a custom blocking rule (e.g. from a scanner finding).
 	 */
 	public static function handle_add_rule() {
-		self::guard( 'sccm_add_rule' );
+		self::require_cap();
+		check_admin_referer( 'sccm_add_rule' );
 		$pattern  = isset( $_POST['pattern'] ) ? sanitize_text_field( wp_unslash( $_POST['pattern'] ) ) : '';
 		$category = isset( $_POST['category'] ) ? sanitize_key( wp_unslash( $_POST['category'] ) ) : '';
 		$rules    = (array) SCCM_Settings::get( 'rules' );

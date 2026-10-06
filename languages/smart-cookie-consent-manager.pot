@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-06T17:11:58+00:00\n"
+"POT-Creation-Date: 2026-10-06T17:51:07+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: smart-cookie-consent-manager\n"
@@ -74,7 +74,7 @@ msgstr ""
 
 #: includes/admin/class-sccm-admin.php:78
 #: includes/admin/class-sccm-admin.php:79
-#: includes/admin/class-sccm-admin.php:177
+#: includes/admin/class-sccm-admin.php:178
 msgid "Cookie Consent"
 msgstr ""
 
@@ -109,74 +109,74 @@ msgid "The scan could not finish: %s"
 msgstr ""
 
 #. translators: %d: number of cookies
-#: includes/admin/class-sccm-admin.php:153
+#: includes/admin/class-sccm-admin.php:154
 #, php-format
 msgid "%d cookie is waiting for your approval."
 msgid_plural "%d cookies are waiting for your approval."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/admin/class-sccm-admin.php:156
+#: includes/admin/class-sccm-admin.php:157
 msgid "Review now"
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:178
+#: includes/admin/class-sccm-admin.php:179
 msgid "Banner on"
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:178
+#: includes/admin/class-sccm-admin.php:179
 msgid "Banner off"
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:179
+#: includes/admin/class-sccm-admin.php:180
 msgid "Help: how it works"
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:274
+#: includes/admin/class-sccm-admin.php:275
 msgid "Save changes"
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:302
+#: includes/admin/class-sccm-admin.php:303
 msgid "Enabled"
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:428
-#: includes/admin/class-sccm-admin.php:570
-#: includes/admin/class-sccm-admin.php:586
-#: includes/admin/class-sccm-admin.php:615
+#: includes/admin/class-sccm-admin.php:427
+#: includes/admin/class-sccm-admin.php:591
+#: includes/admin/class-sccm-admin.php:607
+#: includes/admin/class-sccm-admin.php:636
 msgid "You are not allowed to do this."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:476
+#: includes/admin/class-sccm-admin.php:491
 msgid "Settings saved. Page caches of supported caching plugins and hosts were cleared; if you use another cache or a CDN, clear it so visitors get the new settings."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:491
+#: includes/admin/class-sccm-admin.php:507
 msgid "Could not save the cookie. Please check the name."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:493
+#: includes/admin/class-sccm-admin.php:509
 msgid "Cookie saved."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:502
+#: includes/admin/class-sccm-admin.php:519
 msgid "Cookie deleted."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:517
+#: includes/admin/class-sccm-admin.php:535
 msgid "Please choose a category for the cookie first."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:522
+#: includes/admin/class-sccm-admin.php:540
 msgid "Cookie approved. It now appears in the cookie list."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:522
+#: includes/admin/class-sccm-admin.php:540
 msgid "Cookie ignored. It will not be reported again."
 msgstr ""
 
 #. translators: %d: number of cookies
-#: includes/admin/class-sccm-admin.php:532
+#: includes/admin/class-sccm-admin.php:551
 #, php-format
 msgid "%d cookie ignored."
 msgid_plural "%d cookies ignored."
@@ -184,97 +184,97 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of cookies
-#: includes/admin/class-sccm-admin.php:543
+#: includes/admin/class-sccm-admin.php:563
 #, php-format
 msgid "%d cookie(s) added from the library."
 msgstr ""
 
 #. translators: 1: pages checked, 2: pages planned
-#: includes/admin/class-sccm-admin.php:558
+#: includes/admin/class-sccm-admin.php:579
 #, php-format
 msgid "Scan started: %1$d of %2$d page(s) checked. The rest is scanned in the background in the next minutes."
 msgstr ""
 
 #. translators: 1: pages, 2: services
-#: includes/admin/class-sccm-admin.php:562
+#: includes/admin/class-sccm-admin.php:583
 #, php-format
 msgid "Scan finished: %1$d page(s) checked, %2$d service(s) detected."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:621
+#: includes/admin/class-sccm-admin.php:642
 msgid "The scan took too long. Please start it again."
 msgstr ""
 
 #. translators: 1: pages, 2: cookies added automatically, 3: cookies waiting for review
-#: includes/admin/class-sccm-admin.php:629
+#: includes/admin/class-sccm-admin.php:650
 #, php-format
 msgid "Scan finished: %1$d page(s) opened in your browser. %2$d new cookie(s) were recognised and added automatically, %3$d need your review."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:635
+#: includes/admin/class-sccm-admin.php:656
 msgid "Your website did not allow itself to be opened in a frame (a security header), so only the server scan ran. Cookies set by scripts may be missing."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:646
+#: includes/admin/class-sccm-admin.php:669
 msgid "Email sent."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:646
+#: includes/admin/class-sccm-admin.php:669
 msgid "Nothing to send, or the email could not be sent."
 msgstr ""
 
 #. translators: %s: email addresses
-#: includes/admin/class-sccm-admin.php:657
+#: includes/admin/class-sccm-admin.php:681
 #, php-format
 msgid "Sample email sent to %s. If it does not arrive, check your spam folder or your site's email setup."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:659
+#: includes/admin/class-sccm-admin.php:683
 msgid "The sample email could not be sent. Your website may not be set up to send email."
 msgstr ""
 
 #. translators: %d: rows
-#: includes/admin/class-sccm-admin.php:682
+#: includes/admin/class-sccm-admin.php:708
 #, php-format
 msgid "%d old record(s) deleted."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:691
+#: includes/admin/class-sccm-admin.php:718
 msgid "All consent records deleted."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:712
+#: includes/admin/class-sccm-admin.php:741
 msgid "Please choose a file."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:719
+#: includes/admin/class-sccm-admin.php:748
 msgid "Settings imported."
 msgstr ""
 
 #. translators: %d: version
-#: includes/admin/class-sccm-admin.php:729
+#: includes/admin/class-sccm-admin.php:759
 #, php-format
 msgid "Consent version is now %d. Every visitor will be asked again (clear your page cache)."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:739
+#: includes/admin/class-sccm-admin.php:770
 #: includes/class-sccm-settings.php:152
 msgid "Cookie Policy"
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:740
+#: includes/admin/class-sccm-admin.php:771
 msgid "This page explains which cookies this website uses and why. You can change your choice at any time."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:750
+#: includes/admin/class-sccm-admin.php:781
 msgid "Cookie Policy page created and linked in the banner."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:761
+#: includes/admin/class-sccm-admin.php:793
 msgid "Settings reset to defaults."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:777
+#: includes/admin/class-sccm-admin.php:810
 msgid "Blocking rule added."
 msgstr ""
 
@@ -755,7 +755,7 @@ msgstr ""
 
 #: includes/admin/views/help.php:160
 #: includes/admin/views/tab-cookies.php:81
-#: includes/class-sccm-scanner.php:1048
+#: includes/class-sccm-scanner.php:1060
 msgid "Needs review"
 msgstr ""
 
@@ -1127,7 +1127,7 @@ msgid "Optional. Elements use the <code>sccm-</code> prefix, e.g. <code>#sccm-ba
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:25
-#: includes/class-sccm-scanner.php:1188
+#: includes/class-sccm-scanner.php:1200
 msgid "Cookie"
 msgstr ""
 
@@ -2074,20 +2074,20 @@ msgstr ""
 msgid "Marketing cookies are used to track visitors across websites. The aim is to show ads that are relevant to you, and to measure how well advertising campaigns perform."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:347
+#: includes/class-sccm-scanner.php:359
 msgid "Google Fonts are loaded from inside CSS (e.g. an @import or a combined stylesheet). These requests cannot be blocked by the plugin. Host the fonts on your own server to avoid them."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:919
+#: includes/class-sccm-scanner.php:931
 msgid "No valid email address."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:921
+#: includes/class-sccm-scanner.php:933
 msgid "WordPress could not send the email (wp_mail returned false)."
 msgstr ""
 
 #. translators: 1: site name, 2: number of cookies
-#: includes/class-sccm-scanner.php:966
+#: includes/class-sccm-scanner.php:978
 #, php-format
 msgid "[%1$s] %2$d new cookie needs review"
 msgid_plural "[%1$s] %2$d new cookies need review"
@@ -2095,7 +2095,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: site name, 2: number of cookies
-#: includes/class-sccm-scanner.php:969
+#: includes/class-sccm-scanner.php:981
 #, php-format
 msgid "[%1$s] %2$d cookie was added to your cookie banner"
 msgid_plural "[%1$s] %2$d cookies were added to your cookie banner"
@@ -2103,7 +2103,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: site name, 2: number of resources
-#: includes/class-sccm-scanner.php:972
+#: includes/class-sccm-scanner.php:984
 #, php-format
 msgid "[%1$s] %2$d new third-party resource found"
 msgid_plural "[%1$s] %2$d new third-party resources found"
@@ -2111,70 +2111,70 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: subject
-#: includes/class-sccm-scanner.php:976
+#: includes/class-sccm-scanner.php:988
 #, php-format
 msgid "Sample: %s"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1029
-#: includes/class-sccm-scanner.php:1082
+#: includes/class-sccm-scanner.php:1041
+#: includes/class-sccm-scanner.php:1094
 msgid "Cookie changes in the last 24 hours"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1040
+#: includes/class-sccm-scanner.php:1052
 msgid "needs review"
 msgid_plural "need review"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-sccm-scanner.php:1042
+#: includes/class-sccm-scanner.php:1054
 msgid "added automatically"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1048
+#: includes/class-sccm-scanner.php:1060
 msgid "We could not tell what these cookies are for. Someone who manages the website should choose a category for each one in WordPress under Cookie Consent → Cookies. Until then they are not shown to visitors."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1057
+#: includes/class-sccm-scanner.php:1069
 msgid "Added automatically"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1057
+#: includes/class-sccm-scanner.php:1069
 msgid "These are well-known cookies. They were put in the right category for you. Nothing to do unless you disagree."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1070
+#: includes/class-sccm-scanner.php:1082
 msgid "Other third-party resources"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1070
+#: includes/class-sccm-scanner.php:1082
 msgid "External files were found that are not in the service library, so they are not blocked. If one of them tracks visitors, a blocking rule can be added in WordPress under Cookie Consent → Settings."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1087
+#: includes/class-sccm-scanner.php:1099
 msgid "NEEDS REVIEW"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1088
+#: includes/class-sccm-scanner.php:1100
 msgid "Someone who manages the website should choose a category for each one in WordPress under Cookie Consent → Cookies. Until then visitors do not see them."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1095
+#: includes/class-sccm-scanner.php:1107
 msgid "ADDED AUTOMATICALLY"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1102
+#: includes/class-sccm-scanner.php:1114
 msgid "OTHER THIRD-PARTY RESOURCES (not blocked)"
 msgstr ""
 
 #. translators: 1: email addresses, 2: time of day
-#: includes/class-sccm-scanner.php:1141
+#: includes/class-sccm-scanner.php:1153
 #, php-format
 msgid "Sent by Smart Cookie Consent Manager to %1$s. This email is sent once a day at %2$s, only when something changed. The website's administrator can change this in WordPress under Cookie Consent → Settings."
 msgstr ""
 
 #. translators: 1: number of cookies, 2: count per category, e.g. "Necessary 3 · Statistics 2"
-#: includes/class-sccm-scanner.php:1156
+#: includes/class-sccm-scanner.php:1168
 #, php-format
 msgid "Your cookie banner now lists %1$d cookie (%2$s)."
 msgid_plural "Your cookie banner now lists %1$d cookies (%2$s)."
@@ -2182,7 +2182,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of items
-#: includes/class-sccm-scanner.php:1211
+#: includes/class-sccm-scanner.php:1223
 #, php-format
 msgid "…and %d more. See the full list in the plugin."
 msgstr ""

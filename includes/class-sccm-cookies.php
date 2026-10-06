@@ -97,8 +97,8 @@ class SCCM_Cookies {
 		global $wpdb;
 		if ( null === self::$rows ) {
 			$table = self::table();
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$rows  = $wpdb->get_results( "SELECT * FROM {$table}", ARRAY_A );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- read once per request, kept in self::$rows.
+			$rows  = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i', $table ), ARRAY_A );
 			$rows  = is_array( $rows ) ? $rows : array();
 			$order = array_flip( SCCM_Categories::KEYS );
 			usort(
@@ -185,8 +185,8 @@ class SCCM_Cookies {
 			return self::counts()['pending'];
 		}
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'pending' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE status = %s', $table, 'pending' ) );
 	}
 
 	/**

@@ -56,7 +56,7 @@ class SCCM_Frontend {
 	public static function scan_mode_headers() {
 		if ( self::is_scan_mode() ) {
 			if ( ! defined( 'DONOTCACHEPAGE' ) ) {
-				define( 'DONOTCACHEPAGE', true );
+				define( 'DONOTCACHEPAGE', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound -- the standard "do not cache" signal of page-cache plugins.
 			}
 			nocache_headers();
 		}
@@ -144,13 +144,10 @@ class SCCM_Frontend {
 			echo '<script id="sccm-gtm" ' . $attrs . '>' . $gtm_js . "</script>\n";
 		}
 		if ( $ga4 ) {
-			$src = 'https://www.googletagmanager.com/gtag/js?id=' . rawurlencode( $ga4 );
-			if ( $blocked ) {
-				echo '<script id="sccm-ga4-src" type="text/plain" data-sccm-category="analytics" data-sccm-src="' . esc_url( $src ) . '" async></script>' . "\n";
-			} else {
-				echo '<script id="sccm-ga4-src" src="' . esc_url( $src ) . '" async></script>' . "\n"; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript
-			}
-			$ga4_js = 'window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){dataLayer.push(arguments);};gtag("js",new Date());gtag("config",' . wp_json_encode( $ga4 ) . ');';
+			// Google's gtag.js snippet. Like GTM above, the snippet adds the library itself, so in
+			// Strict mode the whole snippet waits for consent as one blocked script.
+			$ga4_js = '(function(d,i){var j=d.createElement("script");j.async=true;j.src="https://www.googletagmanager.com/gtag/js?id="+encodeURIComponent(i);d.head.appendChild(j);})(document,' . wp_json_encode( $ga4 ) . ');'
+				. 'window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){dataLayer.push(arguments);};gtag("js",new Date());gtag("config",' . wp_json_encode( $ga4 ) . ');';
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			echo '<script id="sccm-ga4" ' . $attrs . '>' . $ga4_js . "</script>\n";
 		}
@@ -306,7 +303,7 @@ class SCCM_Frontend {
 			'floatingPos' => $settings['floating_position'],
 			'placeholder' => (bool) $settings['iframe_placeholder'],
 			'categories'  => $categories,
-			'texts'       => SCCM_Settings::texts(),
+			'texts'       => self::browser_texts(),
 			'links'       => array(
 				'policy'  => self::policy_url(),
 				'privacy' => $settings['show_privacy_link'] ? (string) get_privacy_policy_url() : '',
@@ -337,6 +334,21 @@ class SCCM_Frontend {
 		 * @param array $config Config array.
 		 */
 		return apply_filters( 'sccm_frontend_config', $config );
+	}
+
+	/**
+	 * Visitor texts for the browser. The two texts shown as HTML (banner and About text) are
+	 * limited to links and emphasis whatever their source (saved setting, translation file,
+	 * sccm_texts filter); all other texts are inserted as plain text by the script.
+	 *
+	 * @return array
+	 */
+	private static function browser_texts() {
+		$texts = SCCM_Settings::texts();
+		foreach ( array( 'banner_text', 'about_text' ) as $key ) {
+			$texts[ $key ] = wp_kses( (string) ( $texts[ $key ] ?? '' ), SCCM_Settings::allowed_text_html() );
+		}
+		return $texts;
 	}
 
 	/**

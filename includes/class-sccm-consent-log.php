@@ -83,18 +83,45 @@ class SCCM_Consent_Log {
 	public static function query( array $args = array() ) {
 		global $wpdb;
 
-		list( $where, $params ) = self::where( $args );
-		$table                  = self::table();
-		$per_page               = max( 1, min( 500, absint( $args['per_page'] ?? 50 ) ) );
-		$page                   = max( 1, absint( $args['page'] ?? 1 ) );
-		$offset                 = ( $page - 1 ) * $per_page;
+		list( $search, $choice, $from, $to ) = self::filters( $args );
+		$table                               = self::table();
+		$per_page                            = max( 1, min( 500, absint( $args['per_page'] ?? 50 ) ) );
+		$page                                = max( 1, absint( $args['page'] ?? 1 ) );
+		$offset                              = ( $page - 1 ) * $per_page;
 
-		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
-		$count_sql = "SELECT COUNT(*) FROM {$table} {$where}";
-		$total     = (int) ( $params ? $wpdb->get_var( $wpdb->prepare( $count_sql, $params ) ) : $wpdb->get_var( $count_sql ) );
-
-		$sql  = "SELECT * FROM {$table} {$where} ORDER BY id DESC LIMIT %d OFFSET %d";
-		$rows = $wpdb->get_results( $wpdb->prepare( $sql, array_merge( $params, array( $per_page, $offset ) ) ), ARRAY_A );
+		// One fixed statement: an empty filter ('' = '') switches its condition off.
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery
+		$total = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM %i WHERE (%s = '' OR consent_id LIKE %s) AND (%s = '' OR choice = %s) AND (%s = '' OR created_at >= %s) AND (%s = '' OR created_at <= %s)",
+				$table,
+				$search,
+				$search,
+				$choice,
+				$choice,
+				$from,
+				$from,
+				$to,
+				$to
+			)
+		);
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM %i WHERE (%s = '' OR consent_id LIKE %s) AND (%s = '' OR choice = %s) AND (%s = '' OR created_at >= %s) AND (%s = '' OR created_at <= %s) ORDER BY id DESC LIMIT %d OFFSET %d",
+				$table,
+				$search,
+				$search,
+				$choice,
+				$choice,
+				$from,
+				$from,
+				$to,
+				$to,
+				$per_page,
+				$offset
+			),
+			ARRAY_A
+		);
 		// phpcs:enable
 
 		return array(
@@ -111,8 +138,8 @@ class SCCM_Consent_Log {
 	public static function stream_csv( array $args = array() ) {
 		global $wpdb;
 
-		list( $where, $params ) = self::where( $args );
-		$table                  = self::table();
+		list( $search, $choice, $from, $to ) = self::filters( $args );
+		$table                               = self::table();
 
 		$out = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 		fputcsv( $out, array( 'id', 'consent_id', 'date_time_utc', 'choice', 'categories', 'gpc', 'consent_version', 'url', 'ip', 'user_agent' ) );
@@ -120,23 +147,41 @@ class SCCM_Consent_Log {
 		$batch  = 1000;
 		$offset = 0;
 		do {
-			$sql = "SELECT * FROM {$table} {$where} ORDER BY id ASC LIMIT %d OFFSET %d";
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery
-			$rows = $wpdb->get_results( $wpdb->prepare( $sql, array_merge( $params, array( $batch, $offset ) ) ), ARRAY_A );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM %i WHERE (%s = '' OR consent_id LIKE %s) AND (%s = '' OR choice = %s) AND (%s = '' OR created_at >= %s) AND (%s = '' OR created_at <= %s) ORDER BY id ASC LIMIT %d OFFSET %d",
+					$table,
+					$search,
+					$search,
+					$choice,
+					$choice,
+					$from,
+					$from,
+					$to,
+					$to,
+					$batch,
+					$offset
+				),
+				ARRAY_A
+			);
 			foreach ( (array) $rows as $row ) {
 				fputcsv(
 					$out,
-					array(
-						$row['id'],
-						$row['consent_id'],
-						$row['created_at'],
-						$row['choice'],
-						$row['categories'],
-						$row['gpc'] ? 'yes' : 'no',
-						$row['consent_version'],
-						$row['url'],
-						$row['ip'],
-						$row['user_agent'],
+					array_map(
+						array( __CLASS__, 'csv_cell' ),
+						array(
+							$row['id'],
+							$row['consent_id'],
+							$row['created_at'],
+							$row['choice'],
+							$row['categories'],
+							$row['gpc'] ? 'yes' : 'no',
+							$row['consent_version'],
+							$row['url'],
+							$row['ip'],
+							$row['user_agent'],
+						)
 					)
 				);
 			}
@@ -144,6 +189,18 @@ class SCCM_Consent_Log {
 		} while ( is_array( $rows ) && count( $rows ) === $batch );
 
 		fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+	}
+
+	/**
+	 * A CSV value that spreadsheet programs never run as a formula (CSV injection): page URLs and
+	 * browser names come from visitors, so a value starting with = + - @ gets a leading quote.
+	 *
+	 * @param mixed $value Value.
+	 * @return string
+	 */
+	public static function csv_cell( $value ) {
+		$value = (string) $value;
+		return preg_match( '/^[=+\-@\t\r]/', $value ) ? "'" . $value : $value;
 	}
 
 	/**
@@ -160,8 +217,8 @@ class SCCM_Consent_Log {
 		}
 		$cutoff = gmdate( 'Y-m-d H:i:s', strtotime( '-' . $months . ' months' ) );
 		$table  = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		return (int) $wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE created_at < %s", $cutoff ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		return (int) $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE created_at < %s', $table, $cutoff ) );
 	}
 
 	/**
@@ -170,8 +227,8 @@ class SCCM_Consent_Log {
 	public static function delete_all() {
 		global $wpdb;
 		$table = self::table();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wpdb->query( "DELETE FROM {$table}" );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( $wpdb->prepare( 'DELETE FROM %i', $table ) );
 	}
 
 	/**
@@ -184,8 +241,8 @@ class SCCM_Consent_Log {
 		global $wpdb;
 		$table = self::table();
 		$since = gmdate( 'Y-m-d H:i:s', time() - absint( $days ) * DAY_IN_SECONDS );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT choice, COUNT(*) AS total FROM {$table} WHERE created_at >= %s GROUP BY choice", $since ), ARRAY_A );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT choice, COUNT(*) AS total FROM %i WHERE created_at >= %s GROUP BY choice', $table, $since ), ARRAY_A );
 		$out  = array_fill_keys( self::CHOICES, 0 );
 		foreach ( (array) $rows as $row ) {
 			$out[ $row['choice'] ] = (int) $row['total'];
@@ -265,30 +322,17 @@ class SCCM_Consent_Log {
 	}
 
 	/**
-	 * Build WHERE clause + params from filters.
+	 * Filter values for the record queries, validated; '' means "no filter".
 	 *
-	 * @param array $args Filters.
-	 * @return array array( where, params ).
+	 * @param array $args search, choice, from (Y-m-d), to (Y-m-d).
+	 * @return array array( search LIKE pattern, choice, from datetime, to datetime ).
 	 */
-	private static function where( array $args ) {
-		$where  = array();
-		$params = array();
-		if ( ! empty( $args['search'] ) ) {
-			$where[]  = 'consent_id LIKE %s';
-			$params[] = '%' . $GLOBALS['wpdb']->esc_like( sanitize_text_field( $args['search'] ) ) . '%';
-		}
-		if ( ! empty( $args['choice'] ) && in_array( $args['choice'], self::CHOICES, true ) ) {
-			$where[]  = 'choice = %s';
-			$params[] = $args['choice'];
-		}
-		if ( ! empty( $args['from'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $args['from'] ) ) {
-			$where[]  = 'created_at >= %s';
-			$params[] = $args['from'] . ' 00:00:00';
-		}
-		if ( ! empty( $args['to'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $args['to'] ) ) {
-			$where[]  = 'created_at <= %s';
-			$params[] = $args['to'] . ' 23:59:59';
-		}
-		return array( $where ? 'WHERE ' . implode( ' AND ', $where ) : '', $params );
+	private static function filters( array $args ) {
+		global $wpdb;
+		$search = ! empty( $args['search'] ) ? '%' . $wpdb->esc_like( sanitize_text_field( $args['search'] ) ) . '%' : '';
+		$choice = ! empty( $args['choice'] ) && in_array( $args['choice'], self::CHOICES, true ) ? $args['choice'] : '';
+		$from   = ! empty( $args['from'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $args['from'] ) ? $args['from'] . ' 00:00:00' : '';
+		$to     = ! empty( $args['to'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $args['to'] ) ? $args['to'] . ' 23:59:59' : '';
+		return array( $search, $choice, $from, $to );
 	}
 }
