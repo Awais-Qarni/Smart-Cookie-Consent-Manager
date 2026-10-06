@@ -9,7 +9,7 @@ npm test             # php -l on every PHP file, node --check on JS, PHP unit te
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
 SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 102 browser checks (visitor side)
 SCCM_WP=/path/to/wp npm run test:wp                              # 120 checks: cookie list, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent-record filters, CSV safety, banner HTML (WP-CLI)
-SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 41 checks of the admin screens, incl. a real browser scan, the daily email, GA4 by ID, spoofed notices
+SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 44 checks of the admin screens, incl. a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
 ```
 
 `test:wp` and `e2e:admin` reset the cookie list and settings of the site they run on: dev sites only.
@@ -114,6 +114,9 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
       "Step 2 of 2: opening page x of y" with y = all pages for a small site, 40–80 for a big one;
       the main menu pages and some sub pages of each section are among them. The page must stay
       open until it finishes (one to two minutes).
+- [ ] I10 During "Scan now", switch to another browser tab for a minute: the scan keeps counting
+      pages. Click another Cookie Consent tab mid-scan: the browser asks "Leave site?"; after
+      leaving, the new screen shows "Cookie scan: continuing where it stopped…" and finishes.
 - [ ] I8 Settings shows "Last email: … handed to your server". "Last email failed" means the host
       cannot send mail: install an SMTP plugin (e.g. WP Mail SMTP).
 - [ ] I6 Open the sample email in a mail app in dark mode (Outlook, Gmail app, Apple Mail):

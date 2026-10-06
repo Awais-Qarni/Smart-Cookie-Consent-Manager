@@ -240,7 +240,7 @@ class SCCM_Install {
 		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . 'sccm_consent_log' ) );
 		// phpcs:enable
 
-		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge', 'sccm_last_mail', 'sccm_scan_state' ) as $option ) {
+		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge', 'sccm_last_mail', 'sccm_scan_state', 'sccm_browser_scan' ) as $option ) {
 			delete_option( $option );
 		}
 

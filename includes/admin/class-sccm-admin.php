@@ -33,6 +33,7 @@ class SCCM_Admin {
 		add_action( 'wp_ajax_sccm_browser_scan_start', array( __CLASS__, 'ajax_scan_start' ) );
 		add_action( 'wp_ajax_sccm_browser_scan_report', array( __CLASS__, 'ajax_scan_report' ) );
 		add_action( 'wp_ajax_sccm_browser_scan_server', array( __CLASS__, 'ajax_scan_server' ) );
+		add_action( 'wp_ajax_sccm_browser_scan_resume', array( __CLASS__, 'ajax_scan_resume' ) );
 	}
 
 	/**
@@ -114,6 +115,11 @@ class SCCM_Admin {
 				'scanSaving' => __( 'Saving what was found…', 'smart-cookie-consent-manager' ),
 				/* translators: %s: error message */
 				'scanFailed' => __( 'The scan could not finish: %s', 'smart-cookie-consent-manager' ),
+				'scanResume' => (bool) SCCM_Scanner::browser_state(),
+				'scanResuming' => __( 'Cookie scan: continuing where it stopped…', 'smart-cookie-consent-manager' ),
+				'scanBusy'   => __( 'A cookie scan is running in another browser tab.', 'smart-cookie-consent-manager' ),
+				'scanDone'   => __( 'Cookie scan finished. The results are in the Cookies tab.', 'smart-cookie-consent-manager' ),
+				'cookiesUrl' => self::url( 'cookies' ),
 			)
 		);
 	}
@@ -596,7 +602,38 @@ class SCCM_Admin {
 		SCCM_Scanner::begin( true );
 		$token = SCCM_Scanner::scan_token( $first, $counts );
 		$urls  = SCCM_Scanner::browser_scan_urls( $token );
-		wp_send_json_success( array_merge( array( 'token' => $token, 'urls' => $urls ), self::scan_server_step() ) );
+		SCCM_Scanner::browser_begin( $token, $urls );
+		wp_send_json_success( array_merge( array( 'token' => $token, 'urls' => $urls, 'total' => count( $urls ) ), self::scan_server_step() ) );
+	}
+
+	/**
+	 * AJAX: continue a "Scan now" whose page was left (called by any plugin admin page).
+	 */
+	public static function ajax_scan_resume() {
+		if ( ! current_user_can( self::CAP ) ) {
+			wp_send_json_error( array( 'message' => __( 'You are not allowed to do this.', 'smart-cookie-consent-manager' ) ), 403 );
+		}
+		check_ajax_referer( 'sccm_browser_scan' );
+		$state = SCCM_Scanner::browser_state();
+		if ( ! $state ) {
+			wp_send_json_success( array( 'active' => false ) );
+		}
+		// Another tab still reports progress: let it work.
+		if ( time() - (int) $state['beat'] < 45 ) {
+			wp_send_json_success( array( 'active' => true, 'busy' => true ) );
+		}
+		$progress = SCCM_Scanner::progress();
+		wp_send_json_success(
+			array(
+				'active'   => true,
+				'token'    => $state['token'],
+				'urls'     => array_values( array_diff( $state['urls'], $state['done'] ) ),
+				'total'    => count( $state['urls'] ),
+				'opened'   => count( $state['done'] ),
+				'done'     => $progress['done'],
+				'finished' => ! get_option( SCCM_Scanner::STATE_OPTION ),
+			)
+		);
 	}
 
 	/**
@@ -607,6 +644,7 @@ class SCCM_Admin {
 			wp_send_json_error( array( 'message' => __( 'You are not allowed to do this.', 'smart-cookie-consent-manager' ) ), 403 );
 		}
 		check_ajax_referer( 'sccm_browser_scan' );
+		SCCM_Scanner::browser_touch();
 		wp_send_json_success( self::scan_server_step() );
 	}
 
@@ -620,6 +658,8 @@ class SCCM_Admin {
 		$progress = SCCM_Scanner::progress();
 		if ( $finished ) {
 			SCCM_Scanner::finish();
+		} else {
+			SCCM_Scanner::keep_alive();
 		}
 		return array(
 			'done'     => $progress['done'],
@@ -642,17 +682,27 @@ class SCCM_Admin {
 			wp_send_json_error( array( 'message' => __( 'The scan took too long. Please start it again.', 'smart-cookie-consent-manager' ) ), 400 );
 		}
 		$data = isset( $_POST['data'] ) ? json_decode( wp_unslash( $_POST['data'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- every value is validated in record_browser_scan().
-		$sum  = SCCM_Scanner::record_browser_scan( is_array( $data ) ? $data : array(), $valid );
-		delete_transient( 'sccm_scan_' . $token );
+		$data = is_array( $data ) ? $data : array();
+		$sum  = SCCM_Scanner::record_browser_scan( $data, $valid, $token );
+		$left = SCCM_Scanner::browser_progress( (array) ( $data['done'] ?? array() ), ! empty( $_POST['leaving'] ) );
+
+		// Reports come every few pages; only the final one finishes the scan.
+		if ( empty( $_POST['final'] ) ) {
+			wp_send_json_success( array( 'left' => count( $left ) ) );
+		}
+		SCCM_Scanner::browser_end();
+		$browser = (array) ( get_option( SCCM_Scanner::RESULT_OPTION )['browser'] ?? array() );
+		$pages   = (int) ( $browser['pages'] ?? 0 );
+		$blocked = (int) ( $browser['blocked'] ?? 0 );
 
 		$message = sprintf(
 			/* translators: 1: pages, 2: cookies added automatically, 3: cookies waiting for review */
 			__( 'Scan finished: %1$d page(s) opened in your browser. %2$d new cookie(s) were recognised and added automatically, %3$d need your review.', 'smart-cookie-consent-manager' ),
-			absint( $data['pages'] ?? 0 ),
+			$pages,
 			$sum['active'],
 			$sum['pending']
 		);
-		if ( ! empty( $data['blocked'] ) && absint( $data['blocked'] ) >= absint( $data['pages'] ?? 0 ) ) {
+		if ( $blocked && $blocked >= $pages ) {
 			$message .= ' ' . __( 'Your website did not allow itself to be opened in a frame (a security header), so only the server scan ran. Cookies set by scripts may be missing.', 'smart-cookie-consent-manager' );
 		}
 		self::flash( $message );

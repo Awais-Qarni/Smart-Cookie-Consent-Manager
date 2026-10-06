@@ -42,6 +42,13 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   Real Cookie Banner, iubenda, Cookie Notice, Termly…): two banners would conflict.
 - Translation template `languages/smart-cookie-consent-manager.pot`.
 
+### Fixed (scan)
+- **"Scan now" no longer stops when you switch tabs or leave the page.** In another browser tab
+  it runs at full speed (its timers run in a Web Worker, which browsers do not slow down in
+  background tabs). Leaving the page asks first; if you leave anyway, what was found so far is
+  kept, the server part finishes in the background (WP-Cron), and the browser part continues
+  the next time any Cookie Consent screen is opened. Two tabs never scan at the same time.
+
 ### Security
 - **Consent records CSV export is safe to open in Excel**: values that visitors send (page URL,
   browser) can no longer start with a formula (`=`, `+`, `-`, `@`), which spreadsheet programs

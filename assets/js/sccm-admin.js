@@ -96,9 +96,39 @@
 
 	var A = window.SCCM_ADMIN || {};
 
+	/*
+	 * Timers for the scan run in a small Web Worker: browsers slow down timers of background tabs
+	 * (to once a second, later once a minute), which would make a scan crawl when the admin
+	 * switches to another tab. Worker timers are not slowed down. Falls back to setTimeout.
+	 */
+	var timer = null;
+	var timerId = 0;
+	var timerWaiting = {};
+
 	function wait(ms) {
+		if (timer === null) {
+			try {
+				var code = 'onmessage=function(e){setTimeout(function(){postMessage(e.data.id);},e.data.ms);};';
+				timer = new Worker(URL.createObjectURL(new Blob([code], { type: 'text/javascript' })));
+				timer.onmessage = function (event) {
+					var done = timerWaiting[event.data];
+					delete timerWaiting[event.data];
+					if (done) {
+						done();
+					}
+				};
+			} catch (e) {
+				timer = false;
+			}
+		}
 		return new Promise(function (resolve) {
-			setTimeout(resolve, ms);
+			if (timer) {
+				timerId++;
+				timerWaiting[timerId] = resolve;
+				timer.postMessage({ id: timerId, ms: ms });
+			} else {
+				setTimeout(resolve, ms);
+			}
 		});
 	}
 
@@ -130,7 +160,7 @@
 		frame.style.cssText = 'position:fixed;left:-12000px;top:0;width:1280px;height:900px;border:0;opacity:0;pointer-events:none';
 		var loaded = new Promise(function (resolve) {
 			frame.onload = resolve;
-			setTimeout(resolve, 20000);
+			wait(20000).then(resolve);
 		});
 		frame.src = url;
 		document.body.appendChild(frame);
@@ -187,36 +217,150 @@
 		});
 	}
 
+	/** "Scan now": plan + server part, then the browser part. */
 	function browserScan($form) {
-		var $button = $form.find('button').prop('disabled', true);
-		var $status = $('<p class="sccm-scan-status" role="status"><span class="spinner is-active"></span><span class="sccm-scan-status__text"></span></p>').insertAfter($form);
-		var say = function (text) {
-			$status.find('.sccm-scan-status__text').text(text);
+		var ui = scanUi($form, $form.find('button'));
+		ui.say(A.scanServer);
+		$.post(A.ajaxUrl, { action: 'sccm_browser_scan_start', _ajax_nonce: A.scanNonce }).done(function (response) {
+			if (!response || !response.success) {
+				ui.fail(response && response.data && response.data.message);
+				return;
+			}
+			runScan(response.data, ui, true);
+		}).fail(function (xhr) {
+			ui.fail(xhr && xhr.status ? 'HTTP ' + xhr.status : '');
+		});
+	}
+
+	/** Status line under the scan button (or at the top of any plugin page when resuming). */
+	function scanUi($after, $button) {
+		var $status = $('<p class="sccm-scan-status" role="status"><span class="spinner is-active"></span><span class="sccm-scan-status__text"></span></p>').insertAfter($after);
+		$button.prop('disabled', true);
+		return {
+			say: function (text) {
+				$status.find('.sccm-scan-status__text').text(text);
+			},
+			fail: function (message) {
+				stopGuard();
+				$status.find('.spinner').remove();
+				$status.find('.sccm-scan-status__text').text(A.scanFailed.replace('%s', message || ''));
+				$button.prop('disabled', false);
+			},
+			done: function (text) {
+				stopGuard();
+				$status.find('.spinner').remove();
+				$status.find('.sccm-scan-status__text').text(text);
+				$button.prop('disabled', false);
+			}
 		};
-		var fail = function (message) {
-			$status.find('.spinner').remove();
-			say(A.scanFailed.replace('%s', message || ''));
-			$button.prop('disabled', false);
-		};
+	}
+
+	/* While a scan runs: the browser asks before leaving the page, and what was found so far is
+	 * sent even when the page is left anyway, so the scan can continue later. */
+	var guard = null;
+
+	function onLeaveWarn(event) {
+		event.preventDefault();
+		event.returnValue = '';
+	}
+
+	function stopGuard() {
+		if (guard) {
+			window.removeEventListener('beforeunload', onLeaveWarn);
+			window.removeEventListener('pagehide', guard);
+			guard = null;
+		}
+	}
+
+	/**
+	 * Run (or continue) a scan.
+	 *
+	 * @param {Object}  data    token, urls (pages still to open), total, opened, done/finished (server part)
+	 * @param {Object}  ui      scanUi()
+	 * @param {boolean} onPage  Started on this page with "Scan now" (go to the result when finished).
+	 */
+	function runScan(data, ui, onPage) {
+		var urls = data.urls || [];
+		var total = data.total || urls.length;
+		var opened = data.opened || 0;
+		var next = 0;
+		var finished = false;
 		// Storage keys the browser already has (from the dashboard or extensions) are "old".
 		var baseline = {
 			localStorage: storageKeys(window, 'localStorage'),
 			sessionStorage: storageKeys(window, 'sessionStorage')
 		};
-		say(A.scanServer);
+		var batch;
+
+		function newBatch() {
+			batch = { pages: 0, blocked: 0, cookies: {}, storage: {}, resources: {}, done: [] };
+		}
+		newBatch();
+
+		function payload() {
+			return JSON.stringify({
+				pages: batch.pages,
+				blocked: batch.blocked,
+				cookies: Object.keys(batch.cookies),
+				storage: Object.keys(batch.storage).map(function (key) {
+					return batch.storage[key];
+				}),
+				resources: Object.keys(batch.resources).slice(0, 500),
+				done: batch.done
+			});
+		}
+
+		/** Send what was found since the last report. */
+		function report(final) {
+			var body = { action: 'sccm_browser_scan_report', _ajax_nonce: A.scanNonce, token: data.token, data: payload(), final: final ? 1 : 0 };
+			newBatch();
+			return new Promise(function (resolve, reject) {
+				$.post(A.ajaxUrl, body).done(function (result) {
+					if (result && result.success) {
+						resolve(result.data);
+					} else {
+						reject(result && result.data && result.data.message);
+					}
+				}).fail(function (xhr) {
+					reject(xhr && xhr.status ? 'HTTP ' + xhr.status : '');
+				});
+			});
+		}
+
+		// Leaving the page: warn first; if left anyway, send the rest with sendBeacon (no reply needed).
+		stopGuard();
+		guard = function () {
+			if (!finished && navigator.sendBeacon) {
+				var form = new FormData();
+				form.append('action', 'sccm_browser_scan_report');
+				form.append('_ajax_nonce', A.scanNonce);
+				form.append('token', data.token);
+				form.append('data', payload());
+				form.append('final', '0');
+				form.append('leaving', '1'); // The next plugin page may continue right away.
+				navigator.sendBeacon(A.ajaxUrl, form);
+			}
+		};
+		window.addEventListener('beforeunload', onLeaveWarn);
+		window.addEventListener('pagehide', guard);
 
 		/** Server part: one request per step until every planned page was checked. */
-		function serverSteps(data) {
-			if (data.total) {
-				say(A.scanServerProgress.replace('%1$d', data.done).replace('%2$d', data.total));
+		function serverSteps(step) {
+			if (step.total && !step.finished) {
+				ui.say(A.scanServerProgress.replace('%1$d', step.done).replace('%2$d', step.total));
 			}
-			if (data.finished) {
+			if (step.finished) {
 				return Promise.resolve();
 			}
+			var before = step.done;
 			return new Promise(function (resolve, reject) {
 				$.post(A.ajaxUrl, { action: 'sccm_browser_scan_server', _ajax_nonce: A.scanNonce }).done(function (response) {
 					if (response && response.success) {
-						resolve(serverSteps(response.data));
+						// No progress means the background part is busy with a step: ask again shortly.
+						var pause = response.data.done === before && !response.data.finished ? wait(3000) : Promise.resolve();
+						pause.then(function () {
+							resolve(serverSteps(response.data));
+						});
 					} else {
 						reject(response && response.data && response.data.message);
 					}
@@ -226,80 +370,104 @@
 			});
 		}
 
-		$.post(A.ajaxUrl, { action: 'sccm_browser_scan_start', _ajax_nonce: A.scanNonce }).done(function (response) {
-			if (!response || !response.success) {
-				fail(response && response.data && response.data.message);
+		function collect(url, result) {
+			batch.pages++;
+			batch.done.push(url);
+			if (!result) {
+				batch.blocked++;
 				return;
 			}
-			var urls = response.data.urls;
-			var found = { cookies: {}, storage: {}, resources: {} };
-			var pages = 0;
-			var blocked = 0;
-			var next = 0;
-			// Three pages at a time: a big scan takes a minute or two instead of several.
-			function worker() {
-				if (next >= urls.length) {
-					return Promise.resolve();
-				}
-				var url = urls[next++];
-				return scanPage(url).then(function (result) {
-					pages++;
-					say(A.scanPage.replace('%1$d', pages).replace('%2$d', urls.length));
-					collect(result);
-					return worker();
-				});
-			}
-			function collect(result) {
-				if (!result) {
-					blocked++;
-					return;
-				}
-				result.cookies.forEach(function (name) {
-					found.cookies[name] = true;
-				});
-				// A key is the site's own when the page wrote it during the scan, or when the
-				// browser did not have it before the scan started.
-				[['localStorage', result.local], ['sessionStorage', result.session]].forEach(function (pair) {
-					pair[1].forEach(function (name) {
-						var own = !!result.written[pair[0]][name] || baseline[pair[0]].indexOf(name) === -1;
-						var key = pair[0] + ':' + name;
-						found.storage[key] = { n: name, t: pair[0], new: own || !!(found.storage[key] && found.storage[key].new) };
-					});
-				});
-				result.resources.forEach(function (resource) {
-					if (/^https?:/.test(resource)) {
-						found.resources[resource.split('#')[0].slice(0, 500)] = true;
-					}
-				});
-			}
-			serverSteps(response.data).then(function () {
-				say(A.scanPage.replace('%1$d', 1).replace('%2$d', urls.length));
-				return Promise.all([worker(), worker(), worker()]);
-			}).then(function () {
-				say(A.scanSaving);
-				var data = {
-					pages: pages,
-					blocked: blocked,
-					cookies: Object.keys(found.cookies),
-					storage: Object.keys(found.storage).map(function (key) {
-						return found.storage[key];
-					}),
-					resources: Object.keys(found.resources).slice(0, 500)
-				};
-				$.post(A.ajaxUrl, { action: 'sccm_browser_scan_report', _ajax_nonce: A.scanNonce, token: response.data.token, data: JSON.stringify(data) }).done(function (result) {
-					if (result && result.success) {
-						window.location.href = result.data.redirect;
-					} else {
-						fail(result && result.data && result.data.message);
-					}
-				}).fail(function () {
-					fail('');
-				});
-			}, function (message) {
-				fail(message);
+			result.cookies.forEach(function (name) {
+				batch.cookies[name] = true;
 			});
-		}).fail(function (xhr) {
-			fail(xhr && xhr.status ? 'HTTP ' + xhr.status : '');
+			// A key is the site's own when the page wrote it during the scan, or when the
+			// browser did not have it before the scan started.
+			[['localStorage', result.local], ['sessionStorage', result.session]].forEach(function (pair) {
+				pair[1].forEach(function (name) {
+					var own = !!result.written[pair[0]][name] || baseline[pair[0]].indexOf(name) === -1;
+					var key = pair[0] + ':' + name;
+					batch.storage[key] = { n: name, t: pair[0], new: own || !!(batch.storage[key] && batch.storage[key].new) };
+				});
+			});
+			result.resources.forEach(function (resource) {
+				if (/^https?:/.test(resource)) {
+					batch.resources[resource.split('#')[0].slice(0, 500)] = true;
+				}
+			});
+		}
+
+		// Three pages at a time; what was found is reported every three pages, so nothing is lost.
+		var reporting = Promise.resolve();
+		function worker() {
+			if (next >= urls.length) {
+				return Promise.resolve();
+			}
+			var url = urls[next++];
+			return scanPage(url).then(function (result) {
+				opened++;
+				ui.say(A.scanPage.replace('%1$d', opened).replace('%2$d', total));
+				collect(url, result);
+				if (batch.done.length >= 3) {
+					reporting = reporting.then(function () {
+						return report(false);
+					});
+				}
+				return worker();
+			});
+		}
+
+		serverSteps(data).then(function () {
+			ui.say(A.scanPage.replace('%1$d', Math.min(opened + 1, total)).replace('%2$d', total));
+			return Promise.all([worker(), worker(), worker()]);
+		}).then(function () {
+			return reporting;
+		}).then(function () {
+			ui.say(A.scanSaving);
+			return report(true);
+		}).then(function (result) {
+			finished = true;
+			stopGuard();
+			if (onPage || /[?&]tab=cookies\b/.test(window.location.search)) {
+				window.location.href = result.redirect;
+			} else {
+				ui.done(A.scanDone);
+			}
+		}, function (message) {
+			ui.fail(message);
 		});
 	}
+
+	/** Any plugin page: continue a scan whose page was left (unless another tab is working on it). */
+	function resumeScan() {
+		if (!A.scanResume || !window.Promise || !A.ajaxUrl) {
+			return;
+		}
+		var $form = $('form[data-sccm-browser-scan]').first();
+		var $anchor = $form.length ? $form : $('.sccm-admin .nav-tab-wrapper').first();
+		if (!$anchor.length) {
+			return;
+		}
+		var ui = null;
+		(function ask() {
+			$.post(A.ajaxUrl, { action: 'sccm_browser_scan_resume', _ajax_nonce: A.scanNonce }).done(function (response) {
+				if (!response || !response.success || !response.data.active) {
+					if (ui) {
+						ui.done(A.scanDone);
+					}
+					return;
+				}
+				ui = ui || scanUi($anchor, $form.find('button'));
+				if (response.data.busy) {
+					// Another tab is scanning; take over if it stops reporting (closed, crashed).
+					ui.say(A.scanBusy);
+					wait(15000).then(ask);
+					return;
+				}
+				ui.say(A.scanResuming);
+				runScan(response.data, ui, false);
+			});
+		})();
+	}
+
+	$(resumeScan);
 })(jQuery);

@@ -160,6 +160,22 @@ check('X1 a bad nonce is refused', bad.status() === 403, String(bad.status()));
 const anon = await (await browser.newContext()).request.post(`${BASE}/wp-admin/admin-post.php`, { form: { action: 'sccm_scan_now' }, maxRedirects: 0 });
 check('X2 logged-out requests are refused', anon.status() !== 200 && anon.status() < 500, String(anon.status()));
 
+// Leaving the page during "Scan now": the browser warns, and the scan continues on the next plugin page.
+const extra = JSON.parse(wp('eval', `$ids = array(); for ( $i = 1; $i <= 15; $i++ ) { $ids[] = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => "Leave test $i", 'post_content' => 'x' ) ); } echo wp_json_encode( $ids );`));
+await page.goto(admin('cookies'));
+await page.click('.sccm-scanstrip button');
+await page.waitForFunction(() => /Step 2 of 2: opening page ([4-9]|1\d)/.test((document.querySelector('.sccm-scan-status__text') || {}).textContent || ''), null, { timeout: 120000 });
+let warned = false;
+page.once('dialog', (d) => { warned = d.type() === 'beforeunload'; d.accept(); });
+await Promise.all([page.waitForNavigation(), page.click('.nav-tab-wrapper a[href*="tab=dashboard"]')]);
+check('S1 leaving the page during a scan asks first', warned);
+const partial = JSON.parse(wp('eval', `$s = get_option( SCCM_Scanner::BROWSER_OPTION ); echo wp_json_encode( $s ? array( count( $s['urls'] ), count( $s['done'] ) ) : null );`));
+check('S2 what was found so far is kept, the rest is remembered', partial && partial[1] >= 3 && partial[1] < partial[0], JSON.stringify(partial));
+await page.waitForFunction(() => /Cookie scan finished/.test((document.querySelector('.sccm-scan-status__text') || {}).textContent || ''), null, { timeout: 180000 });
+const after = JSON.parse(wp('eval', `$r = get_option( SCCM_Scanner::RESULT_OPTION ); echo wp_json_encode( array( (int) $r['browser']['pages'], count( $r['pages'] ), (bool) get_option( SCCM_Scanner::BROWSER_OPTION ), (bool) get_option( SCCM_Scanner::STATE_OPTION ) ) );`));
+check('S3 back on a plugin page the scan continues and finishes every page', after[0] === after[1] && after[0] >= 15 && !after[2] && !after[3], JSON.stringify(after));
+wp('eval', `foreach ( ${JSON.stringify(extra)} as $id ) { wp_delete_post( $id, true ); }`);
+
 // Spoofed notices: a message in the URL is not shown (notices are kept on the server).
 await page.goto(admin('cookies') + '&sccm_msg=' + encodeURIComponent('Your licence expired, visit evil.example') + '&sccm_notice=1');
 check('X3 a message put in the URL is not shown', !(await page.evaluate(() => Array.from(document.querySelectorAll('.notice')).map((n) => n.textContent).join(' '))).includes('evil.example'));

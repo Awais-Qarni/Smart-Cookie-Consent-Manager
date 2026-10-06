@@ -182,7 +182,7 @@ $sccm_sources    = array(
 			}
 			echo '</p>';
 		} elseif ( $sccm_scan ) {
-			echo '<p class="sccm-scanstate sccm-scanstate--warn">' . esc_html__( 'The last scan ran on the server only (scheduled scan or an old page). Click Scan now and keep this page open to also find cookies that scripts set.', 'smart-cookie-consent-manager' ) . '</p>';
+			echo '<p class="sccm-scanstate sccm-scanstate--warn">' . esc_html__( 'The last scan ran on the server only (scheduled scan or an old page). Click Scan now to also find cookies that scripts set.', 'smart-cookie-consent-manager' ) . '</p>';
 		}
 		?>
 	</div>

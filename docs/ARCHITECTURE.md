@@ -104,6 +104,16 @@ covered; a level with fewer pages leaves its share to the other; (4) recently up
 Only this website's pages: no files, feeds, wp-admin, wp-login, wp-json. Filters:
 `sccm_scan_budget`, `sccm_scan_urls`.
 
+**Scan now and the page being left.** The browser part's waits use a Web Worker timer (not
+slowed down in background tabs). Findings are reported every 3 pages (`sccm_browser_scan_report`,
+final=0), so `sccm_browser_scan` (token, pages, pages done, heartbeat) always knows what is left;
+leaving the page triggers the browser's "Leave site?" prompt, and `pagehide` sends the rest with
+`navigator.sendBeacon` (leaving=1 releases the scan). The server part is kept going by
+`keep_alive()` (cron 90 s after the last step), with a lock (`sccm_scan_lock`) so the page and
+cron never step at once. Any plugin admin page then calls `sccm_browser_scan_resume` and
+continues; while another tab reports (heartbeat < 45 s) it waits and takes over if that tab goes
+quiet. Only the final report (final=1) finishes the scan.
+
 Work in progress lives in `sccm_scan_state` (plan, pages done, results so far): `begin()`,
 `step( $seconds )`, `finish()`. Scheduled scans: `run_cron()` + `sccm_scan_continue_event`
 every 30 s until done; "Scan now": one AJAX request per step; `run()` (tests, no-JS fallback

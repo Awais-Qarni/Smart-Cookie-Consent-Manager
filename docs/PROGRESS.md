@@ -97,6 +97,15 @@ work on Windows (output path, `SCCM_WP` pointing at `wp-cli.phar`).
 - Dead-code sweep: no unused PHP functions or texts; removed `.sccm-linkbtn` CSS, `.gitkeep`.
 - Tests: unit 33/33, WP-CLI 120/120, e2e 102/102, admin e2e 41/41, no PHP notices with WP_DEBUG.
 
+**Round 7 (same day): "Scan now stops when I switch tab or leave the page"**
+- Causes: background tabs slow page timers (the settle loop crawled); leaving the page killed
+  the browser part and left the server part half-done (nothing continued it).
+- Fix: Web Worker timers; reports every 3 pages; `sccm_browser_scan` state + resume endpoint
+  (any plugin page continues, heartbeat avoids two tabs, take-over after 45 s); "Leave site?"
+  prompt + sendBeacon on pagehide; server part kept alive by cron (`keep_alive`) with a lock.
+- Tests: admin e2e 44/44 (new S1–S3: leave mid-scan after 6 of 19 pages → resumes on the
+  Dashboard and finishes 19/19, no state left).
+
 **Next**
 1. Owner: update the plugin on staging (purge NitroPack + WP Engine once more for this update),
    deactivate Cookiebot there if it is still active (the Dashboard now says so), check the

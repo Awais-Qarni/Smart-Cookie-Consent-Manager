@@ -44,6 +44,7 @@ Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 = 1.2.0 =
 * Scans adapt to the size of the website: small sites completely, bigger ones 40–80 pages (main pages, then sub and sub-sub pages of every section), in short steps that never hit time limits.
 * Compact top/bottom banner: buttons stacked vertically.
+* Scan now keeps going in a background tab, and continues where it stopped after leaving the page.
 * Security and quality: CSV export safe for spreadsheets, admin messages not taken from the URL, fully prepared queries, scans respect the host's PHP time limit; requires WordPress 6.2.
 * One email a day at a time you choose, only when something changed in the last 24 hours, to the site admin and the listed addresses; no admin links in the email; delivery status shown in Settings.
 * Button order: four choices, incl. Allow all · Deny · Allow selection (new default) and Deny · Allow all · Allow selection.

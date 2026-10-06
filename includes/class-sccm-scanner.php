@@ -34,9 +34,20 @@ class SCCM_Scanner {
 	const STATE_OPTION = 'sccm_scan_state';
 
 	/**
-	 * Cron hook: the next step of a scheduled scan.
+	 * Cron hook: the next step of a scan (scheduled scans, and "Scan now" when its page was left).
 	 */
 	const CONTINUE_EVENT = 'sccm_scan_continue_event';
+
+	/**
+	 * The browser part of "Scan now" in progress: token, user, pages, pages done, last activity.
+	 * Lets the scan continue when the admin comes back after leaving the page.
+	 */
+	const BROWSER_OPTION = 'sccm_browser_scan';
+
+	/**
+	 * Lock so two requests (the admin page and WP-Cron) never scan at the same time.
+	 */
+	const LOCK = 'sccm_scan_lock';
 
 	/**
 	 * Seconds of scanning per request for scheduled scans and "Scan now" (hosts stop requests
@@ -126,7 +137,7 @@ class SCCM_Scanner {
 		// One "ask visitors again" at most for the whole scan (steps inside do not bump on their own).
 		SCCM_Cookies::bulk(
 			static function () {
-				while ( ! self::step( 0 ) ) {
+				while ( ! self::step( 0, true ) ) {
 					// step( 0 ) scans one page per call until the plan is done.
 				}
 			},
@@ -182,19 +193,39 @@ class SCCM_Scanner {
 			),
 		);
 		update_option( self::STATE_OPTION, $state, false );
+		if ( $manual ) {
+			self::keep_alive();
+		}
 		return $state;
+	}
+
+	/**
+	 * "Scan now": if the admin leaves the page, WP-Cron finishes the server part. Every step the
+	 * page makes pushes this back, so it only runs when the page is gone.
+	 */
+	public static function keep_alive() {
+		wp_clear_scheduled_hook( self::CONTINUE_EVENT );
+		wp_schedule_single_event( time() + 90, self::CONTINUE_EVENT );
 	}
 
 	/**
 	 * Scan the next pages of the plan.
 	 *
-	 * @param int $seconds Time budget; 0 = exactly one page.
-	 * @return bool True when every page of the plan was scanned.
+	 * @param int  $seconds     Time budget; 0 = exactly one page.
+	 * @param bool $ignore_lock Skip the lock (run() does the whole scan in one request).
+	 * @return bool True when every page of the plan was scanned (false also while another request
+	 *              holds the lock).
 	 */
-	public static function step( $seconds ) {
+	public static function step( $seconds, $ignore_lock = false ) {
 		$state = get_option( self::STATE_OPTION );
 		if ( ! is_array( $state ) || empty( $state['urls'] ) || $state['done'] >= count( $state['urls'] ) ) {
 			return true;
+		}
+		if ( ! $ignore_lock ) {
+			if ( get_transient( self::LOCK ) ) {
+				return false;
+			}
+			set_transient( self::LOCK, 1, 2 * MINUTE_IN_SECONDS );
 		}
 		$start   = time();
 		$results = $state['results'];
@@ -229,6 +260,9 @@ class SCCM_Scanner {
 		$results['cookies'] = array_keys( $results['cookies'] );
 		$state['results']   = $results;
 		update_option( self::STATE_OPTION, $state, false );
+		if ( ! $ignore_lock ) {
+			delete_transient( self::LOCK );
+		}
 		return $state['done'] >= count( $state['urls'] );
 	}
 
@@ -270,6 +304,7 @@ class SCCM_Scanner {
 		}
 		update_option( self::RESULT_OPTION, $results, false );
 		delete_option( self::STATE_OPTION );
+		wp_clear_scheduled_hook( self::CONTINUE_EVENT );
 		return $results;
 	}
 
@@ -421,7 +456,90 @@ class SCCM_Scanner {
 	 */
 
 	/**
-	 * Create a one-time scan-mode token for the current administrator (15 minutes).
+	 * Remember the browser part of "Scan now" (so it can continue after the page was left).
+	 *
+	 * @param string $token Scan token.
+	 * @param array  $urls  Pages to open (with the token).
+	 */
+	public static function browser_begin( $token, array $urls ) {
+		update_option(
+			self::BROWSER_OPTION,
+			array(
+				'token' => $token,
+				'user'  => get_current_user_id(),
+				'urls'  => array_values( $urls ),
+				'done'  => array(),
+				'beat'  => time(),
+			),
+			false
+		);
+	}
+
+	/**
+	 * The browser part in progress for the current user, or null (an expired one is forgotten).
+	 *
+	 * @return array|null
+	 */
+	public static function browser_state() {
+		$state = get_option( self::BROWSER_OPTION );
+		if ( ! is_array( $state ) ) {
+			return null;
+		}
+		if ( ! self::valid_scan_token( $state['token'] ) ) {
+			if ( (int) $state['user'] === get_current_user_id() ) {
+				delete_option( self::BROWSER_OPTION );
+			}
+			return null;
+		}
+		return $state;
+	}
+
+	/**
+	 * Note pages the browser has finished; keeps the token alive while the scan makes progress.
+	 *
+	 * @param array $done    Page URLs opened since the last report.
+	 * @param bool  $leaving The page running the scan is being left (another page may continue).
+	 * @return array Pages still to open.
+	 */
+	public static function browser_progress( array $done, $leaving = false ) {
+		$state = self::browser_state();
+		if ( ! $state ) {
+			return array();
+		}
+		$state['done'] = array_values( array_intersect( $state['urls'], array_unique( array_merge( $state['done'], array_map( 'strval', $done ) ) ) ) );
+		$state['beat'] = $leaving ? 0 : time();
+		update_option( self::BROWSER_OPTION, $state, false );
+		$data = get_transient( 'sccm_scan_' . $state['token'] );
+		if ( is_array( $data ) ) {
+			set_transient( 'sccm_scan_' . $state['token'], $data, 30 * MINUTE_IN_SECONDS );
+		}
+		return array_values( array_diff( $state['urls'], $state['done'] ) );
+	}
+
+	/**
+	 * The page running the scan is still there (another tab will not start a second run).
+	 */
+	public static function browser_touch() {
+		$state = get_option( self::BROWSER_OPTION );
+		if ( is_array( $state ) && (int) $state['user'] === get_current_user_id() ) {
+			$state['beat'] = time();
+			update_option( self::BROWSER_OPTION, $state, false );
+		}
+	}
+
+	/**
+	 * The browser part is complete: forget it and its token.
+	 */
+	public static function browser_end() {
+		$state = get_option( self::BROWSER_OPTION );
+		if ( is_array( $state ) ) {
+			delete_transient( 'sccm_scan_' . $state['token'] );
+		}
+		delete_option( self::BROWSER_OPTION );
+	}
+
+	/**
+	 * Create a one-time scan-mode token for the current administrator (30 minutes, renewed while the scan makes progress).
 	 *
 	 * @param bool  $first  Whether this is the first scan ever (then it never asks visitors again).
 	 * @param array $counts Registry counts before the scan started (for the summary).
@@ -493,7 +611,7 @@ class SCCM_Scanner {
 	 * @param array $token Token data from valid_scan_token().
 	 * @return array Summary: active, pending (added since the scan started), unclassified.
 	 */
-	public static function record_browser_scan( array $data, array $token ) {
+	public static function record_browser_scan( array $data, array $token, $token_id = '' ) {
 		$results = get_option( self::RESULT_OPTION );
 		if ( ! is_array( $results ) ) {
 			$results = array(
@@ -545,12 +663,15 @@ class SCCM_Scanner {
 			empty( $token['first'] )
 		);
 
+		// Reports of one scan arrive in batches: add them up.
+		$before                  = isset( $results['browser'] ) && '' !== $token_id && ( $results['browser']['token'] ?? '' ) === $token_id ? $results['browser'] : array();
 		$results['unclassified'] = array_values( $results['unclassified'] );
 		$results['browser']      = array(
+			'token'   => $token_id,
 			'time'    => time(),
-			'pages'   => absint( $data['pages'] ?? 0 ),
-			'blocked' => absint( $data['blocked'] ?? 0 ),
-			'found'   => array_keys( $seen ),
+			'pages'   => (int) ( $before['pages'] ?? 0 ) + absint( $data['pages'] ?? 0 ),
+			'blocked' => (int) ( $before['blocked'] ?? 0 ) + absint( $data['blocked'] ?? 0 ),
+			'found'   => array_values( array_unique( array_merge( (array) ( $before['found'] ?? array() ), array_keys( $seen ) ) ) ),
 		);
 		update_option( self::RESULT_OPTION, $results, false );
 
