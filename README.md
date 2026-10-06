@@ -52,7 +52,7 @@ scanner, with no coding and no subscription. All data stays on your own server.
    - "Scan now", then approve any cookies under **Needs review** in the **Cookies** tab.
    - **Banner**: pick the position, colours and wording.
    - The **Help: how it works** button explains every tab and option.
-4. Clear your page cache.
+4. The page caches of WP Engine, NitroPack, WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, SiteGround, Breeze and Hummingbird are cleared for you; with another cache or a CDN, clear it once.
 
 That's it: known trackers (Google Analytics, Tag Manager, Google Ads, Meta Pixel, LinkedIn,
 TikTok, Hotjar, Clarity, HubSpot, YouTube, Vimeo, Google Maps, Google Fonts and more) are
@@ -75,8 +75,14 @@ Developers: see [`docs/HOOKS.md`](docs/HOOKS.md) for PHP filters/actions and the
 
 ## Compatibility notes
 
-- **Page caching:** fully supported (the banner is rendered in the browser). Clear the cache
-  after changing settings.
+- **Page caching:** fully supported (the banner is rendered in the browser). The plugin clears
+  the page caches of WP Engine, NitroPack, WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, SiteGround, Breeze and Hummingbird when settings or the cookie list change; clear any other cache or
+  CDN by hand (or from the `sccm_cache_purged` action).
+- **Themes and page builders:** the banner's styles are scoped to `#sccm-app`, so theme button
+  and link styles do not change it. The Cookie Policy list uses the theme's own look.
+- **Other consent plugins:** run only one. The Dashboard warns when Cookiebot, Complianz,
+  CookieYes, Borlabs, Real Cookie Banner, iubenda, Cookie Notice or similar is still active.
+- **AMP:** AMP pages are left alone (AMP has its own consent component).
 - **Optimisation plugins** (script delay/combine/minify): the plugin's own scripts carry the
   usual exclusion attributes. If an optimiser still delays them, exclude `sccm-` and
   `data-sccm-` in its settings.

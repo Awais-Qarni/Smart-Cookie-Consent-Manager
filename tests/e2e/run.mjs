@@ -33,13 +33,32 @@ async function launch() {
 	return chromium.launch(opts);
 }
 
-async function newPage(browser, { gpc = false, viewport, layout } = {}) {
+/**
+ * New browser context. layout / order / position / texts: the same page with other banner
+ * settings (as if chosen under Cookie Consent → Banner). css: extra page CSS, e.g. a hostile theme.
+ */
+async function newPage(browser, { gpc = false, viewport, layout, order, position, texts, css, path = '/' } = {}) {
 	const context = await browser.newContext({ viewport: viewport || { width: 1280, height: 900 } });
-	if (layout) {
-		// Same page, another banner style (as if chosen under Banner → Banner style).
-		await context.route(BASE + '/', async (route) => {
+	if (layout || order || position || texts || css) {
+		await context.route(BASE + path, async (route) => {
 			const response = await route.fetch();
-			await route.fulfill({ response, body: (await response.text()).replace(/"layout":"[a-z]+"/, '"layout":"' + layout + '"') });
+			let body = await response.text();
+			if (layout) {
+				body = body.replace(/"layout":"[a-z]+"/, '"layout":"' + layout + '"');
+			}
+			if (order) {
+				body = body.replace(/"order":"[a-z_]+"/, '"order":"' + order + '"');
+			}
+			if (position) {
+				body = body.replace(/"position":"[a-z-]+"/, '"position":"' + position + '"');
+			}
+			for (const [key, value] of Object.entries(texts || {})) {
+				body = body.replace(new RegExp('"' + key + '":"[^"]*"'), '"' + key + '":' + JSON.stringify(value));
+			}
+			if (css) {
+				body = body.replace('</head>', '<style id="hostile-theme">' + css + '</style></head>');
+			}
+			await route.fulfill({ response, body });
 		});
 	}
 	if (gpc) {
@@ -163,7 +182,7 @@ const browser = await launch();
 	await page.waitForSelector('#sccm-prefs:not([hidden])');
 	check('M1 Customize opens the full window (Consent, Details, About) and hides the banner', await page.isVisible('#sccm-prefs .sccm-tab >> nth=2') && await page.isHidden('#sccm-banner'));
 	const prefsButtons = await page.$$eval('#sccm-prefs .sccm-actions .sccm-btn', (els) => els.map((e) => e.textContent.trim()));
-	check('M1 the window has Allow all, Allow selection and Deny', JSON.stringify(prefsButtons) === JSON.stringify(['Allow all', 'Allow selection', 'Deny']), prefsButtons.join(','));
+	check('M1 the window has Allow all, Deny and Allow selection', JSON.stringify(prefsButtons) === JSON.stringify(['Allow all', 'Deny', 'Allow selection']), prefsButtons.join(','));
 	await page.keyboard.press('Escape');
 	check('M2 closing the window without choosing brings the banner back (no consent stored)', await page.isVisible('#sccm-banner') && !(await consentCookie(context)));
 	await page.click('#sccm-banner .sccm-btn--customize');
@@ -173,6 +192,97 @@ const browser = await launch();
 	const c = await consentCookie(context);
 	check('M3 a selection made after Customize is stored and the banner stays closed', c && c.m === 'custom' && c.c.functional === 1 && c.c.analytics === 0 && await page.isHidden('#sccm-banner'));
 	check('no JavaScript errors (compact banner)', errors.length === 0, errors.join(' | '));
+	await context.close();
+}
+
+/* ---------------------------------------------------------------- O: button order setting */
+{
+	const expected = {
+		accept_reject: ['accept', 'reject', 'more'],
+		reject_accept: ['reject', 'accept', 'more'],
+		accept_first: ['accept', 'more', 'reject'],
+		reject_first: ['reject', 'more', 'accept']
+	};
+	const name = (cls) => (/--accept/.test(cls) ? 'accept' : /--reject/.test(cls) ? 'reject' : 'more');
+	for (const [order, want] of Object.entries(expected)) {
+		for (const layout of ['compact', 'tabs']) {
+			const { context, page } = await newPage(browser, { order, layout });
+			await page.goto(BASE + '/');
+			await page.waitForSelector('#sccm-banner:not([hidden])');
+			const got = await page.$$eval('#sccm-banner .sccm-actions .sccm-btn', (els) => els.map((e) => e.className));
+			check(`O1 order ${order} (${layout})`, JSON.stringify(got.map(name)) === JSON.stringify(want), got.join(' / '));
+			await context.close();
+		}
+	}
+}
+
+/* ---------------------------------------------------------------- P: preview looks like a first visit */
+{
+	const { context, page } = await newPage(browser, { layout: 'tabs' });
+	await page.goto(BASE + '/');
+	await page.click('#sccm-banner .sccm-btn--accept');
+	await page.waitForTimeout(300);
+	await page.goto(BASE + '/#sccm-banner');
+	await page.reload();
+	await page.waitForSelector('#sccm-banner:not([hidden])');
+	const switches = await page.evaluate(() => ['functional', 'analytics', 'marketing'].map((k) => document.getElementById('sccm-bcat-' + k).checked));
+	check('P1 banner preview after "Allow all": no category is switched on', switches.every((v) => v === false), switches.join(','));
+	await page.click('#sccm-btab-about');
+	const status = await page.textContent('#sccm-banner .sccm-status');
+	check('P1 banner preview: About tab says no choice was made', /not made a choice/.test(status), status.trim());
+	await page.click('#sccm-btab-details');
+	const detail = await page.evaluate(() => ['functional', 'analytics', 'marketing'].map((k) => document.getElementById('sccm-bdcat-' + k).checked));
+	check('P1 banner preview: Details tab switches are off too', detail.every((v) => v === false));
+	check('P1 the stored choice is untouched by the preview', (await consentCookie(context)).m === 'accept_all');
+	await context.close();
+}
+
+/* ---------------------------------------------------------------- T: theme styles do not leak into the banner */
+{
+	// What page builders and themes typically ship (e.g. Elementor kit / Hello theme rules).
+	const css = 'body.home button, .wp-site-blocks ~ * button, html body button { font-size: 22px; padding: 30px 60px; text-transform: uppercase; letter-spacing: 3px; border-radius: 0; min-height: 90px; font-weight: 300; background: #c36; color: #fff; box-shadow: 0 0 0 5px red; }'
+		+ ' html body button:hover, html body button:focus { background: #c36; color: #fff; } html body a { color: #c36; } html body p { margin: 40px 0; font-size: 22px; }';
+	const { context, page } = await newPage(browser, { css });
+	await page.goto(BASE + '/');
+	await page.waitForSelector('#sccm-banner:not([hidden])');
+	const read = () => page.evaluate(() => {
+		const b = getComputedStyle(document.querySelector('#sccm-banner .sccm-btn--accept'));
+		const c = getComputedStyle(document.querySelector('#sccm-banner .sccm-btn--customize'));
+		const t = getComputedStyle(document.querySelector('#sccm-banner .sccm-text'));
+		return { fs: b.fontSize, pad: b.paddingTop, tt: b.textTransform, fw: b.fontWeight, bg: b.backgroundColor, sh: b.boxShadow, cbg: c.backgroundColor, tfs: t.fontSize };
+	});
+	const s = await read();
+	check('T1 hostile theme button styles do not change the banner buttons', s.fs === '15px' && s.pad === '10px' && s.tt === 'none' && s.fw === '600' && s.bg === 'rgb(31, 41, 55)' && s.sh === 'none', JSON.stringify(s));
+	await page.hover('#sccm-banner .sccm-btn--customize');
+	const h = await read();
+	check('T1 theme hover colours do not change the buttons', h.cbg === 'rgba(0, 0, 0, 0)', h.cbg);
+	check('T1 theme paragraph styles do not change the banner text', s.tfs === '14.25px', s.tfs);
+	await context.close();
+}
+
+/* ---------------------------------------------------------------- B: buttons never break their text */
+{
+	for (const [position, label] of [['bottom-left', 'corner'], ['center', 'centre window'], ['bottom', 'bottom bar']]) {
+		const { context, page } = await newPage(browser, { layout: 'tabs', position });
+		await page.goto(BASE + '/');
+		await page.waitForSelector('#sccm-banner:not([hidden])');
+		const m = await page.evaluate(() => Array.from(document.querySelectorAll('#sccm-banner .sccm-actions .sccm-btn')).map((b) => ({ w: Math.round(b.getBoundingClientRect().width), h: Math.round(b.getBoundingClientRect().height), fits: b.scrollWidth <= b.clientWidth + 1 })));
+		check(`B1 ${label}: three equal one-line buttons`, m.every((b) => b.fits && b.h < 52) && new Set(m.map((b) => b.w)).size === 1, JSON.stringify(m));
+		if (position === 'bottom') {
+			check('B2 bottom bar (detailed): buttons keep a natural width, not a third of the bar', m.every((b) => b.w < 300), JSON.stringify(m));
+		}
+		await context.close();
+	}
+	// A long translation: the buttons stack, all equally wide, instead of wrapping their text.
+	const { context, page } = await newPage(browser, { layout: 'tabs', position: 'bottom-right', texts: { btn_selection: 'Only allow the cookies I selected above' } });
+	await page.goto(BASE + '/');
+	await page.waitForSelector('#sccm-banner:not([hidden])');
+	const st = await page.evaluate(() => {
+		const row = document.querySelector('#sccm-banner .sccm-actions');
+		const bs = Array.from(row.children);
+		return { stacked: row.classList.contains('sccm-actions--stack'), widths: bs.map((b) => Math.round(b.getBoundingClientRect().width)), fits: bs.every((b) => b.scrollWidth <= b.clientWidth + 1) };
+	});
+	check('B3 long button text: buttons stack with equal width, text on one line', st.stacked && st.fits && new Set(st.widths).size === 1, JSON.stringify(st));
 	await context.close();
 }
 
@@ -205,7 +315,7 @@ const browser = await launch();
 	}));
 	check('D1 Necessary locked on, nothing else pre-ticked', first.necessary[0] && first.necessary[1] && first.others.every((v) => v === false));
 	const order = await page.$$eval('#sccm-banner .sccm-actions .sccm-btn', (els) => els.map((e) => e.textContent.trim()));
-	check('D1 default button order: Allow all, Allow selection, Deny', JSON.stringify(order) === JSON.stringify(['Allow all', 'Allow selection', 'Deny']), order.join(','));
+	check('D1 default button order: Allow all, Deny, Allow selection', JSON.stringify(order) === JSON.stringify(['Allow all', 'Deny', 'Allow selection']), order.join(','));
 	const toggles = await page.evaluate(() => {
 		const row = document.querySelector('#sccm-banner .sccm-toggles').getBoundingClientRect();
 		const text = document.querySelector('#sccm-banner .sccm-text').getBoundingClientRect();
@@ -215,8 +325,9 @@ const browser = await launch();
 
 	// Details tab: built on demand; category accordion → provider accordion → cookie cards.
 	check('D2 details are not built until the Details tab is opened', (await page.locator('#sccm-banner .sccm-acc').count()) === 0);
-	await page.click('#sccm-banner .sccm-more .sccm-linkbtn');
-	check('D2 "Show details" opens the Details tab', (await page.getAttribute('#sccm-btab-details', 'aria-selected')) === 'true');
+	check('D2 no separate "Show details" link: the Details tab is the only way in', (await page.locator('#sccm-banner [data-sccm-tab]:not(.sccm-tab)').count()) === 0);
+	await page.click('#sccm-btab-details');
+	check('D2 the Details tab opens', (await page.getAttribute('#sccm-btab-details', 'aria-selected')) === 'true');
 	const accs = await page.$$eval('#sccm-banner .sccm-acc__name', (els) => els.map((e) => e.textContent.trim()));
 	check('D2 Details tab lists one accordion per category', accs.length === 4, accs.join(','));
 	check('D2 accordions start closed', (await page.locator('#sccm-banner .sccm-acc__panel:not([hidden])').count()) === 0);
@@ -312,6 +423,21 @@ const browser = await launch();
 	await page.goto(BASE + '/cookie-policy/');
 	const rows = await page.locator('.sccm-policy .sccm-table tbody tr').count();
 	check('10 Cookie Policy page lists cookies', rows > 0, rows + ' rows');
+	check('10 Cookie Policy page has the sccm-policy-page body class', await page.evaluate(() => document.body.classList.contains('sccm-policy-page')));
+	await context.close();
+}
+{
+	// A dark theme: the list must use the theme's colours and fonts (it used to force dark text).
+	const css = 'body, body .wp-site-blocks { background: #111 !important; color: rgb(230, 230, 230) !important; font-size: 19px !important; }';
+	const { context, page } = await newPage(browser, { css, path: '/cookie-policy/' });
+	await page.goto(BASE + '/cookie-policy/');
+	const s = await page.evaluate(() => {
+		const td = getComputedStyle(document.querySelector('.sccm-policy .sccm-table td'));
+		const p = getComputedStyle(document.querySelector('.sccm-policy p'));
+		return { td: td.color, p: p.color, fs: p.fontSize };
+	});
+	check('10 Cookie Policy list follows the theme colours (readable on dark themes)', s.td === 'rgb(230, 230, 230)' && s.p === 'rgb(230, 230, 230)' && s.fs === '19px', JSON.stringify(s));
+	await page.screenshot({ path: OUT + 'policy-dark-theme.png', fullPage: true });
 	await context.close();
 }
 

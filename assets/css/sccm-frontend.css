@@ -1,6 +1,12 @@
 /* Smart Cookie Consent Manager — front end.
  * Colours come from CSS variables printed by the plugin (Banner settings).
  * Override any variable in your theme: .sccm-root { --sccm-radius: 0; }
+ *
+ * Theme isolation: the banner, the settings window and the widget live in <div id="sccm-app">
+ * at the end of <body>, and their rules start with #sccm-app. Theme rules such as
+ * ".elementor-kit-5 button:hover" or "button { padding: 20px }" are less specific, so the
+ * banner looks the same on every site. The Cookie Policy list (.sccm-policy) is the opposite:
+ * it is part of the page and takes its fonts and colours from the theme.
  */
 .sccm-root {
 	--sccm-bg: #ffffff;
@@ -14,117 +20,191 @@
 	--sccm-border: rgba(31, 41, 55, 0.18);
 	--sccm-soft: rgba(31, 41, 55, 0.06);
 	--sccm-slider-off: rgba(31, 41, 55, 0.32);
+}
+
+#sccm-app .sccm-root {
 	box-sizing: border-box;
 	color: var(--sccm-text);
+	direction: inherit;
 	font-family: inherit;
 	font-size: 15px;
+	font-style: normal;
+	font-weight: 400;
+	letter-spacing: normal;
 	line-height: 1.5;
+	text-align: start;
+	text-transform: none;
 	z-index: 2147483000;
 }
 
-.sccm-root *,
-.sccm-root *::before,
-.sccm-root *::after {
+#sccm-app .sccm-root *,
+#sccm-app .sccm-root *::before,
+#sccm-app .sccm-root *::after {
 	box-sizing: border-box;
 }
 
-.sccm-root[hidden],
-.sccm-root [hidden] {
+#sccm-app [hidden] {
 	display: none !important;
 }
 
-.sccm-root a {
+/* Neutral starting point for elements that themes like to style. */
+#sccm-app p,
+#sccm-app label {
+	color: inherit;
+	font-size: inherit;
+	letter-spacing: inherit;
+	line-height: inherit;
+	margin: 0;
+	padding: 0;
+	text-transform: none;
+}
+
+#sccm-app button {
+	-webkit-appearance: none;
+	appearance: none;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	color: inherit;
+	cursor: pointer;
+	float: none;
+	font-family: inherit;
+	font-size: inherit;
+	font-style: normal;
+	font-weight: inherit;
+	height: auto;
+	letter-spacing: normal;
+	line-height: inherit;
+	margin: 0;
+	max-width: none;
+	min-height: 0;
+	min-width: 0;
+	padding: 0;
+	text-decoration: none;
+	text-shadow: none;
+	text-transform: none;
+	width: auto;
+}
+
+#sccm-app a {
+	box-shadow: none;
 	color: var(--sccm-link);
+	font-weight: inherit;
 	text-decoration: underline;
 }
 
-.sccm-root p {
-	margin: 0;
-}
-
-.sccm-root button {
-	font: inherit;
-	letter-spacing: normal;
-	text-transform: none;
+#sccm-app code {
+	background: none;
+	color: inherit;
+	padding: 0;
 }
 
 /* ---------------------------------------------------------------- Buttons */
 
 /* Deny, Allow selection and Allow all always look exactly the same (fair consent). */
-.sccm-btn {
+#sccm-app .sccm-btn,
+.sccm-placeholder .sccm-btn.sccm-btn,
+a.sccm-open-preferences.sccm-btn {
+	-webkit-appearance: none;
 	appearance: none;
+	align-items: center;
 	background: var(--sccm-btn-bg);
 	border: 2px solid var(--sccm-btn-bg);
 	border-radius: var(--sccm-radius);
+	box-shadow: none;
 	color: var(--sccm-btn-text);
 	cursor: pointer;
+	display: inline-flex;
+	font-family: inherit;
+	font-size: 15px;
 	font-weight: 600;
-	line-height: 1.2;
+	justify-content: center;
+	letter-spacing: normal;
+	line-height: 1.25;
 	margin: 0;
 	min-height: 46px;
-	padding: 10px 16px;
+	padding: 10px 18px;
 	text-align: center;
+	text-decoration: none;
+	text-transform: none;
 	transition: opacity 0.15s ease;
+	white-space: nowrap;
 }
 
-.sccm-btn:hover {
+#sccm-app .sccm-btn:hover,
+#sccm-app .sccm-btn:focus,
+.sccm-placeholder .sccm-btn.sccm-btn:hover,
+a.sccm-open-preferences.sccm-btn:hover {
+	background: var(--sccm-btn-bg);
+	color: var(--sccm-btn-text);
 	opacity: 0.88;
 }
 
-.sccm-actions {
-	display: grid;
-	gap: 10px;
-	grid-template-columns: repeat(3, 1fr);
+/* "Customize" (compact banner) is a secondary action; Allow all and Deny always share one style. */
+#sccm-app .sccm-btn--customize,
+#sccm-app .sccm-btn--customize:hover,
+#sccm-app .sccm-btn--customize:focus {
+	background: transparent;
+	color: var(--sccm-btn-bg);
 }
 
-.sccm-linkbtn {
-	appearance: none;
-	background: none;
-	border: 0;
+/* Three equal buttons in a row; stacked (still equal) when they do not fit, see fitButtons(). */
+#sccm-app .sccm-actions {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+#sccm-app .sccm-actions--stack {
+	grid-template-columns: minmax(0, 1fr);
+}
+
+#sccm-app .sccm-linkbtn {
 	color: var(--sccm-link);
-	cursor: pointer;
 	font-weight: 600;
-	margin: 0;
 	padding: 4px 0;
 	text-decoration: underline;
 }
 
-.sccm-btn:focus-visible,
-.sccm-linkbtn:focus-visible,
-.sccm-close:focus-visible,
-.sccm-tab:focus-visible,
-.sccm-acc__toggle:focus-visible,
-.sccm-prov__toggle:focus-visible,
-.sccm-copy:focus-visible,
-.sccm-floating:focus-visible,
-.sccm-switch input:focus-visible + .sccm-slider {
+#sccm-app .sccm-btn:focus-visible,
+#sccm-app .sccm-linkbtn:focus-visible,
+#sccm-app .sccm-close:focus-visible,
+#sccm-app .sccm-tab:focus-visible,
+#sccm-app .sccm-acc__toggle:focus-visible,
+#sccm-app .sccm-prov__toggle:focus-visible,
+#sccm-app .sccm-copy:focus-visible,
+#sccm-app .sccm-floating:focus-visible,
+#sccm-app a:focus-visible,
+#sccm-app .sccm-switch input:focus-visible + .sccm-slider {
 	outline: 3px solid var(--sccm-link);
 	outline-offset: 2px;
 }
 
 /* ---------------------------------------------------------------- Dialog */
 
-.sccm-dialog {
+#sccm-app .sccm-dialog {
 	position: fixed;
 }
 
-.sccm-dialog__box {
+#sccm-app .sccm-dialog__box {
 	background: var(--sccm-bg);
 	border-radius: var(--sccm-radius);
 	box-shadow: 0 12px 48px rgba(0, 0, 0, 0.22);
 	display: flex;
 	flex-direction: column;
+	margin: 0;
 	max-height: calc(100vh - 32px);
 	overflow: hidden;
 	position: relative;
 	width: 100%;
 }
 
-.sccm-dialog__box:focus {
+#sccm-app .sccm-dialog__box:focus {
 	outline: none;
 }
 
-.sccm-dialog__head {
+#sccm-app .sccm-dialog__head {
 	align-items: center;
 	display: flex;
 	gap: 12px;
@@ -132,49 +212,42 @@
 	padding: 18px 24px 12px;
 }
 
-.sccm-title {
+#sccm-app .sccm-title {
 	font-size: 1.15em;
 	font-weight: 700;
 	line-height: 1.3;
 }
 
-.sccm-close {
-	background: transparent;
-	border: 0;
+#sccm-app .sccm-close {
 	border-radius: var(--sccm-radius);
-	color: inherit;
-	cursor: pointer;
+	flex: 0 0 auto;
 	font-size: 28px;
 	height: 40px;
 	line-height: 1;
-	padding: 0;
 	width: 40px;
 }
 
-.sccm-tabs {
+#sccm-app .sccm-tabs {
 	border-bottom: 1px solid var(--sccm-border);
 	border-top: 1px solid var(--sccm-border);
 	display: flex;
 }
 
-.sccm-tab {
-	background: none;
-	border: 0;
+#sccm-app .sccm-tab {
 	border-bottom: 3px solid transparent;
 	color: var(--sccm-muted);
-	cursor: pointer;
 	flex: 1 1 0;
 	font-weight: 600;
-	margin: 0;
 	padding: 12px 8px 9px;
+	text-align: center;
 }
 
-.sccm-tab[aria-selected="true"] {
+#sccm-app .sccm-tab[aria-selected="true"] {
 	border-bottom-color: var(--sccm-link);
 	color: var(--sccm-link);
 }
 
-.sccm-dialog__body {
+#sccm-app .sccm-dialog__body {
 	flex: 1 1 auto;
 	min-height: 0;
 	overflow-y: auto;
@@ -182,73 +255,73 @@
 	padding: 18px 24px;
 }
 
-.sccm-dialog__foot {
+#sccm-app .sccm-dialog__foot {
 	border-top: 1px solid var(--sccm-border);
 	padding: 14px 24px 16px;
 }
 
-.sccm-text {
+#sccm-app .sccm-text {
 	font-size: 0.95em;
 }
 
-.sccm-text p + p {
+#sccm-app .sccm-text p + p {
 	margin-top: 8px;
 }
 
-.sccm-links {
+#sccm-app .sccm-links {
 	display: flex;
 	flex-wrap: wrap;
 	font-size: 0.9em;
-	gap: 16px;
-	margin-top: 10px !important;
+	gap: 6px 16px;
+	margin-top: 10px;
 }
 
-.sccm-muted {
+#sccm-app .sccm-muted {
 	color: var(--sccm-muted);
 	font-size: 0.9em;
 }
 
 /* Bars at the bottom or top */
-.sccm-pos-bottom,
-.sccm-pos-top {
+#sccm-app .sccm-pos-bottom,
+#sccm-app .sccm-pos-top {
 	left: 0;
 	padding: 12px;
 	right: 0;
 }
 
-.sccm-pos-bottom {
+#sccm-app .sccm-pos-bottom {
 	bottom: 0;
 }
 
-.sccm-pos-top {
+#sccm-app .sccm-pos-top {
 	top: 0;
 }
 
-.sccm-pos-bottom .sccm-dialog__box,
-.sccm-pos-top .sccm-dialog__box {
+#sccm-app .sccm-pos-bottom .sccm-dialog__box,
+#sccm-app .sccm-pos-top .sccm-dialog__box {
 	margin: 0 auto;
 	max-height: min(80vh, 640px);
 	max-width: 1100px;
 }
 
 /* Boxes in a corner */
-.sccm-pos-bottom-left,
-.sccm-pos-bottom-right {
+#sccm-app .sccm-pos-bottom-left,
+#sccm-app .sccm-pos-bottom-right {
 	bottom: 16px;
 	max-width: 460px;
 	width: calc(100% - 32px);
 }
 
-.sccm-pos-bottom-left {
+#sccm-app .sccm-pos-bottom-left {
 	left: 16px;
 }
 
-.sccm-pos-bottom-right {
+#sccm-app .sccm-pos-bottom-right {
 	right: 16px;
 }
 
 /* Window in the centre (also used when the dialog is reopened) */
-.sccm-pos-center {
+#sccm-app .sccm-pos-center {
 	align-items: center;
 	display: flex;
 	inset: 0;
@@ -256,57 +329,65 @@
 	padding: 16px;
 }
 
-.sccm-pos-center .sccm-dialog__box {
+#sccm-app .sccm-pos-center .sccm-dialog__box {
 	max-height: min(88vh, 780px);
 	max-width: 720px;
 }
 
-.sccm-overlay {
+#sccm-app .sccm-overlay {
 	background: rgba(0, 0, 0, 0.5);
 	inset: 0;
 	position: fixed;
 }
 
+/* Wide bars, detailed style: three equal buttons at the right of the footer (not 1/3 of the bar each). */
+@media (min-width: 1000px) {
+	#sccm-app .sccm-pos-bottom .sccm-dialog__foot .sccm-actions:not(.sccm-actions--stack),
+	#sccm-app .sccm-pos-top .sccm-dialog__foot .sccm-actions:not(.sccm-actions--stack) {
+		grid-template-columns: repeat(3, minmax(170px, 1fr));
+		margin-inline-start: auto;
+		width: max-content;
+	}
+}
+
 /* ---------------------------------------------------------------- Compact banner (default first layer) */
 
-.sccm-compact .sccm-dialog__box {
+#sccm-app .sccm-compact .sccm-dialog__box {
 	gap: 18px;
 	padding: 22px 24px;
 }
 
-.sccm-compact .sccm-title {
-	margin-bottom: 6px !important;
+#sccm-app .sccm-compact .sccm-title {
+	margin-bottom: 6px;
 }
 
-/* "Customize" is a secondary action; Allow all and Deny always share the same style. */
-.sccm-btn--customize {
-	background: transparent;
-	color: var(--sccm-btn-bg);
-}
-
-@media (min-width: 900px) {
-	.sccm-compact.sccm-pos-bottom .sccm-dialog__box,
-	.sccm-compact.sccm-pos-top .sccm-dialog__box {
+/* Bars on wide screens: text on the left, the three buttons on the right, centred vertically. */
+@media (min-width: 1000px) {
+	#sccm-app .sccm-compact.sccm-pos-bottom .sccm-dialog__box,
+	#sccm-app .sccm-compact.sccm-pos-top .sccm-dialog__box {
 		align-items: center;
 		flex-direction: row;
 		gap: 32px;
+		padding: 20px 28px;
 	}
 
-	.sccm-compact.sccm-pos-bottom .sccm-compact__content,
-	.sccm-compact.sccm-pos-top .sccm-compact__content {
+	#sccm-app .sccm-compact.sccm-pos-bottom .sccm-compact__content,
+	#sccm-app .sccm-compact.sccm-pos-top .sccm-compact__content {
 		flex: 1 1 auto;
+		min-width: 0;
 	}
 
-	.sccm-compact.sccm-pos-bottom .sccm-compact__actions,
-	.sccm-compact.sccm-pos-top .sccm-compact__actions {
+	#sccm-app .sccm-compact.sccm-pos-bottom .sccm-compact__actions,
+	#sccm-app .sccm-compact.sccm-pos-top .sccm-compact__actions {
 		flex: 0 0 auto;
-		grid-template-columns: repeat(3, minmax(150px, auto));
+		/* Equal columns, as wide as the longest button text. */
+		grid-template-columns: repeat(3, minmax(140px, 1fr));
 	}
 }
 
 /* ---------------------------------------------------------------- Consent tab: category switches */
 
-.sccm-toggles {
+#sccm-app .sccm-toggles {
 	background: var(--sccm-border);
 	border: 1px solid var(--sccm-border);
 	border-radius: var(--sccm-radius);
@@ -317,7 +398,7 @@
 	overflow: hidden;
 }
 
-.sccm-toggle {
+#sccm-app .sccm-toggle {
 	align-items: center;
 	background: var(--sccm-bg);
 	cursor: pointer;
@@ -332,27 +413,22 @@
 }
 
 /* Corner boxes: two per row, full width */
-.sccm-pos-bottom-left .sccm-toggles,
-.sccm-pos-bottom-right .sccm-toggles {
+#sccm-app .sccm-pos-bottom-left .sccm-toggles,
+#sccm-app .sccm-pos-bottom-right .sccm-toggles {
 	grid-template-columns: repeat(2, 1fr);
 }
 
-.sccm-pos-bottom-left .sccm-toggle,
-.sccm-pos-bottom-right .sccm-toggle {
+#sccm-app .sccm-pos-bottom-left .sccm-toggle,
+#sccm-app .sccm-pos-bottom-right .sccm-toggle {
 	flex-direction: row;
 	justify-content: space-between;
 	padding: 12px 14px;
 	text-align: start;
 }
 
-.sccm-more {
-	margin-top: 10px !important;
-	text-align: end;
-}
-
 /* ---------------------------------------------------------------- Switch */
 
-.sccm-switch {
+#sccm-app .sccm-switch {
 	display: inline-block;
 	flex: 0 0 auto;
 	height: 26px;
@@ -360,7 +436,9 @@
 	width: 48px;
 }
 
-.sccm-switch input {
+#sccm-app .sccm-switch input {
+	-webkit-appearance: none;
+	appearance: none;
 	cursor: pointer;
 	height: 100%;
 	left: 0;
@@ -372,7 +450,7 @@
 	z-index: 1;
 }
 
-.sccm-slider {
+#sccm-app .sccm-slider {
 	background: var(--sccm-slider-off);
 	border-radius: 999px;
 	inset: 0;
@@ -381,7 +459,7 @@
 	transition: background 0.15s ease;
 }
 
-.sccm-slider::before {
+#sccm-app .sccm-slider::before {
 	background: #fff;
 	border-radius: 50%;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -394,73 +472,68 @@
 	width: 20px;
 }
 
-.sccm-switch input:checked + .sccm-slider {
+#sccm-app .sccm-switch input:checked + .sccm-slider {
 	background: var(--sccm-toggle);
 }
 
-.sccm-switch input:checked + .sccm-slider::before {
+#sccm-app .sccm-switch input:checked + .sccm-slider::before {
 	transform: translateX(22px);
 }
 
-.sccm-switch input:disabled {
+#sccm-app .sccm-switch input:disabled {
 	cursor: not-allowed;
 }
 
-.sccm-switch input:disabled + .sccm-slider {
+#sccm-app .sccm-switch input:disabled + .sccm-slider {
 	opacity: 0.55;
 }
 
 /* ---------------------------------------------------------------- Details tab: accordions and cookie cards */
 
-.sccm-notice {
+#sccm-app .sccm-notice {
 	background: var(--sccm-soft);
 	border-inline-start: 4px solid var(--sccm-toggle);
 	border-radius: 4px;
 	font-size: 0.92em;
-	margin-bottom: 8px !important;
+	margin-bottom: 8px;
 	padding: 10px 12px;
 }
 
-.sccm-acc {
+#sccm-app .sccm-acc {
 	border-bottom: 1px solid var(--sccm-border);
 }
 
-.sccm-acc__head,
-.sccm-prov__head {
+#sccm-app .sccm-acc__head,
+#sccm-app .sccm-prov__head {
 	align-items: center;
 	display: flex;
 	gap: 12px;
 }
 
-.sccm-acc__head {
+#sccm-app .sccm-acc__head {
 	padding: 10px 0;
 }
 
-.sccm-acc__toggle,
-.sccm-prov__toggle {
+#sccm-app .sccm-acc__toggle,
+#sccm-app .sccm-prov__toggle {
 	align-items: center;
-	background: none;
-	border: 0;
-	color: inherit;
-	cursor: pointer;
 	display: flex;
 	flex: 1 1 auto;
 	gap: 10px;
-	margin: 0;
 	padding: 6px 0;
 	text-align: start;
 }
 
-.sccm-acc__toggle {
+#sccm-app .sccm-acc__toggle {
 	font-weight: 700;
 }
 
-.sccm-prov__toggle {
+#sccm-app .sccm-prov__toggle {
 	font-weight: 600;
 	padding: 12px 14px;
 }
 
-.sccm-chev {
+#sccm-app .sccm-chev {
 	border-bottom: 2px solid currentColor;
 	border-right: 2px solid currentColor;
 	flex: 0 0 auto;
@@ -471,11 +544,11 @@
 	width: 8px;
 }
 
-[aria-expanded="true"] > .sccm-chev {
+#sccm-app [aria-expanded="true"] > .sccm-chev {
 	transform: rotate(45deg);
 }
 
-.sccm-count {
+#sccm-app .sccm-count {
 	background: var(--sccm-soft);
 	border-radius: 999px;
 	font-size: 0.78em;
@@ -485,58 +558,58 @@
 	text-align: center;
 }
 
-.sccm-acc__panel {
+#sccm-app .sccm-acc__panel {
 	padding: 0 0 16px 26px;
 }
 
-.sccm-acc__desc {
+#sccm-app .sccm-acc__desc {
 	color: var(--sccm-muted);
 	font-size: 0.92em;
-	margin-bottom: 4px !important;
+	margin-bottom: 4px;
 }
 
-.sccm-prov {
+#sccm-app .sccm-prov {
 	border: 1px solid var(--sccm-border);
 	border-radius: var(--sccm-radius);
 	margin-top: 10px;
 }
 
-.sccm-prov__panel {
+#sccm-app .sccm-prov__panel {
 	display: grid;
 	gap: 10px;
 	padding: 0 14px 14px;
 }
 
-.sccm-ck {
+#sccm-app .sccm-ck {
 	background: var(--sccm-soft);
 	border-radius: var(--sccm-radius);
 	padding: 12px 14px;
 }
 
-.sccm-ck__name {
+#sccm-app .sccm-ck__name {
 	font-weight: 700;
 	overflow-wrap: anywhere;
 }
 
-.sccm-ck__purpose {
+#sccm-app .sccm-ck__purpose {
 	font-size: 0.92em;
-	margin-top: 4px !important;
+	margin-top: 4px;
 }
 
-.sccm-ck__meta {
+#sccm-app .sccm-ck__meta {
 	border-top: 1px solid var(--sccm-border);
 	color: var(--sccm-muted);
 	display: flex;
 	flex-wrap: wrap;
 	font-size: 0.85em;
 	gap: 4px 28px;
-	margin-top: 10px !important;
+	margin-top: 10px;
 	padding-top: 8px;
 }
 
 /* ---------------------------------------------------------------- About tab: the visitor's consent */
 
-.sccm-status {
+#sccm-app .sccm-status {
 	background: var(--sccm-soft);
 	border-radius: var(--sccm-radius);
 	font-size: 0.9em;
@@ -544,22 +617,19 @@
 	padding: 10px 14px;
 }
 
-.sccm-status__row {
-	margin: 2px 0 !important;
+#sccm-app .sccm-status__row {
+	margin: 2px 0;
 	overflow-wrap: anywhere;
 }
 
-.sccm-status code {
+#sccm-app .sccm-status code {
 	font-size: 0.95em;
 	margin-inline-end: 8px;
 }
 
-.sccm-copy {
-	background: transparent;
+#sccm-app .sccm-copy {
 	border: 1px solid var(--sccm-border);
 	border-radius: 999px;
-	color: inherit;
-	cursor: pointer;
 	font-size: 0.85em;
 	padding: 1px 10px;
 }
@@ -567,13 +637,13 @@
 /* ---------------------------------------------------------------- Small screens */
 
 @media (max-width: 600px) {
-	.sccm-pos-bottom,
-	.sccm-pos-top {
+	#sccm-app .sccm-pos-bottom,
+	#sccm-app .sccm-pos-top {
 		padding: 8px;
 	}
 
-	.sccm-pos-bottom-left,
-	.sccm-pos-bottom-right {
+	#sccm-app .sccm-pos-bottom-left,
+	#sccm-app .sccm-pos-bottom-right {
 		bottom: 8px;
 		left: 8px;
 		max-width: none;
@@ -581,58 +651,36 @@
 		width: auto;
 	}
 
-	.sccm-dialog__head,
-	.sccm-dialog__body,
-	.sccm-dialog__foot,
-	.sccm-compact .sccm-dialog__box {
+	#sccm-app .sccm-dialog__head,
+	#sccm-app .sccm-dialog__body,
+	#sccm-app .sccm-dialog__foot,
+	#sccm-app .sccm-compact .sccm-dialog__box {
 		padding-left: 16px;
 		padding-right: 16px;
 	}
 
-	.sccm-toggles {
+	#sccm-app .sccm-toggles {
 		grid-template-columns: repeat(2, 1fr);
 	}
 
-	.sccm-actions {
-		grid-template-columns: 1fr;
+	#sccm-app .sccm-actions {
+		grid-template-columns: minmax(0, 1fr);
 	}
 
-	.sccm-acc__panel {
+	#sccm-app .sccm-acc__panel {
 		padding-left: 8px;
-	}
-
-	.sccm-table thead {
-		display: none;
-	}
-
-	.sccm-table tr {
-		border-bottom: 1px solid var(--sccm-border);
-		display: block;
-		padding: 6px 0;
-	}
-
-	.sccm-table td {
-		border: 0;
-		display: block;
-		padding: 2px 0;
-	}
-
-	.sccm-table td::before {
-		content: attr(data-label) ": ";
-		font-weight: 600;
 	}
 }
 
 /* ---------------------------------------------------------------- Cookie settings button */
 
-.sccm-floating {
+#sccm-app .sccm-floating {
 	align-items: center;
 	background: var(--sccm-btn-bg);
 	border: 0;
 	border-radius: 50%;
 	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 	color: var(--sccm-btn-text);
-	cursor: pointer;
 	display: flex;
 	height: 46px;
 	justify-content: center;
@@ -642,17 +690,23 @@
 	width: 46px;
 }
 
-.sccm-floating__icon {
+#sccm-app .sccm-floating:hover,
+#sccm-app .sccm-floating:focus {
+	background: var(--sccm-btn-bg);
+	color: var(--sccm-btn-text);
+}
+
+#sccm-app .sccm-floating__icon {
 	display: flex;
 }
 
 /* Corners: a round icon button */
-.sccm-floating--bottom-left {
+#sccm-app .sccm-floating--bottom-left {
 	bottom: 16px;
 	left: 16px;
 }
 
-.sccm-floating--bottom-right {
+#sccm-app .sccm-floating--bottom-right {
 	bottom: 16px;
 	right: 16px;
 }
@@ -661,7 +715,7 @@
  * Bottom centre and the middle of a side: a slim tab with a text label, attached to the edge
  * of the screen. It sits slightly tucked in and comes out a little when hovered or focused.
  */
-.sccm-floating--tab {
+#sccm-app .sccm-floating--tab {
 	font-size: 13px;
 	font-weight: 700;
 	gap: 7px;
@@ -670,12 +724,12 @@
 	width: auto;
 }
 
-.sccm-floating--tab .sccm-floating__icon svg {
+#sccm-app .sccm-floating--tab .sccm-floating__icon svg {
 	height: 16px;
 	width: 16px;
 }
 
-.sccm-floating--bottom-center {
+#sccm-app .sccm-floating--bottom-center {
 	border-radius: 10px 10px 0 0;
 	bottom: 0;
 	left: 50%;
@@ -683,100 +737,134 @@
 	transform: translate(-50%, 3px);
 }
 
-.sccm-floating--bottom-center:hover,
-.sccm-floating--bottom-center:focus-visible {
+#sccm-app .sccm-floating--bottom-center:hover,
+#sccm-app .sccm-floating--bottom-center:focus-visible {
 	transform: translate(-50%, 0);
 }
 
-.sccm-floating--left-center,
-.sccm-floating--right-center {
+#sccm-app .sccm-floating--left-center,
+#sccm-app .sccm-floating--right-center {
 	padding: 16px 9px;
 	top: 50%;
 	writing-mode: vertical-rl;
 }
 
 /* Reads bottom-to-top on the left edge, top-to-bottom on the right edge. */
-.sccm-floating--left-center {
+#sccm-app .sccm-floating--left-center {
 	border-radius: 10px 0 0 10px;
 	left: 0;
 	transform: translate(-3px, -50%) rotate(180deg);
 }
 
-.sccm-floating--left-center:hover,
-.sccm-floating--left-center:focus-visible {
+#sccm-app .sccm-floating--left-center:hover,
+#sccm-app .sccm-floating--left-center:focus-visible {
 	transform: translate(0, -50%) rotate(180deg);
 }
 
-.sccm-floating--right-center {
+#sccm-app .sccm-floating--right-center {
 	border-radius: 10px 0 0 10px;
 	right: 0;
 	transform: translate(3px, -50%);
 }
 
-.sccm-floating--right-center:hover,
-.sccm-floating--right-center:focus-visible {
+#sccm-app .sccm-floating--right-center:hover,
+#sccm-app .sccm-floating--right-center:focus-visible {
 	transform: translate(0, -50%);
-}
-
-/* ---------------------------------------------------------------- Blocked iframe placeholder */
-
-.sccm-placeholder {
-	align-items: center;
-	background: #f3f4f6;
-	border: 1px dashed #9ca3af;
-	border-radius: 8px;
-	color: #1f2937;
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	justify-content: center;
-	min-height: 180px;
-	padding: 20px;
-	text-align: center;
-	width: 100%;
-}
-
-/* ---------------------------------------------------------------- Cookie policy shortcode */
-
-.sccm-policy.sccm-root,
-.sccm-placeholder.sccm-root {
-	font-size: inherit;
-	z-index: auto;
-}
-
-.sccm-policy .sccm-policy__category {
-	margin: 1.5em 0 0.5em;
-}
-
-.sccm-table {
-	border-collapse: collapse;
-	font-size: 0.95em;
-	margin-top: 10px;
-	width: 100%;
-}
-
-.sccm-table th,
-.sccm-table td {
-	border-bottom: 1px solid var(--sccm-border);
-	padding: 6px 8px;
-	text-align: start;
-	vertical-align: top;
-	word-break: break-word;
-}
-
-.sccm-table th {
-	background: var(--sccm-soft);
-	font-weight: 600;
 }
 
 html.sccm-noscroll {
 	overflow: hidden;
 }
 
+/* ---------------------------------------------------------------- Blocked iframe placeholder */
+
+.sccm-placeholder.sccm-root {
+	align-items: center;
+	background: #f3f4f6;
+	border: 1px dashed #9ca3af;
+	border-radius: 8px;
+	box-sizing: border-box;
+	color: #1f2937;
+	display: flex;
+	flex-direction: column;
+	font-size: 15px;
+	gap: 12px;
+	justify-content: center;
+	line-height: 1.5;
+	min-height: 180px;
+	padding: 20px;
+	text-align: center;
+	width: 100%;
+}
+
+.sccm-placeholder.sccm-root p {
+	color: inherit;
+	margin: 0;
+}
+
+/* ---------------------------------------------------------------- Cookie policy shortcode
+ * Part of the page: fonts, colours, headings and links come from the theme. Lines use the
+ * text colour (currentColor), so the table works on light and dark themes alike.
+ */
+
+.sccm-policy .sccm-table {
+	border-collapse: collapse;
+	margin: 1em 0;
+	width: 100%;
+}
+
+.sccm-policy .sccm-table th,
+.sccm-policy .sccm-table td {
+	border-bottom: 1px solid rgba(128, 128, 128, 0.35);
+	border-bottom: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+	padding: 0.6em 0.75em;
+	text-align: start;
+	vertical-align: top;
+	word-break: normal;
+}
+
+.sccm-policy .sccm-table th {
+	font-weight: 600;
+}
+
+/* Only long cookie names may break anywhere; words (Provider, YouTube…) stay whole. */
+.sccm-policy .sccm-table code {
+	overflow-wrap: anywhere;
+	word-break: break-all;
+}
+
+.sccm-policy__empty,
+.sccm-policy__updated {
+	opacity: 0.75;
+}
+
+@media (max-width: 600px) {
+	.sccm-policy .sccm-table thead {
+		display: none;
+	}
+
+	.sccm-policy .sccm-table tr {
+		border-bottom: 1px solid rgba(128, 128, 128, 0.35);
+		border-bottom: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+		display: block;
+		padding: 0.5em 0;
+	}
+
+	.sccm-policy .sccm-table td {
+		border: 0;
+		display: block;
+		padding: 0.15em 0;
+	}
+
+	.sccm-policy .sccm-table td::before {
+		content: attr(data-label) ": ";
+		font-weight: 600;
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
-	.sccm-root *,
-	.sccm-root *::before,
-	.sccm-floating {
+	#sccm-app *,
+	#sccm-app *::before {
 		transition: none !important;
 	}
 }

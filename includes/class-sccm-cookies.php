@@ -255,7 +255,21 @@ class SCCM_Cookies {
 				self::maybe_bump_version();
 			}
 		}
+		if ( false !== $result && ( 'active' === $clean['status'] || ( $old && 'active' === $old['status'] ) ) ) {
+			self::list_changed();
+		}
 		return $result;
+	}
+
+	/**
+	 * The list of cookies shown to visitors (banner details, Cookie Policy page) changed.
+	 */
+	private static function list_changed() {
+		/**
+		 * Fires when the cookies shown to visitors change (added, edited, removed). The plugin
+		 * clears page caches on it (see SCCM_Cache).
+		 */
+		do_action( 'sccm_cookie_list_changed' );
 	}
 
 	/**
@@ -266,8 +280,12 @@ class SCCM_Cookies {
 	 */
 	public static function delete( $id ) {
 		global $wpdb;
+		$old        = self::get( $id );
 		$ok         = $wpdb->delete( self::table(), array( 'id' => (int) $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		self::$rows = null;
+		if ( $ok && $old && 'active' === $old['status'] ) {
+			self::list_changed();
+		}
 		return (bool) $ok;
 	}
 
@@ -294,6 +312,9 @@ class SCCM_Cookies {
 		self::$rows = null;
 		if ( $changed && 'active' === $to ) {
 			self::maybe_bump_version();
+		}
+		if ( $changed && ( 'active' === $to || 'active' === $from ) ) {
+			self::list_changed();
 		}
 		return $changed;
 	}

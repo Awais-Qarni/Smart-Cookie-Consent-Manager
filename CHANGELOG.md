@@ -3,6 +3,49 @@
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
+### Added
+- **Button order: four choices.** Allow all · Deny · Allow selection (**new default**), Deny ·
+  Allow all · Allow selection, and the earlier two with "Allow selection" in the middle. In the
+  compact banner "Customize" takes the place of "Allow selection". On update, a saved "Allow all
+  first" becomes Allow all · Deny · Allow selection and "Deny first" becomes Deny · Allow all ·
+  Allow selection, so the compact banner looks exactly as before.
+- **Page caches are cleared automatically** when you save settings or the cookie list changes
+  (approve, edit, delete, or a scan adding a known cookie): WP Engine, NitroPack, WP Rocket,
+  LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, SiteGround, Breeze and
+  Hummingbird. The Cookie Policy page and the banner's cookie list update without clearing the
+  cache by hand. Visitors can never trigger a stream of purges (at most one every 5 minutes).
+- **Cookie Policy page without sidebar** (Banner → Links → "Hide the sidebar on the Cookie
+  Policy page", on by default; also sets the no-sidebar layout in Astra, GeneratePress and
+  OceanWP). The page gets the body class `sccm-policy-page`.
+- **Warning when another consent plugin is active** (Cookiebot, Complianz, CookieYes, Borlabs,
+  Real Cookie Banner, iubenda, Cookie Notice, Termly…): two banners would conflict.
+- Translation template `languages/smart-cookie-consent-manager.pot`.
+
+### Fixed
+- **Cookie Policy page did not follow the theme**: it forced the banner's dark text colour,
+  which was unreadable on dark themes. It now uses the theme's fonts, colours and table look;
+  only cookie names may break across lines (no more "Provide r", "YouTub e").
+- **Banner looked different on some themes**: theme styles for buttons, links and paragraphs
+  (e.g. Elementor global buttons, hover colours) leaked into the banner, and the plugin's own
+  reset dropped the buttons' bold weight. The banner now lives in `<div id="sccm-app">` and its
+  styles are scoped to it, so it looks the same on every site. If you wrote custom CSS for the
+  banner, start its selectors with `#sccm-app` (e.g. `#sccm-app .sccm-btn`) or use the CSS
+  variables (`.sccm-root { --sccm-radius: 0; }`).
+- **Button texts wrapped** ("Allow / selection") in narrow boxes: texts stay on one line; when
+  three buttons do not fit side by side they stack, all equally wide.
+- **Detailed banner in a bottom/top bar** had buttons a third of the bar wide: they now sit on
+  the right at a natural, equal width. The compact bar's buttons are equal width and centred.
+- **Banner preview showed your own earlier choice** (switches on, About tab "Allowed all
+  cookies"): the preview now looks exactly like a first visit, and so does its Customize window.
+- Removed the "Show details" link under the switches: the Details tab already does that.
+- **Alert email looked broken in dark mode** (Outlook, Gmail app): the dark header became a light
+  block and the button lost its padding. New light design that survives colour inversion, real
+  dark-mode colours where supported, and a button that keeps its padding in Outlook.
+- AMP pages and more page-builder editors (Fusion, Breakdance, Flatsome UX Builder, SiteOrigin,
+  Zion, Cornerstone, OptimizePress, Pagelayer) are left alone.
+- Custom CSS help listed old class names; it now names `#sccm-banner`, `#sccm-prefs`,
+  `.sccm-btn`, `.sccm-policy` and the CSS variables.
+
 ### Changed
 - **New default banner style "Compact"**: title, text, policy links and three buttons
   (**Allow all**, **Deny**, **Customize**). Customize opens the full Consent / Details / About

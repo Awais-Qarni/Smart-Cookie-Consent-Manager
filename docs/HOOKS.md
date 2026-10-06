@@ -17,6 +17,8 @@
 | `sccm_scan_sslverify` | `bool $verify` | Set to `false` for staging with self-signed certificates. |
 | `sccm_async_css` | `bool $async` | Return `false` to load the front-end stylesheet the usual (render-blocking) way. |
 | `sccm_versioned_asset_files` | `bool $copy` | Return `false` to serve CSS/JS from the plugin folder with `?ver=` instead of hashed copies in `uploads/sccm-assets/`. |
+| `sccm_purge_page_cache` | `bool $purge` | Return `false` to stop the plugin from clearing page caches when settings or the cookie list change. |
+| `sccm_other_consent_plugins` | `string[] $names` | Other consent plugins detected as active (Dashboard warning). Return `array()` to hide the warning. |
 
 Example: add a service.
 
@@ -42,8 +44,29 @@ add_filter( 'sccm_services', function ( $services ) {
 | Action | Arguments | When |
 |---|---|---|
 | `sccm_consent_recorded` | `array $row` | After a consent record is stored. |
-| `sccm_consent_version_changed` | `int $version` | After "ask everyone again" / cookie list change (purge page caches here). |
+| `sccm_consent_version_changed` | `int $version` | After "ask everyone again" / cookie list change. |
 | `sccm_settings_saved` | `string $tab` | After settings are saved in the admin. |
+| `sccm_cookie_list_changed` | — | A cookie visitors can see was added, edited or removed (not fired for cookies waiting for review). |
+| `sccm_cache_purged` | — | After the plugin cleared page caches (see `SCCM_Cache`). Clear any other cache (e.g. a CDN) here. |
+
+The plugin clears the page caches of WP Engine, NitroPack, WP Rocket, LiteSpeed Cache, W3 Total
+Cache, WP Super Cache, WP Fastest Cache, SiteGround Speed Optimizer, Breeze and Hummingbird after
+`sccm_settings_saved`, `sccm_consent_version_changed` and `sccm_cookie_list_changed` (once per
+request; clears not started by an administrator at most every 5 minutes).
+
+## CSS
+
+The banner (`#sccm-banner`), the cookie settings window (`#sccm-prefs`) and the widget
+(`.sccm-floating`) are inside `<div id="sccm-app">` at the end of `<body>`, and the plugin's rules
+start with `#sccm-app`, so theme styles for `button`, `a`, `p`… do not change them. To restyle:
+
+```css
+.sccm-root { --sccm-radius: 0; --sccm-btn-bg: #111; }   /* variables: easiest */
+#sccm-app .sccm-btn { text-transform: uppercase; }       /* or the #sccm-app prefix */
+```
+
+The Cookie Policy list (`.sccm-policy`, body class `sccm-policy-page`) is part of the page and
+takes its fonts and colours from the theme.
 
 ## JavaScript API
 

@@ -98,12 +98,45 @@ visit, in the chosen position) and `#sccm-prefs` (reopened, centred, with a clos
 Consent (text + category switches), Details (category accordion → provider accordion → cookie
 cards; built on first open), About (explanation + the visitor's consent status). Switches of
 one category in both tabs stay in sync. Buttons: Allow all / Allow selection / Deny, identical
-style, order from the `button_order` setting.
+style, order from the `button_order` setting (`SCCM_Settings::button_orders()`; JS `ORDERS`):
+`accept_reject` (default), `reject_accept`, `accept_first`, `reject_first`. "Allow selection"
+and the compact banner's "Customize" take the same place.
 
 The first-visit banner has two styles (`banner_layout`): **compact** (default,
 `buildCompactBanner()`: text + Allow all / Deny / Customize; Customize hides the banner and opens
 `#sccm-prefs`; closing that without a choice shows the banner again) and **tabs** (the dialog
 above as the banner).
+
+**Preview** (`/#sccm-banner`, used by the admin's Preview links): the banner is shown even when
+the visitor has already chosen, but it renders as a first visit (switches off, About says "no
+choice yet"), and so does the window its Customize button opens (`showsChoice()`). The stored
+choice only changes if a button is clicked.
+
+**Theme isolation.** Dialogs and the widget are mounted in `<div id="sccm-app">` (`mount()`), and
+every rule in `sccm-frontend.css` starts with `#sccm-app`. Theme rules (`button {…}`,
+`.elementor-kit-5 button:hover`, `html body p {…}`) are less specific, so the banner looks the
+same on every site; the e2e suite checks this with a hostile stylesheet. Buttons never wrap their
+text (`white-space: nowrap`); `fitButtons()` stacks the three buttons (still equal width) when
+they do not fit side by side, e.g. in a corner box with a long translation.
+
+## Cookie Policy page
+
+`[sccm_cookie_policy]` prints the active cookies grouped by category when the page is rendered,
+so it is always current; `SCCM_Cache` clears cached copies when the list changes. The list is
+not `.sccm-root`: fonts, colours and table look come from the theme (lines use `currentColor`),
+so it is readable on light and dark themes. On the page chosen in the settings,
+`policy_hide_sidebar` (default on) empties widget sidebars (`is_active_sidebar`,
+`sidebars_widgets`) and asks Astra / GeneratePress / OceanWP for their no-sidebar layout.
+
+## Page caches (`SCCM_Cache`)
+
+Every page carries the config (texts, colours, cookie list) and the policy page prints the
+list, so cached copies go stale when they change. `SCCM_Cache::request()` is hooked to
+`sccm_settings_saved`, `sccm_consent_version_changed` and `sccm_cookie_list_changed`; the clear
+runs once at `shutdown`. Clears not started by an administrator (e.g. a cookie added from a
+visitor's report) are throttled to one per 5 minutes, the rest postponed to a WP-Cron event, so
+visitors can never cause a stream of purges. Each integration call is guarded (`function_exists`
+/ `try … catch ( Throwable )`): a missing or changed cache plugin never breaks the site.
 
 ## Asset files (why they are copied to uploads)
 
@@ -147,3 +180,9 @@ predictable. Labels/descriptions are editable; categories can be hidden if unuse
 - Scripts that were already executed cannot be "unloaded" → page reload on withdrawal.
 - Optimisers that rewrite `<script>` tags *after* our buffer must exclude `data-sccm-*`
   tags (documented in README → Compatibility).
+- AMP pages (official AMP plugin) and page-builder editors are left alone: no banner, no
+  blocking (AMP has its own consent component; editors must keep working).
+- Another consent plugin running at the same time (Cookiebot, Complianz, CookieYes…) gives two
+  banners; the Dashboard warns about it (`SCCM_Admin::other_consent_plugins()`).
+- Page caches that are not in the `SCCM_Cache` list (e.g. a CDN in front of the site) must be
+  cleared by hand, or from the `sccm_cache_purged` action.

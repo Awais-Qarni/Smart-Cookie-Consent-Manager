@@ -50,6 +50,51 @@
 		return node;
 	}
 
+	var app = null;
+
+	/**
+	 * <div id="sccm-app"> at the end of <body>: holds the banner, the settings window and the
+	 * widget. Its id scopes the CSS so theme styles for buttons, links… do not leak in.
+	 */
+	function mount(node) {
+		if (!app || !app.parentNode) {
+			app = d.getElementById('sccm-app') || el('div', { id: 'sccm-app' });
+			if (!app.parentNode) {
+				d.body.appendChild(app);
+			}
+		}
+		app.appendChild(node);
+		return node;
+	}
+
+	/**
+	 * Buttons never break their text over two lines. When three do not fit side by side
+	 * (narrow box, long translation, big theme font) they are stacked, all equally wide.
+	 */
+	function fitButtons(root) {
+		if (!root || root.hidden) {
+			return;
+		}
+		root.querySelectorAll('.sccm-actions').forEach(function (row) {
+			row.classList.remove('sccm-actions--stack');
+			var tooWide = Array.prototype.some.call(row.children, function (button) {
+				return button.scrollWidth > button.clientWidth + 1;
+			});
+			if (tooWide) {
+				row.classList.add('sccm-actions--stack');
+			}
+		});
+	}
+
+	var resizeTimer = null;
+	w.addEventListener('resize', function () {
+		clearTimeout(resizeTimer);
+		resizeTimer = setTimeout(function () {
+			fitButtons(banner);
+			fitButtons(modal);
+		}, 150);
+	});
+
 	function uuid() {
 		if (w.crypto && typeof w.crypto.randomUUID === 'function') {
 			return w.crypto.randomUUID();
@@ -440,6 +485,7 @@
 		state.consent = consent;
 		state.grants = grants;
 		state.needsChoice = false;
+		previewing = false;
 
 		applyConsentMode();
 
@@ -523,8 +569,22 @@
 		return links.length ? el('p', { 'class': 'sccm-links' }, links) : null;
 	}
 
+	/**
+	 * Whether a dialog shows the visitor's stored choice. The banner opened as a preview
+	 * (#sccm-banner, e.g. by the site owner who already chose) looks exactly like a first visit,
+	 * and so does the window its "Customize" button opens.
+	 *
+	 * @param {string} prefix Dialog id prefix ('sccm-b' = banner, 'sccm-' = reopened window).
+	 */
+	function showsChoice(prefix) {
+		if (!previewing) {
+			return true;
+		}
+		return prefix === 'sccm-b' ? false : !bannerAway;
+	}
+
 	/** On/off switch for one category. Several switches for the same category stay in sync. */
-	function categorySwitch(cat, id, labelled) {
+	function categorySwitch(cat, id, labelled, prefix) {
 		var locked = cat.locked || isGpcBlocked(cat.key);
 		return el('span', { 'class': 'sccm-switch' }, [
 			el('input', {
@@ -532,7 +592,7 @@
 				role: 'switch',
 				id: id,
 				'data-sccm-cat': cat.locked ? null : cat.key,
-				checked: cat.locked || (!isGpcBlocked(cat.key) && state.grants[cat.key] === true),
+				checked: cat.locked || (!isGpcBlocked(cat.key) && showsChoice(prefix) && state.grants[cat.key] === true),
 				disabled: locked,
 				'aria-label': labelled ? null : cat.label
 			}),
@@ -540,15 +600,29 @@
 		]);
 	}
 
+	/** Button order per setting; 'more' = "Allow selection" in the dialog, "Customize" in the compact banner. */
+	var ORDERS = {
+		accept_first: ['accept', 'more', 'reject'],
+		reject_first: ['reject', 'more', 'accept'],
+		accept_reject: ['accept', 'reject', 'more'],
+		reject_accept: ['reject', 'accept', 'more']
+	};
+
 	/**
-	 * Reject, selection and accept always share one style. Their order is a setting:
-	 * "Allow all" first, or "Deny" first; "Allow selection" stays in the middle.
+	 * The three buttons, in the order chosen in the settings. Allow all, Deny and Allow selection
+	 * always share one style.
+	 *
+	 * @param {HTMLElement} more The third button (Allow selection or Customize).
 	 */
-	function actionButtons() {
-		var reject = el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--reject', 'data-sccm-action': 'reject', text: T.btn_reject });
-		var selection = el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--selection', 'data-sccm-action': 'selection', text: T.btn_selection });
-		var accept = el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--accept', 'data-sccm-action': 'accept', text: T.btn_accept });
-		return C.order === 'reject_first' ? [reject, selection, accept] : [accept, selection, reject];
+	function actionButtons(more) {
+		var buttons = {
+			accept: el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--accept', 'data-sccm-action': 'accept', text: T.btn_accept }),
+			reject: el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--reject', 'data-sccm-action': 'reject', text: T.btn_reject }),
+			more: more || el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--selection', 'data-sccm-action': 'selection', text: T.btn_selection })
+		};
+		return (ORDERS[C.order] || ORDERS.accept_reject).map(function (key) {
+			return buttons[key];
+		});
 	}
 
 	/** Consent tab: the text, then one switch per category across the full width. */
@@ -557,16 +631,13 @@
 			var id = prefix + 'cat-' + cat.key;
 			return el('label', { 'class': 'sccm-toggle', 'for': id }, [
 				el('span', { 'class': 'sccm-toggle__label', text: cat.label }),
-				categorySwitch(cat, id, true)
+				categorySwitch(cat, id, true, prefix)
 			]);
 		}));
 		return [
 			el('div', { 'class': 'sccm-text', id: prefix + 'text', html: T.banner_text }),
 			linksRow(),
-			toggles,
-			el('p', { 'class': 'sccm-more' }, [
-				el('button', { type: 'button', 'class': 'sccm-linkbtn', 'data-sccm-tab': 'details', text: T.btn_details + ' ›' })
-			])
+			toggles
 		];
 	}
 
@@ -621,7 +692,7 @@
 				el('span', { 'class': 'sccm-chev', 'aria-hidden': 'true' }),
 				el('span', { 'class': 'sccm-acc__name', text: cat.label }),
 				el('span', { 'class': 'sccm-count', text: String(cat.cookies.length) })
-			], inner, categorySwitch(cat, prefix + 'dcat-' + cat.key, false)));
+			], inner, categorySwitch(cat, prefix + 'dcat-' + cat.key, false, prefix)));
 		});
 		return nodes;
 	}
@@ -641,7 +712,7 @@
 			return;
 		}
 		box.textContent = '';
-		var consent = state.consent;
+		var consent = showsChoice(dialog.getAttribute('data-sccm-prefix')) ? state.consent : null;
 		if (!consent) {
 			box.appendChild(el('p', { 'class': 'sccm-muted', text: T.no_choice }));
 			return;
@@ -693,10 +764,7 @@
 	 */
 	function buildCompactBanner() {
 		var isModal = C.position === 'center';
-		var buttons = actionButtons().filter(function (button) {
-			return !button.classList.contains('sccm-btn--selection');
-		});
-		buttons.push(el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--customize', 'data-sccm-action': 'customize', text: T.btn_customize }));
+		var buttons = actionButtons(el('button', { type: 'button', 'class': 'sccm-btn sccm-btn--customize', 'data-sccm-action': 'customize', text: T.btn_customize }));
 		var root = el('div', {
 			id: 'sccm-banner',
 			'class': 'sccm-root sccm-dialog sccm-compact sccm-pos-' + C.position,
@@ -715,8 +783,7 @@
 				el('div', { 'class': 'sccm-actions sccm-compact__actions' }, buttons)
 			])
 		]);
-		d.body.appendChild(root);
-		return root;
+		return mount(root);
 	}
 
 	/**
@@ -774,14 +841,13 @@
 				head,
 				tabList,
 				body,
-				el('div', { 'class': 'sccm-dialog__foot sccm-actions' }, actionButtons())
+				el('div', { 'class': 'sccm-dialog__foot' }, [el('div', { 'class': 'sccm-actions' }, actionButtons())])
 			])
 		]);
 		root.setAttribute('data-sccm-prefix', prefix);
 		root.addEventListener('change', syncSwitches);
 		root.addEventListener('keydown', onDialogKey);
-		d.body.appendChild(root);
-		return root;
+		return mount(root);
 	}
 
 	/** Keep the Consent-tab and Details-tab switches of one category in step. */
@@ -821,15 +887,17 @@
 	}
 
 	function syncDialog(dialog) {
+		var shown = showsChoice(dialog.getAttribute('data-sccm-prefix'));
 		dialog.querySelectorAll('input[data-sccm-cat]').forEach(function (box) {
 			var key = box.getAttribute('data-sccm-cat');
-			box.checked = !isGpcBlocked(key) && state.grants[key] === true;
+			box.checked = shown && !isGpcBlocked(key) && state.grants[key] === true;
 		});
 		renderStatus(dialog);
 	}
 
 	var bannerQueued = false;
 	var bannerAway = false;
+	var previewing = false;
 
 	/**
 	 * Show the banner. Nothing is drawn before the stylesheet is applied.
@@ -851,7 +919,9 @@
 		afterStyles(function () {
 			bannerQueued = false;
 			if (state.needsChoice || force === true) {
+				previewing = !state.needsChoice;
 				banner = C.layout === 'tabs' ? buildDialog('banner') : buildCompactBanner();
+				fitButtons(banner);
 				if (floating) {
 					floating.hidden = true;
 				}
@@ -918,6 +988,7 @@
 			showTab(modal, typeof tab === 'string' ? tab : 'consent');
 			lastFocus = d.activeElement;
 			modal.hidden = false;
+			fitButtons(modal);
 			d.documentElement.classList.add('sccm-noscroll');
 			modal.querySelector('.sccm-dialog__box').focus();
 		});
@@ -930,7 +1001,7 @@
 		modal.hidden = true;
 		d.documentElement.classList.remove('sccm-noscroll');
 		// Closed without choosing after "Customize": the banner comes back (closing is never consent).
-		if (bannerAway && state.needsChoice && banner) {
+		if (bannerAway && (state.needsChoice || previewing) && banner) {
 			banner.hidden = false;
 		}
 		bannerAway = false;
@@ -963,7 +1034,7 @@
 					el('span', { 'class': 'sccm-floating__icon', 'aria-hidden': 'true', html: '<svg viewBox="0 0 24 24" width="20" height="20" focusable="false"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5zm-4.5 9a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm2 5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 1a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>' }),
 					tab ? el('span', { 'class': 'sccm-floating__label', text: T.widget_label }) : null
 				]);
-				d.body.appendChild(floating);
+				mount(floating);
 			}
 			floating.hidden = !!(banner && !banner.hidden);
 		});

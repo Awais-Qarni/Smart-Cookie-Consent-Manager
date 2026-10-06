@@ -35,6 +35,7 @@ require_once SCCM_PATH . 'includes/class-sccm-frontend.php';
 require_once SCCM_PATH . 'includes/class-sccm-rest.php';
 require_once SCCM_PATH . 'includes/class-sccm-scanner.php';
 require_once SCCM_PATH . 'includes/class-sccm-shortcodes.php';
+require_once SCCM_PATH . 'includes/class-sccm-cache.php';
 require_once SCCM_PATH . 'includes/class-sccm-plugin.php';
 
 if ( is_admin() ) {

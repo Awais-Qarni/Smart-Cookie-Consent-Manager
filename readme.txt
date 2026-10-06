@@ -2,7 +2,7 @@
 Contributors: muhammadawais
 Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
 Requires at least: 6.0
-Tested up to: 6.8
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 0.1.0
 License: GPLv2 or later
@@ -29,7 +29,7 @@ Smart Cookie Consent Manager adds a complete, self-hosted cookie consent system 
 1. Upload the plugin and activate it.
 2. Go to Cookie Consent → Dashboard and follow "Needs your attention" (create the Cookie Policy page, scan).
 3. Cookies tab → approve any cookies under "Needs review".
-4. Clear your page cache.
+4. Using a page cache or CDN that the plugin does not clear by itself? Clear it once.
 
 == Frequently Asked Questions ==
 
@@ -42,6 +42,14 @@ Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 == Changelog ==
 
 = Unreleased =
+* Button order: four choices, incl. Allow all · Deny · Allow selection (new default) and Deny · Allow all · Allow selection.
+* Banner looks the same on every theme (theme button/link styles no longer leak in); button texts never wrap.
+* Banner preview looks like a first visit; the redundant "Show details" link is gone.
+* Cookie Policy page follows the theme (readable on dark themes), hides the sidebar, and refreshes after every scan.
+* Page caches of WP Engine, NitroPack, WP Rocket, LiteSpeed Cache, W3 Total Cache, WP Super Cache, WP Fastest Cache, SiteGround, Breeze and Hummingbird are cleared automatically when settings or the cookie list change.
+* Alert email redesigned for dark mode and Outlook.
+* Warning when another cookie consent plugin is active; AMP pages and more page-builder editors are left alone.
+* Translation template (.pot) included.
 * Simpler admin: 6 tabs, a Dashboard with a to-do list, and a Help panel explaining everything.
 * Categories renamed to Necessary, Preferences, Statistics, Marketing.
 * Cookiebot-style dialog: Consent / Details / About tabs, equal Allow all / Allow selection / Deny buttons.

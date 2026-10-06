@@ -43,6 +43,7 @@ final class SCCM_Plugin {
 		SCCM_REST::init();
 		SCCM_Scanner::init();
 		SCCM_Shortcodes::init();
+		SCCM_Cache::init();
 
 		if ( is_admin() ) {
 			SCCM_Admin::init();

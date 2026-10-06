@@ -68,7 +68,7 @@ class SCCM_Frontend {
 	 * @return bool
 	 */
 	public static function is_active() {
-		$active = SCCM_Settings::get( 'enabled' ) && ! is_admin() && ! is_feed() && ! is_embed() && ! wp_doing_ajax() && ! self::is_builder_preview();
+		$active = SCCM_Settings::get( 'enabled' ) && ! is_admin() && ! is_feed() && ! is_embed() && ! wp_doing_ajax() && ! self::is_builder_preview() && ! self::is_amp();
 		/**
 		 * Disable the consent system for a request (e.g. a landing page builder preview).
 		 *
@@ -84,13 +84,27 @@ class SCCM_Frontend {
 	 */
 	public static function is_builder_preview() {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
-		foreach ( array( 'elementor-preview', 'fl_builder', 'et_fb', 'ct_builder', 'tve', 'vc_editable', 'bricks', 'brizy-edit-iframe' ) as $param ) {
+		$params = array( 'elementor-preview', 'fl_builder', 'et_fb', 'ct_builder', 'tve', 'vc_editable', 'bricks', 'brizy-edit-iframe', 'fb-edit', 'breakdance', 'breakdance_iframe', 'uxb_iframe', 'siteorigin_panels_live_editor', 'zionbuilder-preview', 'cs-render', 'op3editor', 'pagelayer-live' );
+		foreach ( $params as $param ) {
 			if ( isset( $_GET[ $param ] ) ) {
 				return true;
 			}
 		}
 		// phpcs:enable
 		return is_customize_preview();
+	}
+
+	/**
+	 * AMP pages may not run custom JavaScript; rewritten script tags would make them invalid.
+	 * (AMP has its own consent component.)
+	 *
+	 * @return bool
+	 */
+	public static function is_amp() {
+		if ( function_exists( 'amp_is_request' ) ) {
+			return did_action( 'wp' ) && amp_is_request();
+		}
+		return function_exists( 'is_amp_endpoint' ) && did_action( 'parse_query' ) && is_amp_endpoint();
 	}
 
 	/**

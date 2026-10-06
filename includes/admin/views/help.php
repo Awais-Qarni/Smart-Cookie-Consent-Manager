@@ -54,7 +54,7 @@ if ( ! function_exists( 'sccm_help_section' ) ) {
 		</li>
 		<li>
 			<strong><?php esc_html_e( 'It works with page caching', 'smart-cookie-consent-manager' ); ?></strong>
-			<?php esc_html_e( 'Every visitor gets the same page. The banner and the visitor\'s choice are handled in their browser, so caching plugins and CDNs keep working. After you change settings, clear your page cache once.', 'smart-cookie-consent-manager' ); ?>
+			<?php esc_html_e( 'Every visitor gets the same page. The banner and the visitor\'s choice are handled in their browser, so caching plugins and CDNs keep working. When you save settings or the cookie list changes, the plugin clears the page cache of common caching plugins and hosts (WP Engine, NitroPack, WP Rocket, LiteSpeed, W3 Total Cache, WP Super Cache, WP Fastest Cache, SiteGround, Breeze, Hummingbird). With any other cache or a CDN, clear it once after changing settings.', 'smart-cookie-consent-manager' ); ?>
 		</li>
 	</ol>
 
@@ -98,7 +98,7 @@ if ( ! function_exists( 'sccm_help_section' ) ) {
 			__( 'Where should the banner appear?', 'smart-cookie-consent-manager' ) => __( 'A bar at the bottom or top, a box in a corner, or a window in the centre of the page. Click the picture that looks right.', 'smart-cookie-consent-manager' ),
 			__( 'Banner style', 'smart-cookie-consent-manager' )             => __( 'Compact (default): your text and three buttons, Allow all, Deny and Customize. Customize opens the detailed window. Detailed: the window with tabs opens straight away.', 'smart-cookie-consent-manager' ),
 			__( 'What visitors see', 'smart-cookie-consent-manager' )        => __( 'The detailed window has three tabs. Consent: your text and a switch per category. Details: every category opens to show the providers and each cookie (what it does, how long it lasts, its type). About: what cookies are, and the visitor\'s own choice, date and consent ID.', 'smart-cookie-consent-manager' ),
-			__( 'Button order', 'smart-cookie-consent-manager' )             => __( '"Allow all" first or "Deny" first. "Allow selection" is always in the middle. All three always look exactly the same, which is what makes either order fair.', 'smart-cookie-consent-manager' ),
+			__( 'Button order', 'smart-cookie-consent-manager' )             => __( 'Four orders: Allow all · Deny · Allow selection (default), Deny · Allow all · Allow selection, or with "Allow selection" in the middle. In the compact style "Customize" takes the place of "Allow selection". Allow all, Deny and Allow selection always look exactly the same, which is what makes any order fair.', 'smart-cookie-consent-manager' ),
 			__( 'Cookie settings button', 'smart-cookie-consent-manager' )   => __( 'A small button visible after the choice, so visitors can change their mind. In a corner it is a round icon. At the bottom centre or on the left or right edge it is a slim tab with the word "Cookies".', 'smart-cookie-consent-manager' ),
 			__( 'Colours and rounded corners', 'smart-cookie-consent-manager' ) => __( 'Match the banner to your brand. Accept and Reject always share one style, because valid consent needs both choices to be equally easy.', 'smart-cookie-consent-manager' ),
 			__( 'Links in the banner', 'smart-cookie-consent-manager' )      => __( 'The Cookie Policy page and your Privacy Policy page, linked in the banner.', 'smart-cookie-consent-manager' ),

@@ -578,43 +578,78 @@ class SCCM_Scanner {
 		$recipients = implode( ', ', SCCM_Settings::alert_recipients() );
 		$limit      = 25;
 
-		/* ---- HTML */
-		$font  = "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;";
-		$h     = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>';
-		$h    .= '<body style="margin:0;padding:0;background:#f3f4f6;' . $font . '">';
-		$h    .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 12px;"><tr><td align="center">';
-		$h    .= '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">';
+		/* ---- HTML
+		 * Built like a bulletproof email: tables, inline styles and bgcolor attributes. A light design
+		 * (no dark header) so mail apps that invert colours in dark mode (Outlook, Gmail apps) still
+		 * show it correctly, plus real dark-mode colours for apps that support them (Apple Mail,
+		 * Outlook.com via [data-ogsc]/[data-ogsb], Outlook for Mac). The button gets its padding from
+		 * its table cell, which Outlook for Windows respects.
+		 */
+		$font = "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;";
+		$mono = 'font-family:Menlo,Consolas,Monaco,monospace;';
 
-		// Header.
-		$h .= '<tr><td style="background:#1f2937;padding:22px 28px;">';
-		$h .= '<div style="' . $font . 'font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;">' . esc_html( $site ) . '</div>';
-		$h .= '<div style="' . $font . 'font-size:22px;font-weight:700;color:#ffffff;margin-top:4px;">' . esc_html__( 'Cookie scan report', 'smart-cookie-consent-manager' ) . '</div>';
+		$h  = '<!DOCTYPE html><html lang="' . esc_attr( get_bloginfo( 'language' ) ) . '"><head><meta charset="utf-8">';
+		$h .= '<meta name="viewport" content="width=device-width,initial-scale=1">';
+		$h .= '<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">';
+		$h .= '<title>' . esc_html( $subject ) . '</title>';
+		$h .= '<style>'
+			. ':root{color-scheme:light dark;supported-color-schemes:light dark;}'
+			. 'a{text-decoration:none;}'
+			. '@media (prefers-color-scheme:dark){'
+			. '.sccm-e-page{background:#111827 !important;}'
+			. '.sccm-e-card,.sccm-e-row{background:#1f2937 !important;border-color:#374151 !important;}'
+			. '.sccm-e-h{color:#f9fafb !important;}'
+			. '.sccm-e-p{color:#d1d5db !important;}'
+			. '.sccm-e-muted{color:#9ca3af !important;}'
+			. '.sccm-e-stat{background:#111827 !important;}'
+			. '.sccm-e-link{color:#93c5fd !important;}'
+			. '.sccm-e-pill-pending{color:#fbbf24 !important;border-color:#fbbf24 !important;}'
+			. '.sccm-e-pill-active{color:#4ade80 !important;border-color:#4ade80 !important;}'
+			. '}'
+			. '[data-ogsb] .sccm-e-page{background:#111827 !important;}'
+			. '[data-ogsb] .sccm-e-card,[data-ogsb] .sccm-e-row{background:#1f2937 !important;}'
+			. '[data-ogsc] .sccm-e-h{color:#f9fafb !important;}'
+			. '[data-ogsc] .sccm-e-p{color:#d1d5db !important;}'
+			. '[data-ogsc] .sccm-e-muted{color:#9ca3af !important;}'
+			. '@media (max-width:620px){.sccm-e-pad{padding-left:18px !important;padding-right:18px !important;}.sccm-e-stat{display:block !important;width:auto !important;margin-bottom:10px !important;}.sccm-e-gap{display:none !important;}}'
+			. '</style></head>';
+		$h .= '<body class="sccm-e-page" style="margin:0;padding:0;background:#f3f4f6;-webkit-text-size-adjust:100%;">';
+
+		// Preview line shown by mail apps next to the subject.
+		$h .= '<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">' . esc_html( $subject ) . '</div>';
+
+		$h .= '<table role="presentation" class="sccm-e-page" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3f4f6" style="background:#f3f4f6;"><tr><td align="center" style="padding:24px 12px;">';
+		$h .= '<table role="presentation" class="sccm-e-card" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;">';
+
+		// Header: coloured line, site name, title.
+		$h .= '<tr><td height="4" bgcolor="#2563eb" style="height:4px;line-height:4px;font-size:4px;background:#2563eb;border-radius:10px 10px 0 0;">&nbsp;</td></tr>';
+		$h .= '<tr><td class="sccm-e-pad" style="padding:24px 32px 8px;">';
+		$h .= '<div class="sccm-e-muted" style="' . $font . 'font-size:12px;line-height:16px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;">' . esc_html( $site ) . '</div>';
+		$h .= '<div class="sccm-e-h" style="' . $font . 'font-size:22px;line-height:28px;font-weight:700;color:#111827;margin-top:4px;">' . esc_html__( 'Cookie scan report', 'smart-cookie-consent-manager' ) . '</div>';
 		$h .= '</td></tr>';
 
 		// Summary numbers.
-		$h .= '<tr><td style="padding:24px 28px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>';
-		$h .= self::email_stat( $n_review, _n( 'needs your review', 'need your review', $n_review, 'smart-cookie-consent-manager' ), $n_review ? '#b45309' : '#6b7280', $n_review ? '#fffbeb' : '#f9fafb' );
-		$h .= '<td width="12"></td>';
-		$h .= self::email_stat( $n_auto, __( 'added automatically', 'smart-cookie-consent-manager' ), '#15803d', '#f0fdf4' );
+		$h .= '<tr><td class="sccm-e-pad" style="padding:16px 32px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>';
+		$h .= self::email_stat( $n_review, _n( 'needs your review', 'need your review', $n_review, 'smart-cookie-consent-manager' ), $n_review ? '#d97706' : '#9ca3af' );
+		$h .= '<td class="sccm-e-gap" width="12" style="width:12px;">&nbsp;</td>';
+		$h .= self::email_stat( $n_auto, __( 'added automatically', 'smart-cookie-consent-manager' ), '#16a34a' );
 		$h .= '</tr></table></td></tr>';
 
 		// Needs review.
 		if ( $n_review ) {
-			$h .= '<tr><td style="padding:16px 28px 0;">';
-			$h .= '<div style="' . $font . 'font-size:16px;font-weight:700;color:#111827;">' . esc_html__( 'Needs your review', 'smart-cookie-consent-manager' ) . '</div>';
-			$h .= '<div style="' . $font . 'font-size:14px;line-height:1.5;color:#4b5563;margin:4px 0 10px;">' . esc_html__( 'We could not tell what these cookies are for. Choose a category for each one and click Approve. Until then they are not shown to visitors.', 'smart-cookie-consent-manager' ) . '</div>';
-			$h .= self::email_rows( array_slice( $groups['pending'], 0, $limit ), $font, 'pending' );
+			$h .= '<tr><td class="sccm-e-pad" style="padding:20px 32px 0;">';
+			$h .= self::email_heading( __( 'Needs your review', 'smart-cookie-consent-manager' ), __( 'We could not tell what these cookies are for. Choose a category for each one and click Approve. Until then they are not shown to visitors.', 'smart-cookie-consent-manager' ), $font );
+			$h .= self::email_rows( array_slice( $groups['pending'], 0, $limit ), $font, $mono, 'pending' );
 			$h .= self::email_more( count( $groups['pending'] ) - $limit, $font );
-			$h .= '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:18px 0 6px;"><tr><td style="background:#1f2937;border-radius:6px;"><a href="' . esc_url( $review ) . '" style="' . $font . 'display:inline-block;padding:12px 22px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;">' . esc_html__( 'Review and approve', 'smart-cookie-consent-manager' ) . '</a></td></tr></table>';
+			$h .= self::email_button( $review, __( 'Review and approve', 'smart-cookie-consent-manager' ), $font );
 			$h .= '</td></tr>';
 		}
 
 		// Added automatically.
 		if ( $n_auto ) {
-			$h .= '<tr><td style="padding:20px 28px 0;">';
-			$h .= '<div style="' . $font . 'font-size:16px;font-weight:700;color:#111827;">' . esc_html__( 'Added automatically', 'smart-cookie-consent-manager' ) . '</div>';
-			$h .= '<div style="' . $font . 'font-size:14px;line-height:1.5;color:#4b5563;margin:4px 0 10px;">' . esc_html__( 'These are well-known cookies. They were put in the right category for you. Nothing to do unless you disagree.', 'smart-cookie-consent-manager' ) . '</div>';
-			$h .= self::email_rows( array_slice( $groups['active'], 0, $limit ), $font, 'active' );
+			$h .= '<tr><td class="sccm-e-pad" style="padding:24px 32px 0;">';
+			$h .= self::email_heading( __( 'Added automatically', 'smart-cookie-consent-manager' ), __( 'These are well-known cookies. They were put in the right category for you. Nothing to do unless you disagree.', 'smart-cookie-consent-manager' ), $font );
+			$h .= self::email_rows( array_slice( $groups['active'], 0, $limit ), $font, $mono, 'active' );
 			$h .= self::email_more( count( $groups['active'] ) - $limit, $font );
 			$h .= '</td></tr>';
 		}
@@ -625,18 +660,17 @@ class SCCM_Scanner {
 			foreach ( array_slice( $groups['unclassified'], 0, 8 ) as $item ) {
 				$hosts[] = $item['name'];
 			}
-			$h .= '<tr><td style="padding:20px 28px 0;">';
-			$h .= '<div style="' . $font . 'font-size:16px;font-weight:700;color:#111827;">' . esc_html__( 'Other third-party resources', 'smart-cookie-consent-manager' ) . '</div>';
-			$h .= '<div style="' . $font . 'font-size:14px;line-height:1.5;color:#4b5563;margin:4px 0 6px;">' . esc_html__( 'External files were found that are not in the service library, so they are not blocked. If one of them tracks visitors, add a blocking rule in the plugin settings.', 'smart-cookie-consent-manager' ) . '</div>';
-			$h .= '<div style="' . $font . 'font-size:13px;line-height:1.6;color:#374151;font-family:Menlo,Consolas,monospace;">' . esc_html( implode( ', ', $hosts ) ) . ( $n_other > 8 ? ' …' : '' ) . '</div>';
+			$h .= '<tr><td class="sccm-e-pad" style="padding:24px 32px 0;">';
+			$h .= self::email_heading( __( 'Other third-party resources', 'smart-cookie-consent-manager' ), __( 'External files were found that are not in the service library, so they are not blocked. If one of them tracks visitors, add a blocking rule in the plugin settings.', 'smart-cookie-consent-manager' ), $font );
+			$h .= '<div class="sccm-e-p" style="' . $mono . 'font-size:13px;line-height:20px;color:#374151;word-break:break-all;">' . esc_html( implode( ', ', $hosts ) ) . ( $n_other > 8 ? ' …' : '' ) . '</div>';
 			$h .= '</td></tr>';
 		}
 
 		// Footer.
-		$h .= '<tr><td style="padding:28px;"><div style="border-top:1px solid #e5e7eb;padding-top:16px;' . $font . 'font-size:12px;line-height:1.6;color:#6b7280;">';
-		$h .= esc_html__( 'Sent by Smart Cookie Consent Manager', 'smart-cookie-consent-manager' ) . ' · ' . esc_html( $recipients ) . '<br>';
-		$h .= '<a href="' . esc_url( $settings ) . '" style="color:#1d4ed8;">' . esc_html__( 'Change recipients or turn these emails off', 'smart-cookie-consent-manager' ) . '</a>';
-		$h .= '</div></td></tr>';
+		$h .= '<tr><td class="sccm-e-pad" style="padding:28px 32px 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="sccm-e-row" style="border-top:1px solid #e5e7eb;padding-top:16px;">';
+		$h .= '<div class="sccm-e-muted" style="' . $font . 'font-size:12px;line-height:18px;color:#6b7280;">' . esc_html__( 'Sent by Smart Cookie Consent Manager', 'smart-cookie-consent-manager' ) . ' · ' . esc_html( $recipients ) . '</div>';
+		$h .= '<div style="' . $font . 'font-size:12px;line-height:18px;margin-top:4px;"><a class="sccm-e-link" href="' . esc_url( $settings ) . '" style="color:#2563eb;text-decoration:underline;">' . esc_html__( 'Change recipients or turn these emails off', 'smart-cookie-consent-manager' ) . '</a></div>';
+		$h .= '</td></tr></table></td></tr>';
 		$h .= '</table></td></tr></table></body></html>';
 
 		/* ---- Plain text */
@@ -673,42 +707,73 @@ class SCCM_Scanner {
 	}
 
 	/**
-	 * One summary box (a big number and a caption) of the email.
+	 * One summary box of the email: a big number and a caption, with a coloured line on the left.
 	 *
 	 * @param int    $number  Number.
-	 * @param string $caption Caption (already escaped or plain).
-	 * @param string $color   Number colour.
-	 * @param string $bg      Box background.
+	 * @param string $caption Caption (plain text).
+	 * @param string $accent  Accent colour (number + line).
 	 * @return string
 	 */
-	private static function email_stat( $number, $caption, $color, $bg ) {
+	private static function email_stat( $number, $caption, $accent ) {
 		$font = "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;";
-		return '<td width="49%" valign="top" style="background:' . esc_attr( $bg ) . ';border-radius:8px;padding:14px 16px;">'
-			. '<div style="' . $font . 'font-size:30px;font-weight:700;line-height:1.1;color:' . esc_attr( $color ) . ';">' . (int) $number . '</div>'
-			. '<div style="' . $font . 'font-size:13px;color:#4b5563;margin-top:2px;">' . esc_html( wp_strip_all_tags( $caption ) ) . '</div></td>';
+		return '<td class="sccm-e-stat" width="50%" valign="top" bgcolor="#f9fafb" style="width:50%;background:#f9fafb;border-left:4px solid ' . esc_attr( $accent ) . ';border-radius:6px;padding:14px 16px;">'
+			. '<div style="' . $font . 'font-size:30px;line-height:34px;font-weight:700;color:' . esc_attr( $accent ) . ';">' . (int) $number . '</div>'
+			. '<div class="sccm-e-p" style="' . $font . 'font-size:13px;line-height:18px;color:#4b5563;margin-top:2px;">' . esc_html( wp_strip_all_tags( $caption ) ) . '</div></td>';
 	}
 
 	/**
-	 * Rows of cookie names (and categories) for the email.
+	 * Section heading and explanation.
+	 *
+	 * @param string $title Heading.
+	 * @param string $text  Explanation.
+	 * @param string $font  Font style.
+	 * @return string
+	 */
+	private static function email_heading( $title, $text, $font ) {
+		return '<div class="sccm-e-h" style="' . $font . 'font-size:16px;line-height:22px;font-weight:700;color:#111827;">' . esc_html( $title ) . '</div>'
+			. '<div class="sccm-e-p" style="' . $font . 'font-size:14px;line-height:21px;color:#4b5563;margin:4px 0 12px;">' . esc_html( $text ) . '</div>';
+	}
+
+	/**
+	 * Rows of cookie names with a label (type or category) on the right.
 	 *
 	 * @param array  $items  Items.
 	 * @param string $font   Font style.
+	 * @param string $mono   Monospace font style.
 	 * @param string $status pending|active.
 	 * @return string
 	 */
-	private static function email_rows( array $items, $font, $status ) {
-		$h = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:6px;border-collapse:separate;">';
-		$i = 0;
+	private static function email_rows( array $items, $font, $mono, $status ) {
+		$pending = 'pending' === $status;
+		$h       = '<table role="presentation" class="sccm-e-row" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:6px;border-collapse:separate;">';
+		$i       = 0;
 		foreach ( $items as $item ) {
 			$border = $i++ ? 'border-top:1px solid #e5e7eb;' : '';
-			$right  = 'pending' === $status
-				? esc_html( 'cookie' === $item['type'] ? __( 'Cookie', 'smart-cookie-consent-manager' ) : $item['type'] )
-				: esc_html( SCCM_Categories::label( $item['category'] ) );
-			$pill   = 'pending' === $status ? 'background:#fef3c7;color:#92400e;' : 'background:#dcfce7;color:#166534;';
-			$h     .= '<tr><td style="' . $border . 'padding:10px 14px;' . $font . 'font-size:14px;color:#111827;"><span style="font-family:Menlo,Consolas,monospace;font-size:13px;">' . esc_html( $item['name'] ) . '</span></td>'
-				. '<td align="right" style="' . $border . 'padding:10px 14px;"><span style="' . $font . 'display:inline-block;font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px;' . $pill . '">' . $right . '</span></td></tr>';
+			$label  = $pending
+				? ( 'cookie' === $item['type'] ? __( 'Cookie', 'smart-cookie-consent-manager' ) : $item['type'] )
+				: SCCM_Categories::label( $item['category'] );
+			$color  = $pending ? '#b45309' : '#15803d';
+			$h     .= '<tr>'
+				. '<td class="sccm-e-row" style="' . $border . 'padding:10px 14px;"><span class="sccm-e-h" style="' . $mono . 'font-size:13px;line-height:18px;color:#111827;word-break:break-all;">' . esc_html( $item['name'] ) . '</span></td>'
+				. '<td class="sccm-e-row" align="right" style="' . $border . 'padding:10px 14px;white-space:nowrap;"><span class="sccm-e-pill-' . ( $pending ? 'pending' : 'active' ) . '" style="' . $font . 'font-size:12px;line-height:16px;font-weight:700;color:' . $color . ';border:1px solid ' . $color . ';border-radius:999px;padding:2px 10px;">' . esc_html( $label ) . '</span></td>'
+				. '</tr>';
 		}
 		return $h . '</table>';
+	}
+
+	/**
+	 * A button that works in every mail app (padding on the cell, mso-padding-alt for Outlook).
+	 *
+	 * @param string $url   Link.
+	 * @param string $label Text.
+	 * @param string $font  Font style.
+	 * @return string
+	 */
+	private static function email_button( $url, $label, $font ) {
+		return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 4px;"><tr>'
+			. '<td align="center" bgcolor="#2563eb" style="background:#2563eb;border-radius:6px;mso-padding-alt:12px 24px;">'
+			. '<a href="' . esc_url( $url ) . '" target="_blank" style="' . $font . 'display:inline-block;padding:12px 24px;font-size:15px;line-height:20px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;">' . esc_html( $label ) . '</a>'
+			. '</td></tr></table>';
 	}
 
 	/**
@@ -723,6 +788,6 @@ class SCCM_Scanner {
 			return '';
 		}
 		/* translators: %d: number of items */
-		return '<div style="' . $font . 'font-size:13px;color:#6b7280;margin-top:6px;">' . esc_html( sprintf( __( '…and %d more. See the full list in the plugin.', 'smart-cookie-consent-manager' ), (int) $more ) ) . '</div>';
+		return '<div class="sccm-e-muted" style="' . $font . 'font-size:13px;line-height:18px;color:#6b7280;margin-top:6px;">' . esc_html( sprintf( __( '…and %d more. See the full list in the plugin.', 'smart-cookie-consent-manager' ), (int) $more ) ) . '</div>';
 	}
 }

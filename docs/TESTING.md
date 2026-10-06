@@ -7,8 +7,8 @@ npm install          # first time only (dev dependency: Playwright)
 npm test             # php -l on every PHP file, node --check on JS, PHP unit tests (tests/php/run.php)
 
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
-SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 76 browser checks (visitor side)
-SCCM_WP=/path/to/wp npm run test:wp                              # 56 checks: cookie list, browser-scan rules, settings, email (WP-CLI)
+SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 99 browser checks (visitor side)
+SCCM_WP=/path/to/wp npm run test:wp                              # 83 checks: cookie list, browser-scan rules, settings, email, policy page, cache clearing (WP-CLI)
 SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 35 checks of the admin screens, incl. a real browser scan
 ```
 
@@ -41,7 +41,16 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
       the tabs and Allow selection; Esc/close without choosing shows the banner again.
 - [ ] D5 Banner style "Detailed": banner has Consent / Details / About tabs; Consent shows Necessary / Preferences /
       Statistics / Marketing switches; "Allow selection" releases only the ticked ones; the three
-      buttons look identical; Banner tab → Button order changes the order.
+      buttons look identical; Banner tab → Button order changes the order (four orders; "Allow
+      selection" / "Customize" share a place). No separate "Show details" link (the Details tab
+      is the way in).
+- [ ] D7 Choose "Allow all", then Banner tab → "Preview the banner": the preview looks like a
+      first visit (no category switched on; About says you have not made a choice yet).
+- [ ] D8 Button texts stay on one line in every position (bottom/top bar, corners, centre) on
+      desktop and phone; in a wide bottom/top bar the buttons of the detailed style sit on the
+      right at a natural width.
+- [ ] D9 Theme look does not leak in: on a site whose theme styles buttons (e.g. Elementor
+      global buttons) the banner buttons keep the plugin's size, font and colours, also on hover.
 - [ ] D6 Details tab: each category opens to providers, each provider to cookie cards (name,
       purpose, maximum storage duration, type). About tab: choice, date and consent ID; Copy works.
 - [ ] D3 Enable Analytics only → only analytics tags load; log row `custom` with `analytics`.
@@ -92,6 +101,17 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 - [ ] I4 Approving a cookie needs a category choice; "Ignore all" empties the review list.
 - [ ] I5 After updating the plugin, the admin screens look right without clearing any cache
       (assets are versioned by file time).
+- [ ] I6 Open the sample email in a mail app in dark mode (Outlook, Gmail app, Apple Mail):
+      readable, header not inverted into a light block, the "Review and approve" button has
+      its padding.
+
+### L. Cookie Policy page (feature 10)
+- [ ] L1 On a dark theme the list is readable and uses the theme font; no words split in the
+      middle ("Provider", "YouTube").
+- [ ] L2 No widget sidebar on the page (Banner → Links → "Hide the sidebar"); with the option
+      off the theme sidebar is back.
+- [ ] L3 Approve a cookie (or run a scan that adds one) with NitroPack / WP Engine cache on: the
+      page shows it after a reload without clearing the cache by hand.
 
 ### J. GPC (feature 11)
 - [ ] J1 Enable GPC in the browser (Firefox: Settings → Privacy → "Tell websites not to sell
@@ -109,3 +129,6 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 - [ ] K2 Language switcher / translation plugin translates banner text.
 - [ ] K3 Mobile (375px): banner and modal usable, no horizontal scroll.
 - [ ] K4 Export settings on site A → import on site B → same configuration.
+- [ ] K5 With Cookiebot (or another consent plugin) still active, the Dashboard warns about it.
+      Deactivate it so visitors see one banner.
+- [ ] K6 AMP pages (official AMP plugin) show no banner and no rewritten scripts.

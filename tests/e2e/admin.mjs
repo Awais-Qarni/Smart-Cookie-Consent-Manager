@@ -28,7 +28,7 @@ add_filter( 'pre_wp_mail', function ( $null, $atts ) {
 `);
 
 // Clean slate: only the plugin cookie, three unknown cookies waiting for review.
-wp('eval', `global $wpdb; $wpdb->query("DELETE FROM " . SCCM_Cookies::table() . " WHERE service <> 'sccm'"); SCCM_Settings::update(SCCM_Settings::defaults()); foreach (array('shop_session_id','promo_seen','tracking_xyz') as $n) { SCCM_Cookies::record_seen($n, 'cookie', 'scanner'); }`);
+wp('eval', `global $wpdb; $wpdb->query("DELETE FROM " . SCCM_Cookies::table() . " WHERE service <> 'sccm'"); SCCM_Settings::update(array_merge(SCCM_Settings::defaults(), array("policy_page_id" => SCCM_Settings::get("policy_page_id")))); foreach (array('shop_session_id','promo_seen','tracking_xyz') as $n) { SCCM_Cookies::record_seen($n, 'cookie', 'scanner'); }`);
 
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' }).catch(() => chromium.launch());
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -104,10 +104,10 @@ check('E1 sample email subject is marked as a sample', /^Sample: /.test(mail.sub
 await page.goto(admin('banner'));
 await page.click('.sccm-picker--banner .sccm-pos:has(input[value=center])');
 await page.click('.sccm-picker--widget .sccm-pos:has(input[value=right-center])');
-await page.selectOption('#sccm-button_order', 'reject_first');
+await page.selectOption('#sccm-button_order', 'reject_accept');
 await Promise.all([page.waitForNavigation(), page.click('p.submit input[type=submit]')]);
 const b = option();
-check('B1 banner position, widget position and button order saved', b.position === 'center' && b.floating_position === 'right-center' && b.button_order === 'reject_first');
+check('B1 banner position, widget position and button order saved', b.position === 'center' && b.floating_position === 'right-center' && b.button_order === 'reject_accept');
 const front = await ctx.newPage();
 await front.goto(BASE + '/');
 await front.waitForSelector('#sccm-banner');
@@ -118,7 +118,7 @@ await Promise.all([page.waitForNavigation(), page.click('p.submit input[type=sub
 check('B3 banner style "tabs" saved', option().banner_layout === 'tabs');
 await front.reload();
 await front.waitForSelector('#sccm-banner');
-check('B3 tabbed banner shows the tabs and all three buttons in the chosen order', (await front.locator('#sccm-banner .sccm-tab').count()) === 3 && JSON.stringify(await front.$$eval('#sccm-banner .sccm-actions .sccm-btn', (els) => els.map((e) => e.textContent.trim()))) === JSON.stringify(['Deny', 'Allow selection', 'Allow all']));
+check('B3 tabbed banner shows the tabs and all three buttons in the chosen order', (await front.locator('#sccm-banner .sccm-tab').count()) === 3 && JSON.stringify(await front.$$eval('#sccm-banner .sccm-actions .sccm-btn', (els) => els.map((e) => e.textContent.trim()))) === JSON.stringify(['Deny', 'Allow all', 'Allow selection']));
 await front.close();
 
 // Browser scan: finds cookies set by JavaScript and third-party cookies, from a nearly empty list.
@@ -153,7 +153,7 @@ const anon = await (await browser.newContext()).request.post(`${BASE}/wp-admin/a
 check('X2 logged-out requests are refused', anon.status() !== 200 && anon.status() < 500, String(anon.status()));
 
 check('no JavaScript errors in the admin', errors.length === 0, errors.join(' | '));
-wp('eval', `SCCM_Settings::update(SCCM_Settings::defaults());`);
+wp('eval', `SCCM_Settings::update(array_merge(SCCM_Settings::defaults(), array("policy_page_id" => SCCM_Settings::get("policy_page_id"))));`);
 fs.rmSync(MU, { force: true });
 fs.rmSync(CONTENT + '/mail-captured.json', { force: true });
 await browser.close();

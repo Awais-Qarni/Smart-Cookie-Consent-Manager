@@ -192,6 +192,46 @@ class SCCM_Admin {
 	/* ------------------------------------------------------------------ Form helpers (used by views) */
 
 	/**
+	 * Other cookie consent plugins that are active (two banners would conflict).
+	 *
+	 * @return string[] Plugin names.
+	 */
+	public static function other_consent_plugins() {
+		$known = array(
+			'cookiebot'                    => 'Cookiebot',
+			'complianz-gdpr'               => 'Complianz',
+			'complianz-gdpr-premium'       => 'Complianz',
+			'cookie-law-info'              => 'CookieYes',
+			'gdpr-cookie-compliance'       => 'GDPR Cookie Compliance',
+			'real-cookie-banner'           => 'Real Cookie Banner',
+			'real-cookie-banner-pro'       => 'Real Cookie Banner',
+			'borlabs-cookie'               => 'Borlabs Cookie',
+			'iubenda-cookie-law-solution'  => 'iubenda',
+			'cookie-notice'                => 'Cookie Notice & Compliance',
+			'uk-cookie-consent'            => 'Termly',
+			'gdpr-cookie-consent'          => 'WP Cookie Consent',
+			'cookie-consent-box'           => 'Cookie Consent Box',
+		);
+		$active = (array) get_option( 'active_plugins', array() );
+		if ( is_multisite() ) {
+			$active = array_merge( $active, array_keys( (array) get_site_option( 'active_sitewide_plugins', array() ) ) );
+		}
+		$found = array();
+		foreach ( $active as $basename ) {
+			$dir = strtok( (string) $basename, '/' );
+			if ( isset( $known[ $dir ] ) ) {
+				$found[ $known[ $dir ] ] = true;
+			}
+		}
+		/**
+		 * Other consent plugins detected (names). Return an empty array to hide the warning.
+		 *
+		 * @param string[] $names Plugin names.
+		 */
+		return (array) apply_filters( 'sccm_other_consent_plugins', array_keys( $found ) );
+	}
+
+	/**
 	 * Admin page URL.
 	 *
 	 * @param string $tab  Tab slug.
@@ -430,7 +470,7 @@ class SCCM_Admin {
 		 * @param string $tab Tab.
 		 */
 		do_action( 'sccm_settings_saved', $tab );
-		self::back( $tab, __( 'Settings saved. If you use a page cache, clear it so visitors get the new settings.', 'smart-cookie-consent-manager' ) );
+		self::back( $tab, __( 'Settings saved. Page caches of supported caching plugins and hosts were cleared; if you use another cache or a CDN, clear it so visitors get the new settings.', 'smart-cookie-consent-manager' ) );
 	}
 
 	/**

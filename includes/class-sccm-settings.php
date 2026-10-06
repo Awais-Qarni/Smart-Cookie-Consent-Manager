@@ -36,10 +36,11 @@ class SCCM_Settings {
 			'enabled'              => 1,
 			'position'             => 'bottom',   // bottom | top | bottom-left | bottom-right | center.
 			'banner_layout'        => 'compact',  // compact (text + 3 buttons; Customize opens the full dialog) | tabs (full dialog at once).
-			'button_order'         => 'accept_first', // accept_first | reject_first (all buttons always look the same).
+			'button_order'         => 'accept_reject', // See button_orders(). All buttons always look the same.
 			'floating_button'      => 1,
 			'floating_position'    => 'bottom-left', // bottom-left | bottom-right | bottom-center | left-center | right-center.
 			'policy_page_id'       => 0,
+			'policy_hide_sidebar'  => 1,          // Hide widget sidebars on the Cookie Policy page.
 			'show_privacy_link'    => 1,
 			'consent_expiry_days'  => 365,        // 0 = session only; 1-395 days.
 			'reask_on_change'      => 1,
@@ -132,7 +133,6 @@ class SCCM_Settings {
 			'btn_accept'           => __( 'Allow all', 'smart-cookie-consent-manager' ),
 			'btn_reject'           => __( 'Deny', 'smart-cookie-consent-manager' ),
 			'btn_selection'        => __( 'Allow selection', 'smart-cookie-consent-manager' ),
-			'btn_details'          => __( 'Show details', 'smart-cookie-consent-manager' ),
 			'btn_customize'        => __( 'Customize', 'smart-cookie-consent-manager' ),
 			'about_text'           => __( 'Cookies are small text files that websites store in your browser. The law says we may only store cookies that are strictly necessary for the website to work. For all other types of cookies we need your permission. Some cookies are placed by third-party services that appear on our pages. You can change or withdraw your consent at any time with the cookie settings button.', 'smart-cookie-consent-manager' ),
 			// Details tab: cookie cards.
@@ -163,8 +163,10 @@ class SCCM_Settings {
 			'choice_reject_all'    => __( 'Denied non-essential cookies', 'smart-cookie-consent-manager' ),
 			'choice_custom'        => __( 'Allowed a selection', 'smart-cookie-consent-manager' ),
 			'choice_gpc'           => __( 'Browser privacy signal (GPC) honoured', 'smart-cookie-consent-manager' ),
+			/* translators: %s: list of cookie categories, e.g. "Statistics, Marketing". */
 			'gpc_notice'           => __( 'Your browser sent a Global Privacy Control (GPC) signal. We have honoured it, so the following cookies stay off: %s.', 'smart-cookie-consent-manager' ),
 			// Blocked videos / maps.
+			/* translators: %s: cookie category name, e.g. "Marketing". */
 			'placeholder_text'     => __( 'This content is provided by a third party and may set %s cookies. It is blocked until you allow them.', 'smart-cookie-consent-manager' ),
 			'placeholder_btn'      => __( 'Allow and load', 'smart-cookie-consent-manager' ),
 		);
@@ -252,7 +254,7 @@ class SCCM_Settings {
 		$defaults = self::defaults();
 		$out      = $current;
 
-		$bools = array( 'enabled', 'floating_button', 'show_privacy_link', 'reask_on_change', 'reload_on_withdraw', 'ads_data_redaction', 'url_passthrough', 'blocker_enabled', 'iframe_placeholder', 'gpc_enabled', 'scanner_client', 'alerts_enabled', 'log_enabled', 'delete_on_uninstall' );
+		$bools = array( 'enabled', 'floating_button', 'show_privacy_link', 'policy_hide_sidebar', 'reask_on_change', 'reload_on_withdraw', 'ads_data_redaction', 'url_passthrough', 'blocker_enabled', 'iframe_placeholder', 'gpc_enabled', 'scanner_client', 'alerts_enabled', 'log_enabled', 'delete_on_uninstall' );
 		foreach ( $bools as $key ) {
 			if ( array_key_exists( $key, $input ) ) {
 				$out[ $key ] = empty( $input[ $key ] ) ? 0 : 1;
@@ -262,7 +264,7 @@ class SCCM_Settings {
 		$enums = array(
 			'position'          => array( 'bottom', 'top', 'bottom-left', 'bottom-right', 'center' ),
 			'floating_position' => array( 'bottom-left', 'bottom-right', 'bottom-center', 'left-center', 'right-center' ),
-			'button_order'      => array( 'accept_first', 'reject_first' ),
+			'button_order'      => array_keys( self::button_orders() ),
 			'banner_layout'     => array( 'compact', 'tabs' ),
 			'consent_mode'      => array( 'basic', 'advanced', 'off' ),
 			'gpc_scope'         => array( 'all', 'marketing' ),
@@ -397,6 +399,21 @@ class SCCM_Settings {
 			$list = self::parse_emails( (string) get_option( 'admin_email' ) );
 		}
 		return $list;
+	}
+
+	/**
+	 * Button orders: key => label. "Allow selection" (detailed style) and "Customize" (compact
+	 * style) take the same place. All buttons always look the same.
+	 *
+	 * @return array
+	 */
+	public static function button_orders() {
+		return array(
+			'accept_reject' => __( 'Allow all · Deny · Allow selection / Customize', 'smart-cookie-consent-manager' ),
+			'reject_accept' => __( 'Deny · Allow all · Allow selection / Customize', 'smart-cookie-consent-manager' ),
+			'accept_first'  => __( 'Allow all · Allow selection / Customize · Deny', 'smart-cookie-consent-manager' ),
+			'reject_first'  => __( 'Deny · Allow selection / Customize · Allow all', 'smart-cookie-consent-manager' ),
+		);
 	}
 
 	/**

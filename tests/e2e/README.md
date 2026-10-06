@@ -36,10 +36,21 @@ and screenshots go to `tests/e2e/output/` (git-ignored).
 
 | Command | What it covers |
 |---|---|
-| `npm run e2e` | Visitor side: compact banner + Customize, dialog tabs, switches, details, button order, widget, expiry, scan-mode safety, reporting (76 checks). |
-| `SCCM_WP=/path/to/wp-cli-wrapper npm run test:wp` | Cookie list rules, browser-scan rules, settings, email recipients and design, categories, library details, hashed asset files (WP-CLI, 56 checks). |
+| `npm run e2e` | Visitor side: compact banner + Customize, dialog tabs, switches, details, the four button orders, first-visit preview, theme isolation (hostile theme CSS), one-line buttons, Cookie Policy on a dark theme, widget, expiry, scan-mode safety, reporting (99 checks). |
+| `SCCM_WP=/path/to/wp-cli-wrapper npm run test:wp` | Cookie list rules, browser-scan rules, settings, button orders, email recipients and design (dark mode, Outlook button), categories, library details, hashed asset files, Cookie Policy sidebar, cache clearing and throttling, other-CMP detection (WP-CLI, 83 checks). |
 | `SCCM_WP=… SCCM_E2E_URL=… npm run e2e:admin` | Admin screens as `admin`/`admin`: approve/ignore, expiry, recipients, sample email, positions, button order, banner style, a real browser scan, CSRF (35 checks). |
 | `node tests/e2e/admin-shots.mjs <dir>` | Screenshots of every admin tab, for visual review. |
 
 The last three reset the plugin settings and cookie list of the site they run on: use a
-development site only.
+development site only. (The Cookie Policy page link is kept.)
+
+## Windows
+
+- Run the npm scripts with Git Bash as the script shell:
+  `npm_config_script_shell="C:\\Program Files\\Git\\bin\\bash.exe"` (adjust the path).
+- `SCCM_WP` can point straight at `wp-cli.phar` (it is run with `php`; set `SCCM_PHP` for
+  another PHP binary). Give WP-CLI the WordPress path with a `wp-cli.yml` and
+  `WP_CLI_CONFIG_PATH`.
+- PHP's built-in server is single-threaded on Windows (`PHP_CLI_SERVER_WORKERS` is Unix-only)
+  and Chromium's extra connections stall it. Put a small proxy in front that spreads requests
+  over several `php -S` processes, or use LocalWP / XAMPP.

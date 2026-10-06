@@ -47,7 +47,7 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - [x] Automated checks: `php -l`, `node --check`, PHP unit tests (`npm test`)
 - [x] Local WordPress end-to-end run of TESTING.md (all 12 features)
 - [x] readme.txt, CHANGELOG
-- [ ] `.pot` translation template (generate with `wp i18n make-pot . languages/smart-cookie-consent-manager.pot`)
+- [x] `.pot` translation template (`languages/smart-cookie-consent-manager.pot`; regenerate with `wp i18n make-pot . languages/smart-cookie-consent-manager.pot --exclude=node_modules,tests,docs,.github`)
 - [ ] Staging test on a real site with the TESTING.md checklist (incl. Compliance review)
 - [ ] Release 1.0.0 (tag + zip)
 
@@ -62,6 +62,10 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
       (cache-proof on NitroPack/CDNs), NitroPack/GTranslate/chat/pixel services, menu pages
       in the scan, scan diagnostics, Help button alignment
 - [x] HTML alert email, several recipients, sample email
+- [x] Round 4 (owner feedback, session 6): Cookie Policy page follows the theme + no sidebar +
+      cache refresh after scans, four button orders, theme-proof banner (#sccm-app scope, no
+      wrapping buttons), first-visit preview, no "Show details" link, dark-mode-safe email,
+      automatic page-cache clearing, other-CMP warning, AMP/page-builder exclusions, .pot
 - [x] Performance review (see `PERFORMANCE.md`)
 - [ ] Review against the live Cookiebot banner and account (not reachable from the build environment)
 

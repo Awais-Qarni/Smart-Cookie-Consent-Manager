@@ -13,9 +13,9 @@ defined( 'ABSPATH' ) || exit;
 class SCCM_Install {
 
 	/**
-	 * Database schema version. Bump when the table structure changes.
+	 * Database schema version. Bump when the table structure or stored data needs an upgrade step.
 	 */
-	const DB_VERSION = '2';
+	const DB_VERSION = '3';
 
 	/**
 	 * Option that stores the installed schema version.
@@ -51,6 +51,7 @@ class SCCM_Install {
 	public static function deactivate() {
 		wp_clear_scheduled_hook( 'sccm_scan_event' );
 		wp_clear_scheduled_hook( 'sccm_daily_event' );
+		wp_clear_scheduled_hook( 'sccm_purge_cache_event' );
 	}
 
 	/**
@@ -74,8 +75,33 @@ class SCCM_Install {
 		if ( false !== $previous && version_compare( (string) $previous, '2', '<' ) ) {
 			self::upgrade_to_2();
 		}
+		if ( false !== $previous && version_compare( (string) $previous, '3', '<' ) ) {
+			self::upgrade_to_3();
+		}
 
 		update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
+	}
+
+	/**
+	 * Version 3: button orders. The compact banner used to show "Allow all · Deny · Customize"
+	 * (or "Deny · Allow all · Customize") whatever the order setting; "Customize" now takes the
+	 * place of "Allow selection". Saved orders move to the new ones that keep the compact banner
+	 * exactly as it was (the detailed dialog then shows Allow selection last).
+	 */
+	private static function upgrade_to_3() {
+		$settings = get_option( SCCM_Settings::OPTION );
+		if ( ! is_array( $settings ) || empty( $settings['button_order'] ) ) {
+			return;
+		}
+		$map = array(
+			'accept_first' => 'accept_reject',
+			'reject_first' => 'reject_accept',
+		);
+		if ( isset( $map[ $settings['button_order'] ] ) ) {
+			$settings['button_order'] = $map[ $settings['button_order'] ];
+			update_option( SCCM_Settings::OPTION, $settings );
+			SCCM_Settings::flush();
+		}
 	}
 
 	/**
@@ -202,12 +228,13 @@ class SCCM_Install {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
 		$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}sccm_consent_log" );
 
-		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates' ) as $option ) {
+		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge' ) as $option ) {
 			delete_option( $option );
 		}
 
 		wp_clear_scheduled_hook( 'sccm_scan_event' );
 		wp_clear_scheduled_hook( 'sccm_daily_event' );
+		wp_clear_scheduled_hook( 'sccm_purge_cache_event' );
 
 		// Versioned copies of the plugin's CSS/JS (see SCCM_Plugin::asset()).
 		$uploads = wp_upload_dir( null, false );

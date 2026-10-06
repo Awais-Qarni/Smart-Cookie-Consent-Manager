@@ -15,6 +15,8 @@ global $wpdb;
 // wp eval-file runs this inside a function, so the counters live in $GLOBALS.
 $GLOBALS['sccm_failures'] = 0;
 $GLOBALS['sccm_total']    = 0;
+// The Cookie Policy page linked before the run; it is linked again at the end.
+$GLOBALS['sccm_policy_id'] = (int) SCCM_Settings::get( 'policy_page_id' );
 
 function sccm_check( $name, $condition ) {
 	++$GLOBALS['sccm_total'];
@@ -225,13 +227,133 @@ sccm_check( 'email HTML lists the cookie, its category, and the review button', 
 sccm_check( 'email has a plain-text version', false !== strpos( $email['text'], 'mystery_cookie' ) && false !== strpos( $email['text'], 'Statistics' ) );
 $escaped = SCCM_Scanner::build_email( array( array( 'name' => '<script>alert(1)</script>', 'type' => 'cookie', 'status' => 'pending', 'category' => '', 'time' => time() ) ) );
 sccm_check( 'cookie names are escaped in the email', false === strpos( $escaped['html'], '<script>alert(1)' ) );
+sccm_check( 'email declares light and dark colour schemes', false !== strpos( $email['html'], 'name="color-scheme" content="light dark"' ) && false !== strpos( $email['html'], 'prefers-color-scheme:dark' ) );
+sccm_check( 'email button gets its padding from the table cell (Outlook-safe)', 1 === preg_match( '/<td[^>]+bgcolor="#2563eb"[^>]+mso-padding-alt:12px 24px;[^>]*><a /', $email['html'] ) );
+sccm_check( 'email header is light (no dark block that dark mode inverts)', 0 === preg_match( '/style="[^"]*background:#(1f2937|111827)/', $email['html'] ) );
 file_put_contents( getenv( 'SCCM_EMAIL_PREVIEW' ) ?: sys_get_temp_dir() . '/sccm-email-preview.html', $email['html'] );
 
-// Leave the site tidy.
+/* ---------------------------------------------------------------- Button order */
+
+$policy_id = $GLOBALS['sccm_policy_id'];
+SCCM_Settings::update( SCCM_Settings::defaults() );
+sccm_check( 'button order defaults to Allow all · Deny · Allow selection', 'accept_reject' === SCCM_Settings::get( 'button_order' ) && 'accept_reject' === SCCM_Frontend::config()['order'] );
+foreach ( array( 'reject_accept', 'accept_first', 'reject_first', 'accept_reject' ) as $order ) {
+	$s = SCCM_Settings::update( array( 'button_order' => $order ) );
+	sccm_check( "button order {$order} is accepted", $order === $s['button_order'] );
+}
+foreach ( array( 'accept_first' => 'accept_reject', 'reject_first' => 'reject_accept' ) as $old => $new ) {
+	$raw                 = get_option( SCCM_Settings::OPTION );
+	$raw['button_order'] = $old;
+	update_option( SCCM_Settings::OPTION, $raw );
+	update_option( SCCM_Install::DB_VERSION_OPTION, '2' );
+	SCCM_Install::maybe_upgrade();
+	SCCM_Settings::flush();
+	sccm_check( "upgrade moves a saved {$old} to {$new} (compact banner unchanged)", $new === SCCM_Settings::get( 'button_order' ) && SCCM_Install::DB_VERSION === get_option( SCCM_Install::DB_VERSION_OPTION ) );
+}
+wp_clear_scheduled_hook( 'sccm_scan_event' );
+SCCM_Install::schedule_events();
+$s = SCCM_Settings::update( array( 'button_order' => 'deny_hidden' ) );
+sccm_check( 'unknown button order falls back to the default', 'accept_reject' === $s['button_order'] );
+sccm_check( '"Show details" text is gone (the Details tab replaces it)', ! isset( SCCM_Settings::texts()['btn_details'] ) );
+
+/* ---------------------------------------------------------------- Cookie Policy page: sidebar */
+
+$page_id = $policy_id ? $policy_id : wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'Cookie Policy test', 'post_content' => '[sccm_cookie_policy]' ) );
+SCCM_Settings::update( array( 'policy_page_id' => $page_id ) );
+sccm_check( 'hide-sidebar setting is on by default', 1 === (int) SCCM_Settings::get( 'policy_hide_sidebar' ) );
+$GLOBALS['wp_the_query']->query( array( 'page_id' => $page_id ) );
+$GLOBALS['wp_query'] = $GLOBALS['wp_the_query'];
+$had_wp              = did_action( 'wp' );
+if ( ! $had_wp ) {
+	$GLOBALS['wp_actions']['wp'] = 1; // As if the front-end query ran.
+}
+$widgets = array( 'sidebar-1' => array( 'search-2' ), 'wp_inactive_widgets' => array( 'text-3' ), 'array_version' => 3 );
+sccm_check( 'policy page: no active sidebar', false === apply_filters( 'is_active_sidebar', true, 'sidebar-1' ) );
+$filtered = apply_filters( 'sidebars_widgets', $widgets );
+sccm_check( 'policy page: sidebars emptied, inactive widgets kept', array() === $filtered['sidebar-1'] && array( 'text-3' ) === $filtered['wp_inactive_widgets'] && 3 === $filtered['array_version'] );
+sccm_check( 'policy page: Astra/GeneratePress layout is no-sidebar', 'no-sidebar' === apply_filters( 'astra_page_layout', 'right-sidebar' ) && 'no-sidebar' === apply_filters( 'generate_sidebar_layout', 'right-sidebar' ) );
+sccm_check( 'policy page: body class added', in_array( 'sccm-policy-page', apply_filters( 'body_class', array() ), true ) );
+SCCM_Settings::update( array( 'policy_hide_sidebar' => 0 ) );
+sccm_check( 'hide-sidebar off: sidebars untouched', true === apply_filters( 'is_active_sidebar', true, 'sidebar-1' ) && $widgets === apply_filters( 'sidebars_widgets', $widgets ) );
+SCCM_Settings::update( array( 'policy_hide_sidebar' => 1 ) );
+$other = wp_insert_post( array( 'post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'Other page' ) );
+$GLOBALS['wp_the_query']->query( array( 'page_id' => $other ) );
+sccm_check( 'other pages keep their sidebar', true === apply_filters( 'is_active_sidebar', true, 'sidebar-1' ) && $widgets === apply_filters( 'sidebars_widgets', $widgets ) );
+wp_delete_post( $other, true );
+if ( ! $had_wp ) {
+	unset( $GLOBALS['wp_actions']['wp'] );
+}
+$GLOBALS['wp_the_query']->init();
+
+/* ---------------------------------------------------------------- Page cache clearing */
+
+$fired = 0;
+$count = function () use ( &$fired ) {
+	++$fired;
+};
+add_action( 'sccm_cookie_list_changed', $count );
+$id = SCCM_Cookies::save( array( 'name' => 'cache_test_cookie', 'category' => 'analytics', 'status' => 'active' ) );
+SCCM_Cookies::save( array( 'name' => 'cache_test_cookie', 'category' => 'marketing', 'status' => 'active' ), $id );
+sccm_check( 'adding or editing a visible cookie signals a cookie list change', 2 === $fired );
+$pending = SCCM_Cookies::save( array( 'name' => 'cache_test_pending', 'status' => 'pending' ) );
+sccm_check( 'a cookie waiting for review does not (visitors do not see it)', 2 === $fired );
+SCCM_Cookies::delete( $pending );
+SCCM_Cookies::delete( $id );
+sccm_check( 'deleting a visible cookie signals a change', 3 === $fired );
+remove_action( 'sccm_cookie_list_changed', $count );
+
+$purged = 0;
+$count  = function () use ( &$purged ) {
+	++$purged;
+};
+add_action( 'sccm_cache_purged', $count );
+wp_set_current_user( 0 );
+delete_option( 'sccm_last_cache_purge' );
+wp_clear_scheduled_hook( SCCM_Cache::EVENT );
+SCCM_Cache::request();
+SCCM_Cache::request();
+SCCM_Cache::flush_queued();
+sccm_check( 'a requested cache clear runs once at the end of the request', 1 === $purged && (int) get_option( 'sccm_last_cache_purge' ) >= time() - 5 );
+SCCM_Cache::request();
+SCCM_Cache::flush_queued();
+sccm_check( 'a second clear from a visitor within 5 minutes is postponed to WP-Cron', 1 === $purged && wp_next_scheduled( SCCM_Cache::EVENT ) > time() );
+$admins = get_users( array( 'role' => 'administrator', 'number' => 1, 'fields' => 'ID' ) );
+wp_set_current_user( (int) $admins[0] );
+SCCM_Cache::request();
+SCCM_Cache::flush_queued();
+sccm_check( 'an administrator\'s change clears the cache right away', 2 === $purged );
+add_filter( 'sccm_purge_page_cache', '__return_false' );
+SCCM_Cache::run();
+sccm_check( 'the sccm_purge_page_cache filter turns clearing off', 2 === $purged );
+remove_filter( 'sccm_purge_page_cache', '__return_false' );
+remove_action( 'sccm_cache_purged', $count );
+wp_clear_scheduled_hook( SCCM_Cache::EVENT );
+wp_set_current_user( 0 );
+remove_action( 'shutdown', array( 'SCCM_Cache', 'flush_queued' ), 1 ); // The clears queued above already ran.
+
+/* ---------------------------------------------------------------- Other consent plugins */
+
+require_once SCCM_PATH . 'includes/admin/class-sccm-admin.php';
+sccm_check( 'no other consent plugin detected on a clean site', array() === SCCM_Admin::other_consent_plugins() );
+$fake = function ( $plugins ) {
+	return array_merge( (array) $plugins, array( 'cookiebot/cookiebot.php', 'complianz-gdpr/complianz-gpdr.php' ) );
+};
+add_filter( 'option_active_plugins', $fake );
+sccm_check( 'active Cookiebot / Complianz are detected (two banners would conflict)', array( 'Cookiebot', 'Complianz' ) === SCCM_Admin::other_consent_plugins() );
+remove_filter( 'option_active_plugins', $fake );
+
+/* ---------------------------------------------------------------- AMP */
+
+sccm_check( 'AMP detection is off when no AMP plugin is active', false === SCCM_Frontend::is_amp() );
+
+// Leave the site tidy (the Cookie Policy page stays linked).
 $wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE service <> 'sccm'" );
 delete_option( 'sccm_candidates' );
 delete_option( 'sccm_pending_alert' );
-SCCM_Settings::update( SCCM_Settings::defaults() );
+SCCM_Settings::update( array_merge( SCCM_Settings::defaults(), array( 'policy_page_id' => $policy_id ) ) );
+if ( ! $policy_id ) {
+	wp_delete_post( $page_id, true );
+}
 
 echo "\n" . ( $GLOBALS['sccm_total'] - $GLOBALS['sccm_failures'] ) . '/' . $GLOBALS['sccm_total'] . " checks passed\n";
 if ( $GLOBALS['sccm_failures'] ) {

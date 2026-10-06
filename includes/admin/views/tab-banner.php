@@ -22,7 +22,6 @@ $sccm_text_groups = array(
 		'btn_accept'    => __( 'Accept button', 'smart-cookie-consent-manager' ),
 		'btn_selection' => __( '"Allow selection" button', 'smart-cookie-consent-manager' ),
 		'btn_reject'    => __( 'Reject button', 'smart-cookie-consent-manager' ),
-		'btn_details'   => __( '"Show details" link', 'smart-cookie-consent-manager' ),
 		'btn_customize' => __( '"Customize" button (compact style)', 'smart-cookie-consent-manager' ),
 		'about_text'    => __( 'Text (About tab)', 'smart-cookie-consent-manager' ),
 		'policy_link'   => __( 'Cookie Policy link', 'smart-cookie-consent-manager' ),
@@ -56,7 +55,9 @@ $sccm_text_groups = array(
 	__( 'Other messages', 'smart-cookie-consent-manager' )          => array(
 		'settings_button'  => __( 'Cookie settings button: accessible name', 'smart-cookie-consent-manager' ),
 		'widget_label'     => __( 'Cookie settings button: text on the edge tab', 'smart-cookie-consent-manager' ),
+		/* translators: Field label; keep "%s" as it is: it stands for the list of categories in the visitor-facing text. */
 		'gpc_notice'       => __( 'Privacy signal (GPC) notice (%s = categories)', 'smart-cookie-consent-manager' ),
+		/* translators: Field label; keep "%s" as it is: it stands for the category name in the visitor-facing text. */
 		'placeholder_text' => __( 'Blocked video/map text (%s = category)', 'smart-cookie-consent-manager' ),
 		'placeholder_btn'  => __( 'Blocked video/map button', 'smart-cookie-consent-manager' ),
 	),
@@ -97,11 +98,8 @@ SCCM_Admin::form_open( 'banner' );
 			'button_order',
 			__( 'Button order', 'smart-cookie-consent-manager' ),
 			$settings['button_order'],
-			array(
-				'accept_first' => __( 'Allow all · Allow selection · Deny', 'smart-cookie-consent-manager' ),
-				'reject_first' => __( 'Deny · Allow selection · Allow all', 'smart-cookie-consent-manager' ),
-			),
-			__( 'All three buttons always have the same size, colour and style, which is what the law asks for. With equal buttons either order is fine; "Deny first" is the more cautious choice that some regulators prefer.', 'smart-cookie-consent-manager' )
+			SCCM_Settings::button_orders(),
+			__( '"Allow selection" (detailed style) and "Customize" (compact style) take the same place. Allow all, Deny and Allow selection always have the same size, colour and style, which is what the law asks for. With equal buttons any order is fine; "Deny" first is the more cautious choice that some regulators prefer.', 'smart-cookie-consent-manager' )
 		);
 		?>
 	</table>
@@ -158,9 +156,10 @@ SCCM_Admin::form_open( 'banner' );
 						<option value="<?php echo (int) $sccm_page->ID; ?>" <?php selected( (int) $settings['policy_page_id'], (int) $sccm_page->ID ); ?>><?php echo esc_html( $sccm_page->post_title ); ?></option>
 					<?php endforeach; ?>
 				</select>
-				<p class="description"><?php echo wp_kses( __( 'Add the shortcode <code>[sccm_cookie_policy]</code> to that page to show your cookie list. It updates by itself. No page yet? The Dashboard can create one for you.', 'smart-cookie-consent-manager' ), array( 'code' => array() ) ); ?></p>
+				<p class="description"><?php echo wp_kses( __( 'Add the shortcode <code>[sccm_cookie_policy]</code> to that page to show your cookie list. It updates by itself after every scan or change (the page cache of that page is cleared too). No page yet? The Dashboard can create one for you.', 'smart-cookie-consent-manager' ), array( 'code' => array() ) ); ?></p>
 			</td>
 		</tr>
+		<?php SCCM_Admin::checkbox( 'policy_hide_sidebar', __( 'Hide the sidebar on the Cookie Policy page', 'smart-cookie-consent-manager' ), $settings['policy_hide_sidebar'], __( 'Removes widget sidebars from that page so the cookie list uses the full width. If your theme still shows an empty column, choose its "No sidebar" or "Full width" layout when editing the page.', 'smart-cookie-consent-manager' ) ); ?>
 		<?php SCCM_Admin::checkbox( 'show_privacy_link', __( 'Link to Privacy Policy', 'smart-cookie-consent-manager' ), $settings['show_privacy_link'], __( 'Uses the page chosen in Settings → Privacy.', 'smart-cookie-consent-manager' ) ); ?>
 	</table>
 </div>
@@ -205,7 +204,7 @@ SCCM_Admin::form_open( 'banner' );
 <details class="sccm-panel sccm-fold">
 	<summary><?php esc_html_e( 'Custom CSS (advanced)', 'smart-cookie-consent-manager' ); ?></summary>
 	<table class="form-table" role="presentation">
-		<?php SCCM_Admin::textarea( 'custom_css', __( 'CSS', 'smart-cookie-consent-manager' ), $settings['custom_css'], __( 'Optional. Elements use the <code>sccm-</code> prefix, e.g. <code>.sccm-banner</code>, <code>.sccm-btn</code>, <code>.sccm-modal</code>.', 'smart-cookie-consent-manager' ), '', 6 ); ?>
+		<?php SCCM_Admin::textarea( 'custom_css', __( 'CSS', 'smart-cookie-consent-manager' ), $settings['custom_css'], __( 'Optional. Elements use the <code>sccm-</code> prefix, e.g. <code>#sccm-banner</code> (first-visit banner), <code>#sccm-prefs</code> (cookie settings window), <code>.sccm-btn</code>, <code>.sccm-policy</code> (Cookie Policy list). Colours can be changed with variables: <code>.sccm-root { --sccm-radius: 0; }</code>.', 'smart-cookie-consent-manager' ), '', 6 ); ?>
 	</table>
 </details>
 

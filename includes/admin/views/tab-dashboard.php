@@ -21,7 +21,21 @@ $sccm_cats    = SCCM_Categories::all();
  * "Needs your attention": every item is one sentence and one button.
  * type: warn (needs action) | info (recommended).
  */
-$sccm_todo = array();
+$sccm_todo   = array();
+$sccm_others = SCCM_Admin::other_consent_plugins();
+if ( $sccm_others && $sccm_on ) {
+	$sccm_todo[] = array(
+		'type'   => 'warn',
+		'text'   => sprintf(
+			/* translators: %s: plugin names */
+			__( 'Another cookie consent plugin is active: %s. Visitors would see two banners and the two plugins would block each other. Deactivate it once this banner is set up.', 'smart-cookie-consent-manager' ),
+			implode( ', ', $sccm_others )
+		),
+		'label'  => __( 'Open Plugins', 'smart-cookie-consent-manager' ),
+		'url'    => admin_url( 'plugins.php?plugin_status=active' ),
+		'action' => '',
+	);
+}
 if ( $sccm_counts['pending'] ) {
 	$sccm_todo[] = array(
 		'type'   => 'warn',

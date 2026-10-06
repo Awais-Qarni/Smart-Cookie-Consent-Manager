@@ -10,7 +10,72 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 - **Version:** 0.1.0 (feature-complete for the 12 features, not yet staging-tested on a real site)
 - **Branch:** `feature/v1-build` (pull request to `main`)
 - **Phase:** 5b, pre-staging changes done (see `ROADMAP.md`); staging test is next
-- **Last updated:** 2026-10-05 (session 5)
+- **Last updated:** 2026-10-06 (session 6)
+
+---
+
+## 2026-10-06 — Session 6 (owner feedback round 4 + production hardening)
+
+**Set-up:** the project now also runs on the owner's Windows PC: portable PHP 8.3 + MariaDB
+11.4 + WordPress 7.1 + WP-CLI in `workspace/sccm-dev` (outside the repo; start/stop/env scripts
+there). Windows notes added to `tests/e2e/README.md`. Commit `84b9693` made the e2e runners
+work on Windows (output path, `SCCM_WP` pointing at `wp-cli.phar`).
+
+**Root causes found**
+- Cookie Policy page unreadable on the owner's dark theme: the list was `.sccm-root`, so it got
+  the banner's dark text colour (`--sccm-text`) and font size.
+- "Policy page must update after a scan": the shortcode was always current, but page caches
+  (NitroPack, WP Engine) kept serving the old copy. Same for banner texts/cookie list.
+- About tab "Your current choice: Allowed all" without agreeing: it was the banner **preview**
+  (`/#sccm-banner`) shown to the owner, who had clicked Allow all earlier; the preview rendered
+  the stored choice.
+- Buttons looked different per theme and lost their bold: theme rules (`.elementor-kit-N
+  button:hover` …) beat `.sccm-btn`, and our own `.sccm-root button { font: inherit }` (higher
+  specificity) wiped `font-weight: 600`.
+- "Allow selection" wrapped: three equal columns in a 460px corner box are narrower than the text.
+- Email "broken": dark-mode inversion (Outlook / Gmail apps) turned the dark header into a light
+  block, and Outlook ignores padding on `<a>`, so the button lost its padding.
+
+**Done**
+- Policy list follows the theme (no `.sccm-root`, `currentColor` lines, only cookie names break);
+  "Hide the sidebar on the Cookie Policy page" (default on; widget sidebars emptied; Astra /
+  GeneratePress / OceanWP no-sidebar layout); body class `sccm-policy-page`.
+- `SCCM_Cache` (new): clears page caches of WP Engine, NitroPack, WP Rocket, LiteSpeed, W3TC,
+  WP Super Cache, WP Fastest Cache, SiteGround, Breeze, Hummingbird after settings saves, version
+  bumps and cookie list changes (`sccm_cookie_list_changed`); once per request, visitor-caused
+  clears throttled to 5 min (rest via WP-Cron); every call guarded.
+- Button order: 4 options (`accept_reject` default, `reject_accept`, `accept_first`,
+  `reject_first`); Customize takes Allow selection's place. DB version 3 maps saved old values
+  so the compact banner looks as before.
+- Theme isolation: dialogs + widget in `<div id="sccm-app">`, all CSS scoped to it; buttons
+  `nowrap`, `fitButtons()` stacks them (equal width) when they do not fit; detailed style in
+  wide bars: buttons right-aligned at natural equal width; compact bar: equal columns.
+- Preview = first visit (switches off, "no choice yet", also in its Customize window).
+- Removed the "Show details" link (and its text setting).
+- Email rebuilt: light design that survives inversion, `color-scheme` + dark-mode CSS
+  (Apple Mail, Outlook.com `[data-ogsc]`), Outlook-safe button, dark-mode label colours.
+- Hardening: AMP pages skipped; more page-builder editors skipped; Dashboard warns when another
+  consent plugin (Cookiebot, Complianz, CookieYes, Borlabs…) is active; `.pot` generated with
+  translator comments for every placeholder; Custom CSS help names the real selectors.
+- Tests: unit 33/33, WP-CLI 85/85 (was 56), e2e 99/99 (was 76; new: four orders × two styles,
+  preview, hostile theme CSS, one-line buttons, long translation stacking, wide-bar width,
+  policy on a dark theme), admin e2e 35/35. All suites also run with `WP_DEBUG` on: no PHP
+  warnings, notices or deprecations from the plugin (WordPress 7.1, PHP 8.3).
+
+**Next**
+1. Owner: update the plugin on staging (purge NitroPack + WP Engine once more for this update),
+   deactivate Cookiebot there if it is still active (the Dashboard now says so), check the
+   banner in a private window, the Cookie Policy page, and the sample email in dark mode.
+2. Then Cookies → Scan now and compare with Cookiebot (as in session 5).
+3. Before a public release: run the official Plugin Check plugin and the test suites on PHP 7.4
+   (minimum version; only PHP 8.3 was available here), then tag 1.0.0.
+
+**Notes & blockers**
+- Cache clearing covers the listed plugins/hosts; a CDN in front of the site (e.g. Cloudflare
+  APO) must still be purged by hand or from `sccm_cache_purged`.
+- "Never breaks on any site" cannot be proven; the risky parts (theme CSS, page caches, other
+  CMPs, AMP, builders, optimisers) are now guarded and tested, and failures fall back to leaving
+  the page untouched.
 
 ---
 
