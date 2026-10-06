@@ -323,8 +323,9 @@ class SCCM_Frontend {
 			'log'         => (bool) $settings['log_enabled'],
 			'scan'        => (bool) $settings['scanner_client'],
 			'rest'        => array(
-				'consent' => esc_url_raw( rest_url( 'sccm/v1/consent' ) ),
-				'report'  => esc_url_raw( rest_url( 'sccm/v1/report' ) ),
+				'consent' => self::same_site_url( rest_url( 'sccm/v1/consent' ) ),
+				'report'  => self::same_site_url( rest_url( 'sccm/v1/report' ) ),
+				'ajax'    => self::same_site_url( admin_url( 'admin-ajax.php' ) ),
 			),
 		);
 
@@ -334,6 +335,23 @@ class SCCM_Frontend {
 		 * @param array $config Config array.
 		 */
 		return apply_filters( 'sccm_frontend_config', $config );
+	}
+
+	/**
+	 * An address of this website without scheme and host ("/wp-json/…"), so the browser always
+	 * sends to the address the page was opened on: a page cached under another address (staging
+	 * and live domain, http and https) can never send records somewhere the browser refuses.
+	 * Addresses on another host stay absolute.
+	 *
+	 * @param string $url URL.
+	 * @return string
+	 */
+	public static function same_site_url( $url ) {
+		$url = esc_url_raw( $url );
+		if ( wp_parse_url( $url, PHP_URL_HOST ) === wp_parse_url( home_url(), PHP_URL_HOST ) ) {
+			return wp_make_link_relative( $url );
+		}
+		return $url;
 	}
 
 	/**

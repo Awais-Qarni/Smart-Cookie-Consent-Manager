@@ -11,7 +11,7 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); staging test and release are next
 - **Last updated:** 2026-10-06 (session 6)
-- **Tests:** unit 33, WP-CLI 120, visitor e2e 102, admin e2e 44, all passing; WordPress.org
+- **Tests:** unit 33, WP-CLI 120, visitor e2e 102, admin e2e 51, all passing; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
 
 ---
@@ -98,6 +98,20 @@ work on Windows (output path, `SCCM_WP` pointing at `wp-cli.phar`).
 - GA4-by-ID uses Google's snippet (no raw script tag); new admin e2e check for Strict/Advanced.
 - Dead-code sweep: no unused PHP functions or texts; removed `.sccm-linkbtn` CSS, `.gitkeep`.
 - Tests: unit 33/33, WP-CLI 120/120, e2e 102/102, admin e2e 41/41, no PHP notices with WP_DEBUG.
+
+**Round 9 (same day): "consent records stay empty" on staging**
+- Locally records worked (REST 201, row listed). Likely causes on WP Engine staging, all fixed:
+  the banner posted with `credentials: 'omit'`, so a password-protected staging site (HTTP
+  auth) refused it; the absolute REST URL in a page cached under another domain / scheme could
+  be blocked (mixed content, other host); a security plugin or firewall may block the REST API.
+- Fix: same-origin credentials, same-site (relative) URLs, admin-ajax fallback
+  (`sccm_consent` / `sccm_report`) on any REST failure except 400/429, `sccm_rest_problem`
+  note + notice on the Consent Records tab, help text when the list is empty; consent rate
+  limit 60/h per IP.
+- Tests: admin e2e 51/51 (CR1–CR5: stored and listed, sent with credentials, same-site URL,
+  REST blocked → saved via admin-ajax + notice, empty-list help).
+- Owner: after updating, purge NitroPack + WP Engine caches (old cached pages carry the old
+  script), then test in a private window.
 
 **Round 8 (same day): small admin fixes, then pull request**
 - Help button in the top right corner of the header.

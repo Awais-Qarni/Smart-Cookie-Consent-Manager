@@ -42,6 +42,15 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   Real Cookie Banner, iubenda, Cookie Notice, Termly…): two banners would conflict.
 - Translation template `languages/smart-cookie-consent-manager.pot`.
 
+### Fixed (consent records)
+- **Consent records were not saved on some sites** (reported on a WP Engine staging site): the
+  banner sent the record without the browser's credentials, so password-protected sites (staging
+  behind a login prompt) refused it, and the address could point to another domain or http/https
+  when a page was cached elsewhere. Now the record is sent with same-origin credentials to a
+  same-site address; if the REST API still does not answer (blocked by a security plugin or
+  firewall), it is saved through admin-ajax.php instead. The Consent Records tab says when the
+  REST API is blocked, and an empty list explains how to test.
+
 ### Fixed (admin)
 - The **Help** button sits in the top right corner of the plugin header.
 - Removed the "Add rule" button from the scan report's "Other third-party files" (it did not

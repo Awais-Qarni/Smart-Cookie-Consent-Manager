@@ -206,7 +206,12 @@ predictable. Labels/descriptions are editable; categories can be hidden if unuse
 - Texts shown as HTML in the banner are passed through `wp_kses` (links/emphasis) right before
   they go to the browser; all other texts are inserted as plain text.
 - Public REST endpoints (needed because pages are cached, so no nonces): strict validation,
-  size limits, per-IP-hash rate limiting via transients, names-only payloads.
+  size limits, per-IP-hash rate limiting via transients, names-only payloads. The browser posts
+  with same-origin credentials (password-protected staging sites) to a same-site address
+  (`SCCM_Frontend::same_site_url()`); when the REST API does not answer (not 400/429), it posts
+  the same payload to admin-ajax.php (`sccm_consent` / `sccm_report`), which runs the same
+  `store_consent()` / `store_report()` and notes the REST status in `sccm_rest_problem`
+  (at most once an hour) for the Consent Records tab.
 - Output escaped everywhere; SQL via `$wpdb->prepare()`.
 
 ## Known limitations (documented for site owners)

@@ -9,7 +9,7 @@ npm test             # php -l on every PHP file, node --check on JS, PHP unit te
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
 SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 102 browser checks (visitor side)
 SCCM_WP=/path/to/wp npm run test:wp                              # 120 checks: cookie list, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent-record filters, CSV safety, banner HTML (WP-CLI)
-SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 44 checks of the admin screens, incl. a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
+SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 51 checks of the admin screens, incl. consent records (direct, with credentials, REST blocked), a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
 ```
 
 `test:wp` and `e2e:admin` reset the cookie list and settings of the site they run on: dev sites only.
@@ -89,6 +89,9 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
       `consent update` after a choice.
 
 ### H. Consent records (feature 8)
+- [ ] H0 On the staging site (also when it is password-protected): private window → Allow all →
+      Consent Records shows the row within seconds. If a yellow notice says the REST API is
+      blocked, the record still arrives (admin-ajax fallback).
 - [ ] H1 Visitor's Consent ID (About tab) matches the log row.
 - [ ] H2 CSV export contains consent ID, choice, categories, date/time, GPC, version, URL.
 - [ ] H3 IP shown as anonymised/hashed according to the setting.

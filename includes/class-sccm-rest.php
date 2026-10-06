@@ -1,8 +1,10 @@
 <?php
 /**
- * Public REST endpoints used by the banner (pages are cached, so no nonces):
+ * Public endpoints used by the banner (pages are cached, so no nonces):
  *   POST /wp-json/sccm/v1/consent  → consent record
  *   POST /wp-json/sccm/v1/report   → cookie names seen in a visitor's browser (scanner)
+ * and the same through admin-ajax.php (actions sccm_consent / sccm_report), which the browser
+ * uses when a site blocks the REST API for visitors (security plugins, firewalls).
  *
  * Protected by strict validation, payload limits and per-IP rate limiting.
  *
@@ -23,7 +25,16 @@ class SCCM_REST {
 	 */
 	public static function init() {
 		add_action( 'rest_api_init', array( __CLASS__, 'routes' ) );
+		foreach ( array( 'consent', 'report' ) as $action ) {
+			add_action( 'wp_ajax_nopriv_sccm_' . $action, array( __CLASS__, 'ajax_' . $action ) );
+			add_action( 'wp_ajax_sccm_' . $action, array( __CLASS__, 'ajax_' . $action ) );
+		}
 	}
+
+	/**
+	 * Option: the last time a visitor's browser could not use the REST API (status, time).
+	 */
+	const REST_PROBLEM_OPTION = 'sccm_rest_problem';
 
 	/**
 	 * Register routes.
@@ -56,13 +67,26 @@ class SCCM_REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function consent( WP_REST_Request $request ) {
+		$result = self::store_consent( $request->get_json_params() );
+		return is_wp_error( $result ) ? $result : new WP_REST_Response( $result, ! empty( $result['logged'] ) ? 201 : 200 );
+	}
+
+	/**
+	 * Validate and store a consent record (REST and admin-ajax).
+	 *
+	 * @param mixed $data Decoded JSON payload.
+	 * @return array|WP_Error array( ok, logged ) or an error with an HTTP status.
+	 */
+	public static function store_consent( $data ) {
 		if ( ! SCCM_Settings::get( 'log_enabled' ) ) {
-			return new WP_REST_Response( array( 'ok' => true, 'logged' => false ), 200 );
+			return array(
+				'ok'     => true,
+				'logged' => false,
+			);
 		}
-		if ( self::rate_limited( 'consent', 30 ) ) {
+		if ( self::rate_limited( 'consent', 60 ) ) {
 			return new WP_Error( 'sccm_rate_limited', 'Too many requests.', array( 'status' => 429 ) );
 		}
-		$data = $request->get_json_params();
 		if ( ! is_array( $data ) ) {
 			return new WP_Error( 'sccm_bad_request', 'Invalid payload.', array( 'status' => 400 ) );
 		}
@@ -80,7 +104,10 @@ class SCCM_REST {
 			$result->add_data( array( 'status' => 400 ) );
 			return $result;
 		}
-		return new WP_REST_Response( array( 'ok' => true ), 201 );
+		return array(
+			'ok'     => true,
+			'logged' => true,
+		);
 	}
 
 	/**
@@ -94,14 +121,24 @@ class SCCM_REST {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function report( WP_REST_Request $request ) {
+		$result = self::store_report( $request->get_json_params() );
+		return is_wp_error( $result ) ? $result : new WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * Record unknown cookie names reported by a browser (REST and admin-ajax).
+	 *
+	 * @param mixed $data Decoded JSON payload.
+	 * @return array|WP_Error array( ok, added ) or an error with an HTTP status.
+	 */
+	public static function store_report( $data ) {
 		if ( ! SCCM_Settings::get( 'scanner_client' ) ) {
-			return new WP_REST_Response( array( 'ok' => true ), 200 );
+			return array( 'ok' => true );
 		}
 		if ( self::rate_limited( 'report', 10 ) ) {
 			return new WP_Error( 'sccm_rate_limited', 'Too many requests.', array( 'status' => 429 ) );
 		}
-		$data  = $request->get_json_params();
-		$items = is_array( $data['items'] ?? null ) ? array_slice( $data['items'], 0, 30 ) : array();
+		$items = is_array( $data ) && is_array( $data['items'] ?? null ) ? array_slice( $data['items'], 0, 30 ) : array();
 
 		$added = 0;
 		foreach ( $items as $item ) {
@@ -117,13 +154,75 @@ class SCCM_REST {
 				++$added;
 			}
 		}
-		return new WP_REST_Response(
-			array(
-				'ok'    => true,
-				'added' => $added,
-			),
-			200
+		return array(
+			'ok'    => true,
+			'added' => $added,
 		);
+	}
+
+	/**
+	 * admin-ajax fallback for consent records (the browser uses it when the REST API is blocked).
+	 * Public like the REST route: pages are cached, so there is no nonce; same validation and
+	 * rate limit as the REST route.
+	 */
+	public static function ajax_consent() {
+		self::respond( self::store_consent( self::ajax_payload() ) );
+	}
+
+	/**
+	 * admin-ajax fallback for visitor cookie reports.
+	 */
+	public static function ajax_report() {
+		self::respond( self::store_report( self::ajax_payload() ) );
+	}
+
+	/**
+	 * Payload of an admin-ajax fallback request; notes why the REST API could not be used.
+	 *
+	 * @return mixed Decoded JSON or null.
+	 */
+	private static function ajax_payload() {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing -- public endpoint (cached pages), see the class comment.
+		$status = isset( $_POST['rest_status'] ) ? absint( $_POST['rest_status'] ) : 0;
+		$raw    = isset( $_POST['payload'] ) ? (string) wp_unslash( $_POST['payload'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON, every value is validated by the store function.
+		// phpcs:enable
+		self::note_rest_problem( $status );
+		return strlen( $raw ) <= 20000 ? json_decode( $raw, true ) : null;
+	}
+
+	/**
+	 * Remember (at most once an hour) that a browser could not use the REST API, so the Consent
+	 * Records tab can explain it.
+	 *
+	 * @param int $status HTTP status the REST request got (0 = network error / blocked).
+	 */
+	private static function note_rest_problem( $status ) {
+		$last = get_option( self::REST_PROBLEM_OPTION );
+		if ( is_array( $last ) && time() - (int) $last['time'] < HOUR_IN_SECONDS ) {
+			return;
+		}
+		$status = $status < 600 ? (int) $status : 0;
+		update_option(
+			self::REST_PROBLEM_OPTION,
+			array(
+				'status' => $status,
+				'time'   => time(),
+			),
+			false
+		);
+	}
+
+	/**
+	 * Send an admin-ajax JSON reply.
+	 *
+	 * @param array|WP_Error $result Store result.
+	 */
+	private static function respond( $result ) {
+		if ( is_wp_error( $result ) ) {
+			$data = $result->get_error_data();
+			wp_send_json_error( array( 'message' => $result->get_error_message() ), is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 400 );
+		}
+		wp_send_json_success( $result );
 	}
 
 	/**
