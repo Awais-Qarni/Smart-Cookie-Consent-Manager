@@ -50,6 +50,12 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   same-site address; if the REST API still does not answer (blocked by a security plugin or
   firewall), it is saved through admin-ajax.php instead. The Consent Records tab says when the
   REST API is blocked, and an empty list explains how to test.
+- **Why a record was not saved is now shown**: the Consent Records tab shows the reason of the
+  last refused record (database error, unreadable data, rate limit) and a database read error.
+  New button **Test record saving** checks the database and the visitors' route
+  (admin-ajax.php) and removes its test records. A missing records table is recreated
+  automatically. If a firewall changes the data the browser sends, the record is still saved
+  (the browser also sends plain form fields).
 
 ### Fixed (admin)
 - The **Help** button sits in the top right corner of the plugin header.

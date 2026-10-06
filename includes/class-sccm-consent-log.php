@@ -25,6 +25,17 @@ class SCCM_Consent_Log {
 	}
 
 	/**
+	 * Whether the records table exists.
+	 *
+	 * @return bool
+	 */
+	public static function table_exists() {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		return self::table() === $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( self::table() ) ) );
+	}
+
+	/**
 	 * Store a consent record.
 	 *
 	 * @param array $data consent_id, choice, categories (array), gpc, version, url.
@@ -62,8 +73,14 @@ class SCCM_Consent_Log {
 		);
 
 		$ok = $wpdb->insert( self::table(), $row ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		if ( ! $ok && ! self::table_exists() ) {
+			// The table is missing (e.g. a failed activation or a database restore): create it and retry once.
+			SCCM_Install::create_tables();
+			$ok = $wpdb->insert( self::table(), $row ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		}
 		if ( ! $ok ) {
-			return new WP_Error( 'sccm_db', 'Could not store consent.' );
+			/* translators: %s: database error message */
+			return new WP_Error( 'sccm_db', sprintf( __( 'The database did not store the record: %s', 'smart-cookie-consent-manager' ), $wpdb->last_error ? $wpdb->last_error : __( 'unknown error', 'smart-cookie-consent-manager' ) ) );
 		}
 		/**
 		 * Fires after a consent record is stored.
@@ -219,6 +236,17 @@ class SCCM_Consent_Log {
 		$table  = self::table();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		return (int) $wpdb->query( $wpdb->prepare( 'DELETE FROM %i WHERE created_at < %s', $table, $cutoff ) );
+	}
+
+	/**
+	 * Delete the records of one consent ID (used to remove test records).
+	 *
+	 * @param string $consent_id Consent ID.
+	 */
+	public static function delete_by_consent_id( $consent_id ) {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->delete( self::table(), array( 'consent_id' => (string) $consent_id ) );
 	}
 
 	/**

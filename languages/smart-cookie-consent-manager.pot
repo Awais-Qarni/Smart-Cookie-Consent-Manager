@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-06T19:25:46+00:00\n"
+"POT-Creation-Date: 2026-10-06T20:33:34+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: smart-cookie-consent-manager\n"
@@ -58,7 +58,7 @@ msgstr ""
 #: includes/admin/class-sccm-admin.php:49
 #: includes/admin/class-sccm-admin.php:134
 #: includes/admin/views/help.php:113
-#: includes/admin/views/tab-records.php:133
+#: includes/admin/views/tab-records.php:161
 msgid "Settings"
 msgstr ""
 
@@ -246,44 +246,63 @@ msgstr ""
 msgid "The sample email could not be sent. Your website may not be set up to send email."
 msgstr ""
 
+#: includes/admin/class-sccm-admin.php:744
+#: includes/admin/views/tab-records.php:72
+msgid "Records are switched off: Settings → Consent records → \"Keep a record of every choice\"."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:764
+msgid "Database: OK, a record was saved."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:794
+msgid "Visitor route (admin-ajax.php): OK."
+msgstr ""
+
+#. translators: 1: HTTP status or 0, 2: reply
+#: includes/admin/class-sccm-admin.php:798
+#, php-format
+msgid "Visitor route (admin-ajax.php) from the server: HTTP %1$d, %2$s. A password-protected staging site or a firewall that blocks requests from the server itself can cause this test to fail even when visitors get through."
+msgstr ""
+
 #. translators: %d: rows
-#: includes/admin/class-sccm-admin.php:758
+#: includes/admin/class-sccm-admin.php:825
 #, php-format
 msgid "%d old record(s) deleted."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:768
+#: includes/admin/class-sccm-admin.php:835
 msgid "All consent records deleted."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:791
+#: includes/admin/class-sccm-admin.php:858
 msgid "Please choose a file."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:798
+#: includes/admin/class-sccm-admin.php:865
 msgid "Settings imported."
 msgstr ""
 
 #. translators: %d: version
-#: includes/admin/class-sccm-admin.php:809
+#: includes/admin/class-sccm-admin.php:876
 #, php-format
 msgid "Consent version is now %d. Every visitor will be asked again (clear your page cache)."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:820
+#: includes/admin/class-sccm-admin.php:887
 #: includes/class-sccm-settings.php:152
 msgid "Cookie Policy"
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:821
+#: includes/admin/class-sccm-admin.php:888
 msgid "This page explains which cookies this website uses and why. You can change your choice at any time."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:831
+#: includes/admin/class-sccm-admin.php:898
 msgid "Cookie Policy page created and linked in the banner."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:843
+#: includes/admin/class-sccm-admin.php:910
 msgid "Settings reset to defaults."
 msgstr ""
 
@@ -738,9 +757,9 @@ msgid "Words you may meet"
 msgstr ""
 
 #: includes/admin/views/help.php:156
-#: includes/admin/views/tab-records.php:55
-#: includes/admin/views/tab-records.php:56
+#: includes/admin/views/tab-records.php:83
 #: includes/admin/views/tab-records.php:84
+#: includes/admin/views/tab-records.php:112
 msgid "Consent ID"
 msgstr ""
 
@@ -1446,17 +1465,17 @@ msgid "Open settings"
 msgstr ""
 
 #: includes/admin/views/tab-dashboard.php:81
-#: includes/admin/views/tab-records.php:17
+#: includes/admin/views/tab-records.php:18
 msgid "Allowed all"
 msgstr ""
 
 #: includes/admin/views/tab-dashboard.php:82
-#: includes/admin/views/tab-records.php:18
+#: includes/admin/views/tab-records.php:19
 msgid "Denied"
 msgstr ""
 
 #: includes/admin/views/tab-dashboard.php:83
-#: includes/admin/views/tab-records.php:19
+#: includes/admin/views/tab-records.php:20
 #: includes/class-sccm-settings.php:166
 msgid "Allowed a selection"
 msgstr ""
@@ -1567,106 +1586,118 @@ msgstr ""
 msgid "Open the full guide"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:16
+#: includes/admin/views/tab-records.php:17
 msgid "All choices"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:20
+#: includes/admin/views/tab-records.php:21
 msgid "GPC signal"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:23
+#: includes/admin/views/tab-records.php:24
 msgid "Every time a visitor chooses, a record is saved here: their consent ID, the date and time (UTC), what they chose, which categories they allowed and on which page. A visitor can read their consent ID in the About tab of the cookie banner, so you can find their record by pasting it in the search box."
 msgstr ""
 
 #. translators: 1: HTTP status code or "blocked", 2: date and time
-#: includes/admin/views/tab-records.php:33
+#: includes/admin/views/tab-records.php:34
 #, php-format
-msgid "Visitors' browsers could not reach the WordPress REST API (%1$s, last on %2$s), so records are saved through admin-ajax.php instead. Nothing is lost. If records are missing, a security plugin or firewall may also block admin-ajax.php for visitors."
+msgid "Your site blocks the WordPress REST API for visitors (%1$s, last on %2$s), so records are saved through admin-ajax.php instead. That is fine. If new records do not appear below, click \"Test record saving\"."
 msgstr ""
 
-#: includes/admin/views/tab-records.php:34
+#: includes/admin/views/tab-records.php:35
 msgid "blocked"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:44
-msgid "Records are switched off: Settings → Consent records → \"Keep a record of every choice\"."
+#. translators: 1: database error, 2: WordPress version
+#: includes/admin/views/tab-records.php:46
+#, php-format
+msgid "The records could not be read from the database: %1$s (WordPress %2$s; the plugin needs 6.2 or later)."
 msgstr ""
 
-#: includes/admin/views/tab-records.php:46
+#. translators: 1: date and time, 2: reason
+#: includes/admin/views/tab-records.php:61
+#, php-format
+msgid "A visitor's record could not be saved (last on %1$s): %2$s"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:74
 msgid "A record is saved when a visitor clicks Allow all, Deny or Allow selection. To test: open your website in a private window, click a button, then reload this page. If you just updated the plugin, clear your page cache first, because old cached pages still carry the old script."
 msgstr ""
 
-#: includes/admin/views/tab-records.php:57
 #: includes/admin/views/tab-records.php:85
+#: includes/admin/views/tab-records.php:113
 msgid "Choice"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:63
+#: includes/admin/views/tab-records.php:91
 msgid "From"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:64
+#: includes/admin/views/tab-records.php:92
 msgid "To"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:65
+#: includes/admin/views/tab-records.php:93
 msgid "Filter"
 msgstr ""
 
 #. translators: %d: number of records
-#: includes/admin/views/tab-records.php:76
+#: includes/admin/views/tab-records.php:104
 #, php-format
 msgid "Export CSV (%d records)"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:83
+#: includes/admin/views/tab-records.php:111
 msgid "Date / time (UTC)"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:86
+#: includes/admin/views/tab-records.php:114
 msgid "Categories"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:87
+#: includes/admin/views/tab-records.php:115
 msgid "GPC"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:88
+#: includes/admin/views/tab-records.php:116
 msgid "Version"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:89
+#: includes/admin/views/tab-records.php:117
 msgid "Page"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:90
+#: includes/admin/views/tab-records.php:118
 msgid "IP"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:94
+#: includes/admin/views/tab-records.php:122
 msgid "No consent records yet."
 msgstr ""
 
-#: includes/admin/views/tab-records.php:102
+#: includes/admin/views/tab-records.php:130
 msgid "Yes"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:102
+#: includes/admin/views/tab-records.php:130
 msgid "No"
 msgstr ""
 
 #. translators: %s: link to the settings tab
-#: includes/admin/views/tab-records.php:132
+#: includes/admin/views/tab-records.php:160
 #, php-format
 msgid "How long records are kept, and how the IP address is stored, is set in %s."
 msgstr ""
 
-#: includes/admin/views/tab-records.php:141
+#: includes/admin/views/tab-records.php:169
+msgid "Test record saving"
+msgstr ""
+
+#: includes/admin/views/tab-records.php:173
 msgid "Delete records older than the retention period now"
 msgstr ""
 
-#: includes/admin/views/tab-records.php:145
+#: includes/admin/views/tab-records.php:177
 msgid "Delete all consent records"
 msgstr ""
 
@@ -2090,6 +2121,25 @@ msgstr ""
 
 #: includes/class-sccm-categories.php:41
 msgid "Marketing cookies are used to track visitors across websites. The aim is to show ads that are relevant to you, and to measure how well advertising campaigns perform."
+msgstr ""
+
+#. translators: %s: database error message
+#: includes/class-sccm-consent-log.php:83
+#, php-format
+msgid "The database did not store the record: %s"
+msgstr ""
+
+#. translators: %s: database error message
+#: includes/class-sccm-consent-log.php:83
+msgid "unknown error"
+msgstr ""
+
+#: includes/class-sccm-rest.php:129
+msgid "Too many records from one IP address within an hour (60). If all visitors reach your server with the same IP address (a proxy or CDN), use the sccm_client_ip filter to read the real visitor IP."
+msgstr ""
+
+#: includes/class-sccm-rest.php:132
+msgid "The record arrived unreadable (a security plugin or firewall may change the data sent by the browser)."
 msgstr ""
 
 #: includes/class-sccm-scanner.php:394

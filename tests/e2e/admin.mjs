@@ -200,7 +200,31 @@ check('X2 logged-out requests are refused', anon.status() !== 200 && anon.status
 	const blocked = await visitor(true);
 	check('CR4 REST API blocked: the record is saved through admin-ajax.php instead', blocked.rest === 1 && blocked.ajax === 1 && count() === 2, JSON.stringify(blocked));
 	await page.goto(admin('records'));
-	check('CR4 the Consent Records tab explains that the REST API is blocked', /could not reach the WordPress REST API \(HTTP 401/.test(await page.textContent('.sccm-tab')));
+	check('CR4 the Consent Records tab explains that the REST API is blocked', /blocks the WordPress REST API for visitors \(HTTP 401/.test(await page.textContent('.sccm-tab')));
+	// A firewall that changes JSON in form data: the plain fields still get the record saved.
+	{
+		const ctx3 = await browser.newContext();
+		await ctx3.route('**/*', async (route) => {
+			const req = route.request();
+			if (req.url().includes('sccm/v1/consent')) {
+				return route.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
+			}
+			if (req.url().includes('admin-ajax.php') && (req.postData() || '').includes('action=sccm_consent')) {
+				return route.continue({ postData: (req.postData() || '').replace(/payload=[^&]*/, 'payload=%5Bfiltered%5D') });
+			}
+			return route.continue();
+		});
+		const p3 = await ctx3.newPage();
+		await p3.goto(BASE + '/');
+		await p3.click('#sccm-banner .sccm-btn--accept');
+		await p3.waitForTimeout(1500);
+		await ctx3.close();
+		check('CR6 a firewall that changes the JSON: the record is still saved from the plain fields', count() === 3, String(count()));
+	}
+	await page.goto(admin('records'));
+	await Promise.all([page.waitForNavigation(), page.click('button:has-text("Test record saving")')]);
+	const tested = await page.textContent('.notice');
+	check('CR7 "Test record saving" checks the database and the visitor route, and leaves no test record', /Database: OK/.test(tested) && /Visitor route \(admin-ajax\.php\): OK/.test(tested) && count() === 3, tested.trim().slice(0, 160));
 	wp('eval', `SCCM_Consent_Log::delete_all(); delete_option( SCCM_REST::REST_PROBLEM_OPTION );`);
 	await page.goto(admin('records'));
 	check('CR5 an empty list explains how to test record saving', /open your website in a private window/.test(await page.textContent('.sccm-tab')));

@@ -37,6 +37,12 @@ class SCCM_REST {
 	const REST_PROBLEM_OPTION = 'sccm_rest_problem';
 
 	/**
+	 * Option: the last consent record that could not be saved (code, message, time), shown on the
+	 * Consent Records tab so the reason is visible.
+	 */
+	const CONSENT_PROBLEM_OPTION = 'sccm_consent_problem';
+
+	/**
 	 * Register routes.
 	 */
 	public static function routes() {
@@ -78,6 +84,41 @@ class SCCM_REST {
 	 * @return array|WP_Error array( ok, logged ) or an error with an HTTP status.
 	 */
 	public static function store_consent( $data ) {
+		$result = self::save_consent( $data );
+		if ( is_wp_error( $result ) ) {
+			self::note_consent_problem( $result );
+		}
+		return $result;
+	}
+
+	/**
+	 * Remember why a record was not saved (at most once a minute).
+	 *
+	 * @param WP_Error $error Error.
+	 */
+	private static function note_consent_problem( WP_Error $error ) {
+		$last = get_option( self::CONSENT_PROBLEM_OPTION );
+		if ( is_array( $last ) && time() - (int) $last['time'] < MINUTE_IN_SECONDS ) {
+			return;
+		}
+		update_option(
+			self::CONSENT_PROBLEM_OPTION,
+			array(
+				'code'    => $error->get_error_code(),
+				'message' => substr( wp_strip_all_tags( $error->get_error_message() ), 0, 300 ),
+				'time'    => time(),
+			),
+			false
+		);
+	}
+
+	/**
+	 * Validate and insert.
+	 *
+	 * @param mixed $data Decoded payload.
+	 * @return array|WP_Error
+	 */
+	private static function save_consent( $data ) {
 		if ( ! SCCM_Settings::get( 'log_enabled' ) ) {
 			return array(
 				'ok'     => true,
@@ -85,10 +126,10 @@ class SCCM_REST {
 			);
 		}
 		if ( self::rate_limited( 'consent', 60 ) ) {
-			return new WP_Error( 'sccm_rate_limited', 'Too many requests.', array( 'status' => 429 ) );
+			return new WP_Error( 'sccm_rate_limited', __( 'Too many records from one IP address within an hour (60). If all visitors reach your server with the same IP address (a proxy or CDN), use the sccm_client_ip filter to read the real visitor IP.', 'smart-cookie-consent-manager' ), array( 'status' => 429 ) );
 		}
 		if ( ! is_array( $data ) ) {
-			return new WP_Error( 'sccm_bad_request', 'Invalid payload.', array( 'status' => 400 ) );
+			return new WP_Error( 'sccm_bad_request', __( 'The record arrived unreadable (a security plugin or firewall may change the data sent by the browser).', 'smart-cookie-consent-manager' ), array( 'status' => 400 ) );
 		}
 		$result = SCCM_Consent_Log::insert(
 			array(
@@ -185,9 +226,19 @@ class SCCM_REST {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- public endpoint (cached pages), see the class comment.
 		$status = isset( $_POST['rest_status'] ) ? absint( $_POST['rest_status'] ) : 0;
 		$raw    = isset( $_POST['payload'] ) ? (string) wp_unslash( $_POST['payload'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON, every value is validated by the store function.
+		$data   = strlen( $raw ) <= 20000 ? json_decode( $raw, true ) : null;
+		// Firewalls sometimes change JSON in form data: the browser also sends plain fields (f_*).
+		if ( ! is_array( $data ) && isset( $_POST['f_consent_id'] ) ) {
+			$data = array();
+			foreach ( array( 'consent_id', 'choice', 'categories', 'gpc', 'version', 'url' ) as $key ) {
+				$data[ $key ] = isset( $_POST[ 'f_' . $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ 'f_' . $key ] ) ) : '';
+			}
+			$data['categories'] = array_filter( explode( ',', $data['categories'] ) );
+			$data['url']        = isset( $_POST['f_url'] ) ? esc_url_raw( wp_unslash( $_POST['f_url'] ) ) : '';
+		}
 		// phpcs:enable
 		self::note_rest_problem( $status );
-		return strlen( $raw ) <= 20000 ? json_decode( $raw, true ) : null;
+		return $data;
 	}
 
 	/**

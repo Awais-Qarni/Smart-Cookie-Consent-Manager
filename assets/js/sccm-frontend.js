@@ -240,6 +240,13 @@
 			form.append('action', action);
 			form.append('payload', JSON.stringify(body));
 			form.append('rest_status', String(typeof status === 'number' ? status : 0));
+			// The same values as plain fields, in case a firewall changes JSON in form data.
+			Object.keys(body).forEach(function (key) {
+				var value = body[key];
+				if (typeof value !== 'object' || (Array.isArray(value) && value.every(function (v) { return typeof v !== 'object'; }))) {
+					form.append('f_' + key, Array.isArray(value) ? value.join(',') : String(value));
+				}
+			});
 			w.fetch(C.rest.ajax, { method: 'POST', body: form, credentials: 'same-origin', keepalive: true }).catch(function () {});
 		}
 		try {

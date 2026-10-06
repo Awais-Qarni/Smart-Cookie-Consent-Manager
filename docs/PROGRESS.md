@@ -11,7 +11,7 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); staging test and release are next
 - **Last updated:** 2026-10-06 (session 6)
-- **Tests:** unit 33, WP-CLI 120, visitor e2e 102, admin e2e 51, all passing; WordPress.org
+- **Tests:** unit 33, WP-CLI 122, visitor e2e 102, admin e2e 53, all passing; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
 
 ---
@@ -98,6 +98,17 @@ work on Windows (output path, `SCCM_WP` pointing at `wp-cli.phar`).
 - GA4-by-ID uses Google's snippet (no raw script tag); new admin e2e check for Strict/Advanced.
 - Dead-code sweep: no unused PHP functions or texts; removed `.sccm-linkbtn` CSS, `.gitkeep`.
 - Tests: unit 33/33, WP-CLI 120/120, e2e 102/102, admin e2e 41/41, no PHP notices with WP_DEBUG.
+
+**Round 10 (same day): records still empty; REST API blocked on purpose by the owner**
+- The owner's notice (REST 401) proves the admin-ajax fallback reached the plugin, so the record
+  was refused after arriving; the reason was not visible. Now: `sccm_consent_problem` keeps the
+  reason of the last refused record (shown in red on the Records tab), a database read error is
+  shown too, a missing table is recreated on the next record, the fallback also sends plain
+  `f_*` fields (firewalls that change JSON), and **Test record saving** (admin-post
+  `test_record`) checks the database and an admin-ajax loopback, deleting its test records.
+- Tests: WP-CLI 122/122, admin e2e 53/53 (CR6 changed JSON, CR7 test button).
+- Next for the owner: update, purge caches, click Test record saving, then Allow all in a
+  private window; if still empty, send the red notice text.
 
 **Round 9 (same day): "consent records stay empty" on staging**
 - Locally records worked (REST 201, row listed). Likely causes on WP Engine staging, all fixed:

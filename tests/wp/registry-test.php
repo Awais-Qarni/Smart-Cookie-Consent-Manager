@@ -210,6 +210,18 @@ sccm_check( 'CSV export never starts a cell with a formula (=, +, -, @)', "'=HYP
 SCCM_Consent_Log::delete_all();
 sccm_check( 'records: delete all', 0 === SCCM_Consent_Log::query( array() )['total'] );
 
+// A missing records table is created again on the next record (failed activation, DB restore).
+$wpdb->query( 'DROP TABLE IF EXISTS ' . SCCM_Consent_Log::table() ); // phpcs:ignore
+$healed = SCCM_Consent_Log::insert( array( 'consent_id' => 'dddddddd-4444-4444-8444-444444444444', 'choice' => 'accept_all', 'url' => home_url( '/' ) ) );
+sccm_check( 'records: a missing table is recreated and the record saved', ! is_wp_error( $healed ) && SCCM_Consent_Log::table_exists() && 1 === SCCM_Consent_Log::query( array() )['total'] );
+SCCM_Consent_Log::delete_all();
+// Why a visitor's record was refused is remembered for the Consent Records tab.
+delete_option( SCCM_REST::CONSENT_PROBLEM_OPTION );
+$refused = SCCM_REST::store_consent( null );
+$problem = get_option( SCCM_REST::CONSENT_PROBLEM_OPTION );
+sccm_check( 'records: an unreadable record is refused and the reason is kept for the admin', is_wp_error( $refused ) && is_array( $problem ) && false !== strpos( $problem['message'], 'unreadable' ) );
+delete_option( SCCM_REST::CONSENT_PROBLEM_OPTION );
+
 /* ---------------------------------------------------------------- Banner texts sent to the browser */
 
 $html_filter = function ( $texts ) {
