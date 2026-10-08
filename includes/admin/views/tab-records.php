@@ -11,6 +11,7 @@ defined( 'ABSPATH' ) || exit;
 $sccm_filters = SCCM_Admin::log_filters( $_GET ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $sccm_page    = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 $sccm_result  = SCCM_Consent_Log::query( array_merge( $sccm_filters, array( 'page' => $sccm_page, 'per_page' => 50 ) ) );
+$sccm_db_error = $GLOBALS['wpdb']->last_error;
 $sccm_pages   = max( 1, (int) ceil( $sccm_result['total'] / 50 ) );
 $sccm_choices = array(
 	''           => __( 'All choices', 'smart-cookie-consent-manager' ),
@@ -26,13 +27,40 @@ $sccm_choices = array(
 $sccm_problem = get_option( SCCM_REST::REST_PROBLEM_OPTION );
 if ( is_array( $sccm_problem ) && time() - (int) $sccm_problem['time'] < WEEK_IN_SECONDS ) :
 	?>
-	<div class="notice notice-warning inline"><p>
+	<div class="notice notice-info inline"><p>
 		<?php
 		printf(
 			/* translators: 1: HTTP status code or "blocked", 2: date and time */
-			esc_html__( 'Visitors\' browsers could not reach the WordPress REST API (%1$s, last on %2$s), so records are saved through admin-ajax.php instead. Nothing is lost. If records are missing, a security plugin or firewall may also block admin-ajax.php for visitors.', 'smart-cookie-consent-manager' ),
+			esc_html__( 'Your site blocks the WordPress REST API for visitors (%1$s, last on %2$s), so records are saved through admin-ajax.php instead. That is fine. If new records do not appear below, click "Test record saving".', 'smart-cookie-consent-manager' ),
 			$sccm_problem['status'] ? 'HTTP ' . (int) $sccm_problem['status'] : esc_html__( 'blocked', 'smart-cookie-consent-manager' ),
 			esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $sccm_problem['time'] ) )
+		);
+		?>
+	</p></div>
+<?php endif; ?>
+<?php if ( $sccm_db_error ) : ?>
+	<div class="notice notice-error inline"><p>
+		<?php
+		printf(
+			/* translators: 1: database error, 2: WordPress version */
+			esc_html__( 'The records could not be read from the database: %1$s (WordPress %2$s; the plugin needs 6.2 or later).', 'smart-cookie-consent-manager' ),
+			esc_html( $sccm_db_error ),
+			esc_html( get_bloginfo( 'version' ) )
+		);
+		?>
+	</p></div>
+<?php endif; ?>
+<?php
+$sccm_failure = get_option( SCCM_REST::CONSENT_PROBLEM_OPTION );
+if ( is_array( $sccm_failure ) && time() - (int) $sccm_failure['time'] < WEEK_IN_SECONDS ) :
+	?>
+	<div class="notice notice-error inline"><p>
+		<?php
+		printf(
+			/* translators: 1: date and time, 2: reason */
+			esc_html__( 'A visitor\'s record could not be saved (last on %1$s): %2$s', 'smart-cookie-consent-manager' ),
+			esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $sccm_failure['time'] ) ),
+			esc_html( $sccm_failure['message'] )
 		);
 		?>
 	</p></div>
@@ -52,8 +80,8 @@ if ( is_array( $sccm_problem ) && time() - (int) $sccm_problem['time'] < WEEK_IN
 <form method="get" class="sccm-filters">
 	<input type="hidden" name="page" value="<?php echo esc_attr( SCCM_Admin::SLUG ); ?>">
 	<input type="hidden" name="tab" value="records">
-	<label><span class="screen-reader-text"><?php esc_html_e( 'Consent ID', 'smart-cookie-consent-manager' ); ?></span>
-		<input type="search" name="search" value="<?php echo esc_attr( $sccm_filters['search'] ?? '' ); ?>" placeholder="<?php esc_attr_e( 'Consent ID', 'smart-cookie-consent-manager' ); ?>"></label>
+	<label><span class="screen-reader-text"><?php esc_html_e( 'Consent ID or IP address', 'smart-cookie-consent-manager' ); ?></span>
+		<input type="search" name="search" value="<?php echo esc_attr( $sccm_filters['search'] ?? '' ); ?>" placeholder="<?php esc_attr_e( 'Consent ID or IP address', 'smart-cookie-consent-manager' ); ?>"></label>
 	<label><span class="screen-reader-text"><?php esc_html_e( 'Choice', 'smart-cookie-consent-manager' ); ?></span>
 		<select name="choice">
 			<?php foreach ( $sccm_choices as $sccm_value => $sccm_label ) : ?>
@@ -136,6 +164,10 @@ if ( is_array( $sccm_problem ) && time() - (int) $sccm_problem['time'] < WEEK_IN
 </p>
 
 <div class="sccm-inline-forms">
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+		<?php SCCM_Admin::action_fields( 'test_record' ); ?>
+		<button class="button"><?php esc_html_e( 'Test record saving', 'smart-cookie-consent-manager' ); ?></button>
+	</form>
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 		<?php SCCM_Admin::action_fields( 'purge_log' ); ?>
 		<button class="button"><?php esc_html_e( 'Delete records older than the retention period now', 'smart-cookie-consent-manager' ); ?></button>

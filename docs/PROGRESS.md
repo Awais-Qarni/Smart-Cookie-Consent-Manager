@@ -10,9 +10,59 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 - **Version:** 1.2.0 (all owner requests so far done; not yet staging-tested on a real site)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); staging test and release are next
-- **Last updated:** 2026-10-06 (session 6)
-- **Tests:** unit 33, WP-CLI 120, visitor e2e 102, admin e2e 51, all passing; WordPress.org
+- **Last updated:** 2026-10-08 (session 7b)
+- **Tests:** unit 33, WP-CLI 155, visitor e2e 115, admin e2e 66, all passing on **MySQL 8.4
+  and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-10-08 — Session 7b (owner feedback: learning settings, IP display)
+
+**Done**
+- "Learn from visitors" thresholds are settings: `learn_visitors` (default 2, 1–50) and
+  `learn_days` (default 14, 1–90), under Settings → Cookie scan and email alerts.
+  `SCCM_Cookies::min_visitors()` reads them; `MIN_VISITORS` stays as the default.
+- Shortened IPs show the hidden part as `***` (`203.0.113.***`, `2001:db8:85a3:****:…`) instead
+  of `0`; DB version 4 converts old records (`a.b.c.0`, `a:b:c::`).
+- New IP mode `full`; settings text explains GDPR. Search box on Consent Records takes an IP
+  address and matches the full, shortened and coded forms (`SCCM_Consent_Log::ip_forms()`); a
+  shortened record matches every address of its /24 (IPv6: /48).
+- Fixed in passing: `SCCM_Install::remove_all_data()` now clears the cookie-list request cache
+  (`SCCM_Cookies::flush()`), so reinstalling in the same request seeds the plugin cookie again.
+- Tests: WP-CLI 155 (IP modes, search, upgrade, thresholds), admin e2e 66; all suites pass on
+  MySQL 8.4 and MariaDB 11.4, debug.log clean.
+
+**Next:** merge `feature/v1-build` into `main` (PR), staging test, release 1.2.0.
+
+---
+
+## 2026-10-08 — Session 7 (pre-production review, MySQL 8)
+
+**Set-up:** portable MySQL 8.4.11 (strict sql_mode, port 3307) added next to MariaDB in
+`workspace/sccm-dev`; wp-config switches with the marker file `wp/use-mysql`. All suites run on
+both databases.
+
+**Review (features → security)**
+- Every acceptance criterion of FEATURES.md mapped to tests; gaps filled: asking again (version,
+  expiry, Deny grace period, damaged cookie), GPC over a stored "Allow all", keyboard focus trap
+  and ARIA, right-to-left, optimiser attributes, CSV export, settings export/import (and a
+  foreign file refused), "Ask all visitors again", retention purge, validation of what browsers
+  send, per-IP limit, deactivate (jobs removed) and uninstall with "delete data" (tables,
+  options, jobs, asset copies removed).
+- Security: all inputs mapped (admin-post, AJAX, REST, admin-ajax fallback, shortcodes, GET);
+  every visitor-controlled value is escaped where shown; a Subscriber with valid nonces of their
+  own gets 403 on every admin action and scan request; WordPress.org Plugin Check clean on the
+  release files (only the requested mailto: Author URI); no PHP 8-only syntax (static scan).
+- **Fixed:** anonymous reports of a known service cookie were added at once and re-asked every
+  visitor (abuse: re-show everyone's banner, list unused services). Now two visitors needed and
+  no version bump from reports. **Fixed:** `substr()` → `mb_substr()` for stored text (a value
+  cut inside a multi-byte character makes MySQL refuse the insert → lost consent record).
+- Not tested here: PHP 7.4 at runtime (owner chose not to install it; static check only),
+  multisite, real WP Engine/NitroPack (staging test by the owner).
+
+**Next:** owner installs the zip on staging, purges caches, quick checks from TESTING.md, then
+merges `feature/v1-build` into `main` and goes live.
 
 ---
 
@@ -98,6 +148,27 @@ work on Windows (output path, `SCCM_WP` pointing at `wp-cli.phar`).
 - GA4-by-ID uses Google's snippet (no raw script tag); new admin e2e check for Strict/Advanced.
 - Dead-code sweep: no unused PHP functions or texts; removed `.sccm-linkbtn` CSS, `.gitkeep`.
 - Tests: unit 33/33, WP-CLI 120/120, e2e 102/102, admin e2e 41/41, no PHP notices with WP_DEBUG.
+
+**Round 11 (2026-10-06): the real cause — MySQL strict mode**
+- The new diagnostics showed it: "Test record saving" → Database OK, admin-ajax OK, but the list
+  said "Incorrect DATETIME value: ''". Records WERE saved; the list query (rewritten in round 6
+  as one fixed statement) compared `created_at` with '' for unset date filters. MySQL 8 strict
+  mode (WP Engine) refuses that; local MariaDB accepts it, so the tests passed.
+- Fix: unset filters use match-everything values (LIKE '%', 1000-01-01 … 9999-12-31); WP-CLI
+  check on the generated SQL; tests reset the per-IP limit counters; the test button's
+  loopback carries a one-time pass past the visitor rate limit.
+- Lesson: the local stack is MariaDB; consider a MySQL 8 test database for SQL changes.
+
+**Round 10 (same day): records still empty; REST API blocked on purpose by the owner**
+- The owner's notice (REST 401) proves the admin-ajax fallback reached the plugin, so the record
+  was refused after arriving; the reason was not visible. Now: `sccm_consent_problem` keeps the
+  reason of the last refused record (shown in red on the Records tab), a database read error is
+  shown too, a missing table is recreated on the next record, the fallback also sends plain
+  `f_*` fields (firewalls that change JSON), and **Test record saving** (admin-post
+  `test_record`) checks the database and an admin-ajax loopback, deleting its test records.
+- Tests: WP-CLI 122/122, admin e2e 53/53 (CR6 changed JSON, CR7 test button).
+- Next for the owner: update, purge caches, click Test record saving, then Allow all in a
+  private window; if still empty, send the red notice text.
 
 **Round 9 (same day): "consent records stay empty" on staging**
 - Locally records worked (REST 201, row listed). Likely causes on WP Engine staging, all fixed:

@@ -26,7 +26,7 @@ class SCCM_Admin {
 		add_filter( 'plugin_action_links_' . SCCM_BASENAME, array( __CLASS__, 'action_links' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'notices' ) );
 
-		$actions = array( 'save', 'cookie_save', 'cookie_delete', 'cookie_status', 'ignore_all', 'add_service', 'scan_now', 'send_digest', 'send_test_email', 'export_log', 'purge_log', 'delete_log', 'export_settings', 'import_settings', 'bump_version', 'create_policy_page', 'reset_settings' );
+		$actions = array( 'save', 'cookie_save', 'cookie_delete', 'cookie_status', 'ignore_all', 'add_service', 'scan_now', 'send_digest', 'send_test_email', 'export_log', 'purge_log', 'delete_log', 'export_settings', 'import_settings', 'bump_version', 'create_policy_page', 'reset_settings', 'test_record' );
 		foreach ( $actions as $action ) {
 			add_action( 'admin_post_sccm_' . $action, array( __CLASS__, 'handle_' . $action ) );
 		}
@@ -731,6 +731,77 @@ class SCCM_Admin {
 			self::back( 'settings', sprintf( __( 'Sample email sent to %s. If it does not arrive, check your spam folder or your site\'s email setup.', 'smart-cookie-consent-manager' ), implode( ', ', SCCM_Settings::alert_recipients() ) ) );
 		}
 		self::back( 'settings', __( 'The sample email could not be sent. Your website may not be set up to send email.', 'smart-cookie-consent-manager' ), true );
+	}
+
+	/**
+	 * "Test record saving": store a record directly, then the way a visitor's browser does it
+	 * (admin-ajax.php from the server), report both results and remove the test records.
+	 */
+	public static function handle_test_record() {
+		self::require_cap();
+		check_admin_referer( 'sccm_test_record' );
+		if ( ! SCCM_Settings::get( 'log_enabled' ) ) {
+			self::back( 'records', __( 'Records are switched off: Settings → Consent records → "Keep a record of every choice".', 'smart-cookie-consent-manager' ), true );
+		}
+		$messages = array();
+		$failed   = false;
+
+		// 1. The database.
+		$id     = wp_generate_uuid4();
+		$direct = SCCM_Consent_Log::insert(
+			array(
+				'consent_id' => $id,
+				'choice'     => 'accept_all',
+				'categories' => array(),
+				'url'        => home_url( '/' ),
+			)
+		);
+		SCCM_Consent_Log::delete_by_consent_id( $id );
+		if ( is_wp_error( $direct ) ) {
+			$failed     = true;
+			$messages[] = $direct->get_error_message();
+		} else {
+			$messages[] = __( 'Database: OK, a record was saved.', 'smart-cookie-consent-manager' );
+		}
+
+		// 2. The route visitors' browsers use when the REST API is blocked (with a one-time pass,
+		// so the test is not stopped by the per-IP limit meant for visitors).
+		$id   = wp_generate_uuid4();
+		$pass = strtolower( wp_generate_password( 20, false, false ) );
+		set_transient( 'sccm_record_test_' . $pass, 1, MINUTE_IN_SECONDS );
+		$response = wp_remote_post(
+			admin_url( 'admin-ajax.php' ),
+			array(
+				'timeout'   => 15,
+				'sslverify' => (bool) apply_filters( 'sccm_scan_sslverify', true ),
+				'body'      => array(
+					'action'       => 'sccm_consent',
+					'sccm_test'    => $pass,
+					'payload'      => wp_json_encode(
+						array(
+							'consent_id' => $id,
+							'choice'     => 'accept_all',
+							'categories' => array(),
+							'url'        => home_url( '/' ),
+						)
+					),
+					'f_consent_id' => $id,
+					'f_choice'     => 'accept_all',
+					'f_url'        => home_url( '/' ),
+				),
+			)
+		);
+		$code = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
+		$body = is_wp_error( $response ) ? $response->get_error_message() : wp_strip_all_tags( (string) wp_remote_retrieve_body( $response ) );
+		SCCM_Consent_Log::delete_by_consent_id( $id );
+		if ( 200 === $code && false !== strpos( $body, '"success":true' ) ) {
+			$messages[] = __( 'Visitor route (admin-ajax.php): OK.', 'smart-cookie-consent-manager' );
+		} else {
+			$failed = true;
+			/* translators: 1: HTTP status or 0, 2: reply */
+			$messages[] = sprintf( __( 'Visitor route (admin-ajax.php) from the server: HTTP %1$d, %2$s. A password-protected staging site or a firewall that blocks requests from the server itself can cause this test to fail even when visitors get through.', 'smart-cookie-consent-manager' ), $code, mb_substr( $body, 0, 200 ) );
+		}
+		self::back( 'records', implode( ' ', $messages ), $failed );
 	}
 
 	/**

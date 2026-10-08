@@ -31,12 +31,15 @@ scanner, with no coding and no subscription. All data stays on your own server.
 7. **Block until consent**: scripts, iframes (YouTube, Maps…) and fonts are blocked in the page
    HTML until their category is allowed. Google Consent Mode v2 is built in.
 8. **Consent records**: each choice is stored with a consent ID, date/time, categories, GPC flag,
-   version and page. The IP is anonymised or hashed. Filter and export to CSV.
+   version and page. The IP is shortened (203.0.113.***) by default, or saved as a one-way
+   code, in full, or not at all. Search by consent ID or IP address, filter and export to CSV.
 9. **Cookie scanner**: scans your pages on the server and in your own browser (so cookies set by
    scripts and by embedded services are found, like Cookiebot's crawler). Small websites are
    scanned completely, bigger ones 40–80 pages (main pages, then sub pages of every section).
    Known services are sorted into the right category automatically; unknown cookies wait for
-   your approval. Once a day, at a time you choose, an email reports what changed, only if
+   your approval. Visitors' browsers can also report cookies set by JavaScript (names only); a
+   cookie is listed after enough different visitors reported it (default 2 within 14 days,
+   both adjustable). Once a day, at a time you choose, an email reports what changed, only if
    something did.
 10. **Cookie list for visitors**: shown in the banner's Details tab and on your Cookie Policy page
     via `[sccm_cookie_policy]`, and updated automatically.

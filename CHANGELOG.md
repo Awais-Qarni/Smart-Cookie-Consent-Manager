@@ -4,6 +4,15 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
 
 ## [1.2.0] - 2026-10-06
 ### Added
+- **"Learn from visitors" is adjustable** (Settings → Cookie scan and email alerts): how many
+  different visitors must report a cookie before it is listed (default 2, 1–50) and within how
+  many days (default 14, 1–90). Raise the visitors on busy websites, the days on quiet ones.
+- **IP address: new option "Save the full IP address"** (Settings → Consent records), next to
+  shortened (default), one-way code and not saved. The settings explain that a full IP is
+  personal data under the GDPR.
+- **Search Consent Records by IP address**: the search box takes a consent ID or an IP address
+  and finds the visitor's records whether they were saved full, shortened or as a one-way code.
+  A shortened record (203.0.113.***) is found by any address of the same network.
 - **Scans adapt to the size of the website** (was: at most 10 pages for "Scan now", 15 for
   scheduled scans). Up to 40 pages: everything is scanned. Bigger websites get more pages the
   bigger they are (100 pages → 55, 300 → 72, at most 80). Order: every main page (home, Cookie
@@ -43,6 +52,11 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
 - Translation template `languages/smart-cookie-consent-manager.pot`.
 
 ### Fixed (consent records)
+- **The Consent Records list stayed empty on MySQL 8 (WP Engine)** although records were saved:
+  the list query compared the date column with an empty value when no date filter was set,
+  which MySQL in strict mode refuses ("Incorrect DATETIME value"); MariaDB accepts it, so local
+  tests passed. Unset filters now use real values (every date, every ID).
+- "Test record saving" is no longer stopped by the per-IP limit meant for visitors.
 - **Consent records were not saved on some sites** (reported on a WP Engine staging site): the
   banner sent the record without the browser's credentials, so password-protected sites (staging
   behind a login prompt) refused it, and the address could point to another domain or http/https
@@ -50,6 +64,12 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   same-site address; if the REST API still does not answer (blocked by a security plugin or
   firewall), it is saved through admin-ajax.php instead. The Consent Records tab says when the
   REST API is blocked, and an empty list explains how to test.
+- **Why a record was not saved is now shown**: the Consent Records tab shows the reason of the
+  last refused record (database error, unreadable data, rate limit) and a database read error.
+  New button **Test record saving** checks the database and the visitors' route
+  (admin-ajax.php) and removes its test records. A missing records table is recreated
+  automatically. If a firewall changes the data the browser sends, the record is still saved
+  (the browser also sends plain form fields).
 
 ### Fixed (admin)
 - The **Help** button sits in the top right corner of the plugin header.
@@ -64,7 +84,18 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   kept, the server part finishes in the background (WP-Cron), and the browser part continues
   the next time any Cookie Consent screen is opened. Two tabs never scan at the same time.
 
+### Changed
+- **Shortened IP addresses show the hidden part as `***`** (203.0.113.***,
+  2001:db8:85a3:****:…) instead of `0`, which looked like a real address. Existing records
+  are converted on update (database version 4).
+
 ### Security
+- **Fake cookie reports can no longer change the cookie list or re-show the banner**: a cookie
+  name of a known service reported by an anonymous browser was added at once and asked every
+  visitor again. Known cookies from visitor reports now also need two different visitors, and
+  additions from visitor reports never ask everyone again (scans and the admin still do).
+- Values are shortened by characters, not bytes (URL, browser name, provider…): a value cut in
+  the middle of an accented letter or emoji made MySQL refuse the whole consent record.
 - **Consent records CSV export is safe to open in Excel**: values that visitors send (page URL,
   browser) can no longer start with a formula (`=`, `+`, `-`, `@`), which spreadsheet programs
   would run (CSV injection).

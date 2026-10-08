@@ -10,8 +10,8 @@
  *    category. Nothing to do for the site owner.
  *  - Unknown cookies seen by the server scan are added as "Needs review".
  *  - Unknown cookies reported by visitors' browsers are added as "Needs review" only after
- *    at least two different visitors reported them (browser extensions and other one-off
- *    noise never reach the list). Logged-in users never report.
+ *    enough different visitors reported them (setting, default 2 within 14 days), so browser
+ *    extensions and other one-off noise never reach the list. Logged-in users never report.
  *
  * @package SmartCookieConsentManager
  */
@@ -35,7 +35,7 @@ class SCCM_Cookies {
 	/**
 	 * Different visitors that must report an unknown cookie before it is listed.
 	 */
-	const MIN_VISITORS = 2;
+	const MIN_VISITORS = 2; // Default of the setting learn_visitors (see min_visitors()).
 
 	/**
 	 * Option that holds cookies reported by visitors but not yet listed.
@@ -112,6 +112,13 @@ class SCCM_Cookies {
 			self::$rows = $rows;
 		}
 		return self::$rows;
+	}
+
+	/**
+	 * Reset the request cache (after the table was emptied or dropped outside this class).
+	 */
+	public static function flush() {
+		self::$rows = null;
 	}
 
 	/**
@@ -392,20 +399,31 @@ class SCCM_Cookies {
 
 		$known = SCCM_Services::match_cookie( $name );
 		if ( $known && $known['type'] === $type ) {
-			self::save(
-				array(
-					'name'       => $known['name'],
-					'type'       => $type,
-					'category'   => $known['category'],
-					'provider'   => $known['provider'],
-					'purpose'    => $known['purpose'],
-					'duration'   => $known['duration'],
-					'service'    => $known['service'],
-					'status'     => 'active',
-					'source'     => 'scanner',
-					'first_seen' => $now,
-					'last_seen'  => $now,
-				)
+			// Reports come from anonymous browsers: a known cookie too needs several different
+			// visitors, and it does not ask everyone again (that stays with scans and the admin),
+			// so nobody can add services to the list or re-show the banner with fake reports.
+			if ( 'visitor' === $origin && ! self::add_candidate( $known['name'], $type ) ) {
+				return '';
+			}
+			self::bulk(
+				function () use ( $known, $type, $now ) {
+					self::save(
+						array(
+							'name'       => $known['name'],
+							'type'       => $type,
+							'category'   => $known['category'],
+							'provider'   => $known['provider'],
+							'purpose'    => $known['purpose'],
+							'duration'   => $known['duration'],
+							'service'    => $known['service'],
+							'status'     => 'active',
+							'source'     => 'scanner',
+							'first_seen' => $now,
+							'last_seen'  => $now,
+						)
+					);
+				},
+				'visitor' !== $origin
 			);
 			self::queue_alert( $known['name'], $type, 'active', $known['category'] );
 			return 'active';
@@ -434,7 +452,17 @@ class SCCM_Cookies {
 	}
 
 	/**
-	 * Count one visitor's report of an unknown cookie.
+	 * How many different visitors must report a cookie before it is listed (setting
+	 * "learn_visitors", 1-50, default 2).
+	 *
+	 * @return int
+	 */
+	public static function min_visitors() {
+		return max( 1, (int) SCCM_Settings::get( 'learn_visitors' ) );
+	}
+
+	/**
+	 * Count one visitor's report of a cookie (within the days of the setting "learn_days").
 	 *
 	 * @param string $name Cookie name.
 	 * @param string $type Storage type.
@@ -449,7 +477,7 @@ class SCCM_Cookies {
 
 		// Forget stale candidates.
 		foreach ( $candidates as $k => $candidate ) {
-			if ( ! isset( $candidate['t'] ) || $now - (int) $candidate['t'] > 14 * DAY_IN_SECONDS ) {
+			if ( ! isset( $candidate['t'] ) || $now - (int) $candidate['t'] > (int) SCCM_Settings::get( 'learn_days' ) * DAY_IN_SECONDS ) {
 				unset( $candidates[ $k ] );
 			}
 		}
@@ -468,7 +496,7 @@ class SCCM_Cookies {
 			$candidates[ $key ]['t']   = $now;
 		}
 
-		$promote = count( $candidates[ $key ]['v'] ) >= self::MIN_VISITORS;
+		$promote = count( $candidates[ $key ]['v'] ) >= self::min_visitors();
 		if ( $promote ) {
 			unset( $candidates[ $key ] );
 		}
@@ -656,12 +684,12 @@ class SCCM_Cookies {
 		$name = preg_replace( '/[^A-Za-z0-9_\-\.\*\[\]:@$%~|]/', '', (string) $row['name'] );
 
 		return array(
-			'name'       => substr( $name, 0, 191 ),
+			'name'       => mb_substr( $name, 0, 191 ),
 			'type'       => in_array( $row['type'], self::TYPES, true ) ? $row['type'] : 'cookie',
 			'category'   => SCCM_Categories::is_valid( $row['category'] ) ? $row['category'] : 'necessary',
-			'provider'   => substr( sanitize_text_field( (string) $row['provider'] ), 0, 191 ),
+			'provider'   => mb_substr( sanitize_text_field( (string) $row['provider'] ), 0, 191 ),
 			'purpose'    => sanitize_textarea_field( (string) $row['purpose'] ),
-			'duration'   => substr( sanitize_text_field( (string) $row['duration'] ), 0, 100 ),
+			'duration'   => mb_substr( sanitize_text_field( (string) $row['duration'] ), 0, 100 ),
 			'service'    => sanitize_key( (string) $row['service'] ),
 			'status'     => in_array( $row['status'], self::STATUSES, true ) ? $row['status'] : 'active',
 			'source'     => in_array( $row['source'], self::SOURCES, true ) ? $row['source'] : 'manual',

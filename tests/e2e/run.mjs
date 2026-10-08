@@ -37,9 +37,9 @@ async function launch() {
  * New browser context. layout / order / position / texts: the same page with other banner
  * settings (as if chosen under Cookie Consent → Banner). css: extra page CSS, e.g. a hostile theme.
  */
-async function newPage(browser, { gpc = false, viewport, layout, order, position, texts, css, path = '/' } = {}) {
+async function newPage(browser, { gpc = false, viewport, layout, order, position, texts, css, replace, path = '/' } = {}) {
 	const context = await browser.newContext({ viewport: viewport || { width: 1280, height: 900 } });
-	if (layout || order || position || texts || css) {
+	if (layout || order || position || texts || css || replace) {
 		await context.route(BASE + path, async (route) => {
 			const response = await route.fetch();
 			let body = await response.text();
@@ -57,6 +57,9 @@ async function newPage(browser, { gpc = false, viewport, layout, order, position
 			}
 			if (css) {
 				body = body.replace('</head>', '<style id="hostile-theme">' + css + '</style></head>');
+			}
+			for (const [pattern, value] of replace || []) {
+				body = body.replace(pattern, value);
 			}
 			await route.fulfill({ response, body });
 		});
@@ -518,6 +521,88 @@ const browser = await launch();
 	check('X1 session-only expiry: consent cookie has no expiry date', cookie && cookie.expires === -1, cookie && String(cookie.expires));
 	await page.reload();
 	check('X1 session-only expiry: choice still applies on the next page view', !(await page.isVisible('#sccm-banner')) && (await page.evaluate(() => !!window.__gaRan)));
+	await context.close();
+}
+
+/* ---------------------------------------------------------------- Review: asking again (feature 6) */
+{
+	// The site's current consent version, read from the page.
+	const probe = await newPage(browser);
+	await probe.page.goto(BASE + '/');
+	const v = await probe.page.evaluate(() => window.SCCM_CONFIG.v);
+	await probe.context.close();
+	const stored = (m, ageDays, version) => encodeURIComponent(JSON.stringify({
+		id: '11111111-2222-4333-8444-555555555555', v: version, t: Math.floor(Date.now() / 1000) - ageDays * 86400,
+		c: { functional: m === 'accept_all' ? 1 : 0, analytics: m === 'accept_all' ? 1 : 0, marketing: m === 'accept_all' ? 1 : 0 }, m, g: 0
+	}));
+	const shown = async (cookie, opts = {}) => {
+		const { context, page } = await newPage(browser, opts);
+		await context.addCookies([{ name: 'sccm_consent', value: cookie, url: BASE }]);
+		await page.goto(BASE + '/');
+		await page.waitForTimeout(700);
+		const visible = await page.isVisible('#sccm-banner');
+		await context.close();
+		return visible;
+	};
+	check('V1 a valid stored choice: no banner', !(await shown(stored('accept_all', 1, v))));
+	check('V1 consent version changed (cookie list changed / "ask everyone again"): banner again', await shown(stored('accept_all', 1, v - 1)));
+	check('V2 consent older than the chosen period (365 days): banner again', await shown(stored('accept_all', 400, v)));
+	const grace = { replace: [[/"graceDays":\d+/, '"graceDays":30']] };
+	check('V3 "do not ask again after Deny" (30 days): a recent Deny is not asked again after a version change', !(await shown(stored('reject_all', 5, v - 1), grace)));
+	check('V3 …but a recent Allow all is asked again after a version change', await shown(stored('accept_all', 5, v - 1), grace));
+	check('V3 …and a Deny older than the grace period is asked again', await shown(stored('reject_all', 40, v - 1), grace));
+	check('V3 a damaged consent cookie counts as no choice (banner, no error)', await shown('%7Bnot-json'));
+}
+
+/* ---------------------------------------------------------------- Review: GPC overrides an earlier "Allow all" (feature 11) */
+{
+	const { context, page } = await newPage(browser);
+	await page.goto(BASE + '/');
+	await page.click('#sccm-banner .sccm-btn--accept');
+	await page.waitForTimeout(500);
+	await context.addInitScript(() => {
+		Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', { get: () => true, configurable: true });
+	});
+	await page.reload();
+	await page.waitForTimeout(800);
+	const s = await page.evaluate(() => ({ analytics: window.SCCM.hasConsent('analytics'), marketing: window.SCCM.hasConsent('marketing'), ga: !!window.__gaRan, fb: !!window.__fbRan }));
+	check('J4 GPC switched on later overrides a stored "Allow all" (nothing non-essential loads)', !s.analytics && !s.marketing && !s.ga && !s.fb, JSON.stringify(s));
+	await context.close();
+}
+
+/* ---------------------------------------------------------------- Review: keyboard (feature 3) */
+{
+	const { context, page } = await newPage(browser);
+	await page.goto(BASE + '/');
+	await page.click('#sccm-banner .sccm-btn--customize');
+	await page.waitForSelector('#sccm-prefs:not([hidden])');
+	let inside = true;
+	for (let i = 0; i < 25; i++) {
+		await page.keyboard.press(i % 7 === 6 ? 'Shift+Tab' : 'Tab');
+		inside = inside && (await page.evaluate(() => !!document.activeElement.closest('#sccm-prefs')));
+	}
+	check('K1 keyboard: Tab and Shift+Tab stay inside the cookie settings window', inside);
+	const labels = await page.evaluate(() => Array.from(document.querySelectorAll('#sccm-prefs input[type=checkbox]')).every((box) => box.getAttribute('aria-label') || document.querySelector('label[for="' + box.id + '"]')));
+	check('K1 every switch has an accessible name', labels);
+	check('K1 the window is a modal dialog for screen readers', await page.evaluate(() => { const d = document.getElementById('sccm-prefs'); return d.getAttribute('role') === 'dialog' && d.getAttribute('aria-modal') === 'true'; }));
+	await context.close();
+}
+
+/* ---------------------------------------------------------------- Review: right-to-left languages, optimiser attributes (feature 12) */
+{
+	const { context, page } = await newPage(browser, { viewport: { width: 1280, height: 860 }, replace: [[/<html /, '<html dir="rtl" ']] });
+	await page.goto(BASE + '/');
+	await page.waitForSelector('#sccm-banner:not([hidden])');
+	const r = await page.evaluate(() => {
+		const box = document.querySelector('#sccm-banner .sccm-dialog__box').getBoundingClientRect();
+		const text = document.querySelector('#sccm-banner .sccm-text').getBoundingClientRect();
+		const btn = document.querySelector('#sccm-banner .sccm-btn').getBoundingClientRect();
+		return { inView: box.left >= 0 && box.right <= innerWidth, hscroll: document.documentElement.scrollWidth > innerWidth + 1, buttonsLeftOfText: btn.right <= text.left + 1, dir: getComputedStyle(document.querySelector('#sccm-banner .sccm-text')).direction };
+	});
+	check('K5 right-to-left page: banner fits, text runs right-to-left, buttons mirror to the left', r.inView && !r.hscroll && r.dir === 'rtl' && r.buttonsLeftOfText, JSON.stringify(r));
+	await page.screenshot({ path: OUT + 'banner-rtl.png' });
+	const attrs = await page.evaluate(() => ['sccm-boot', 'sccm-frontend-js'].map((id) => { const el = document.getElementById(id); return el ? ['data-no-optimize', 'data-no-defer', 'data-cfasync', 'nitro-exclude', 'data-noptimize'].every((a) => el.hasAttribute(a)) : false; }));
+	check('K6 the plugin scripts carry the exclusion attributes of common optimisers (WP Rocket, LiteSpeed, NitroPack, Cloudflare, Autoptimize)', attrs.every(Boolean), JSON.stringify(attrs));
 	await context.close();
 }
 

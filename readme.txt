@@ -18,7 +18,7 @@ Smart Cookie Consent Manager adds a complete, self-hosted cookie consent system 
 * Blocks scripts, iframes and fonts until the visitor allows their category
 * Google Consent Mode v2 built in
 * Honours Global Privacy Control (GPC)
-* Consent records with CSV export
+* Consent records with CSV export and search by consent ID or IP address (IP shortened, coded, full or not saved)
 * Cookie scanner with email alerts
 * Automatic cookie policy list: [sccm_cookie_policy]
 * Works with page caching and optimisation plugins
@@ -42,7 +42,12 @@ Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 == Changelog ==
 
 = 1.2.0 =
-* Consent records are saved on password-protected (staging) sites, from cached pages on another domain, and when the REST API is blocked (admin-ajax fallback); the Consent Records tab explains problems.
+* "Learn from visitors": the number of different visitors needed (default 2) and the number of days (default 14) can be changed in the settings.
+* Consent records: shortened IP addresses show the hidden part as *** instead of 0; new option to save the full IP address; search records by IP address.
+* Fixed: the Consent Records list stayed empty on MySQL 8 hosts (e.g. WP Engine) although records were saved.
+* Security: fake cookie reports cannot add services or re-show the banner; text is trimmed by characters (no lost records with accents or emoji).
+* Tested on MySQL 8.4 (strict mode) and MariaDB 11.4.
+* Consent records are saved on password-protected (staging) sites, from cached pages on another domain, and when the REST API is blocked (admin-ajax fallback); the Consent Records tab explains problems and has a "Test record saving" button.
 * Scans adapt to the size of the website: small sites completely, bigger ones 40–80 pages (main pages, then sub and sub-sub pages of every section), in short steps that never hit time limits.
 * Compact top/bottom banner: buttons stacked vertically.
 * Scan now keeps going in a background tab, and continues where it stopped after leaving the page.

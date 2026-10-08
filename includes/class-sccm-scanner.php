@@ -422,7 +422,7 @@ class SCCM_Scanner {
 		if ( ! isset( $results['unclassified'][ $host ] ) ) {
 			$results['unclassified'][ $host ] = array(
 				'host' => $host,
-				'url'  => substr( $url, 0, 300 ),
+				'url'  => mb_substr( $url, 0, 300 ),
 				'tag'  => $tag,
 			);
 		}
@@ -717,7 +717,7 @@ class SCCM_Scanner {
 			);
 		}
 		if ( count( $results['services'][ $key ]['examples'] ) < 3 && ! in_array( $where, $results['services'][ $key ]['examples'], true ) ) {
-			$results['services'][ $key ]['examples'][] = substr( $where, 0, 200 );
+			$results['services'][ $key ]['examples'][] = mb_substr( $where, 0, 200 );
 		}
 	}
 

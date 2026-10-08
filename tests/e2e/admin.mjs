@@ -89,10 +89,17 @@ check('S1 "Until the browser is closed" sets 0', (await page.inputValue('#sccm-c
 await page.selectOption('#sccm-expiry-preset', '180');
 await page.locator('summary', { hasText: 'Cookie scan and email alerts' }).click();
 await page.fill('#sccm-alert_email', 'owner@example.com\nteam@example.com\nbroken-address');
+await page.fill('#sccm-learn_visitors', '5');
+await page.fill('#sccm-learn_days', '30');
+await page.locator('summary', { hasText: 'Consent records (the proof)' }).click();
+await page.selectOption('#sccm-ip_mode', 'full');
 await Promise.all([page.waitForNavigation(), page.click('p.submit input[type=submit]')]);
 const saved = option();
 check('S2 expiry saved (180 days)', saved.consent_expiry_days === 180);
 check('S3 two recipients saved, invalid dropped', saved.alert_email === 'owner@example.com, team@example.com', saved.alert_email);
+check('S4 "Learn from visitors" thresholds saved (5 visitors within 30 days)', saved.learn_visitors === 5 && saved.learn_days === 30, `${saved.learn_visitors}/${saved.learn_days}`);
+check('S5 IP address option "Save the full IP address" saved', saved.ip_mode === 'full', saved.ip_mode);
+wp('eval', `SCCM_Settings::update( array( 'learn_visitors' => 2, 'learn_days' => 14, 'ip_mode' => 'anonymize' ) );`);
 await page.locator('summary', { hasText: 'Cookie scan and email alerts' }).click();
 if (fs.existsSync(CONTENT + '/mail-captured.json')) fs.unlinkSync(CONTENT + '/mail-captured.json');
 await Promise.all([page.waitForNavigation(), page.click('button:has-text("Send me a sample email")')]);
@@ -162,7 +169,7 @@ check('X2 logged-out requests are refused', anon.status() !== 200 && anon.status
 
 // Consent records end to end: a visitor's choice is stored and listed, also when the REST API is blocked.
 {
-	wp('eval', `SCCM_Consent_Log::delete_all(); delete_option( SCCM_REST::REST_PROBLEM_OPTION );`);
+	wp('eval', `SCCM_Consent_Log::delete_all(); delete_option( SCCM_REST::REST_PROBLEM_OPTION ); global $wpdb; $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_%sccm\_rl\_%' OR option_name LIKE '\_transient\_timeout\_sccm\_rl\_%'" ); wp_cache_flush();`);
 	const count = () => parseInt(wp('eval', `echo SCCM_Consent_Log::query( array() )['total'];`), 10);
 	const visitor = async (blockRest) => {
 		const ctx2 = await browser.newContext();
@@ -200,7 +207,31 @@ check('X2 logged-out requests are refused', anon.status() !== 200 && anon.status
 	const blocked = await visitor(true);
 	check('CR4 REST API blocked: the record is saved through admin-ajax.php instead', blocked.rest === 1 && blocked.ajax === 1 && count() === 2, JSON.stringify(blocked));
 	await page.goto(admin('records'));
-	check('CR4 the Consent Records tab explains that the REST API is blocked', /could not reach the WordPress REST API \(HTTP 401/.test(await page.textContent('.sccm-tab')));
+	check('CR4 the Consent Records tab explains that the REST API is blocked', /blocks the WordPress REST API for visitors \(HTTP 401/.test(await page.textContent('.sccm-tab')));
+	// A firewall that changes JSON in form data: the plain fields still get the record saved.
+	{
+		const ctx3 = await browser.newContext();
+		await ctx3.route('**/*', async (route) => {
+			const req = route.request();
+			if (req.url().includes('sccm/v1/consent')) {
+				return route.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
+			}
+			if (req.url().includes('admin-ajax.php') && (req.postData() || '').includes('action=sccm_consent')) {
+				return route.continue({ postData: (req.postData() || '').replace(/payload=[^&]*/, 'payload=%5Bfiltered%5D') });
+			}
+			return route.continue();
+		});
+		const p3 = await ctx3.newPage();
+		await p3.goto(BASE + '/');
+		await p3.click('#sccm-banner .sccm-btn--accept');
+		await p3.waitForTimeout(1500);
+		await ctx3.close();
+		check('CR6 a firewall that changes the JSON: the record is still saved from the plain fields', count() === 3, String(count()));
+	}
+	await page.goto(admin('records'));
+	await Promise.all([page.waitForNavigation(), page.click('button:has-text("Test record saving")')]);
+	const tested = await page.textContent('.notice');
+	check('CR7 "Test record saving" checks the database and the visitor route, and leaves no test record', /Database: OK/.test(tested) && /Visitor route \(admin-ajax\.php\): OK/.test(tested) && count() === 3, tested.trim().slice(0, 160));
 	wp('eval', `SCCM_Consent_Log::delete_all(); delete_option( SCCM_REST::REST_PROBLEM_OPTION );`);
 	await page.goto(admin('records'));
 	check('CR5 an empty list explains how to test record saving', /open your website in a private window/.test(await page.textContent('.sccm-tab')));
@@ -221,6 +252,84 @@ await page.waitForFunction(() => /Cookie scan finished/.test((document.querySele
 const after = JSON.parse(wp('eval', `$r = get_option( SCCM_Scanner::RESULT_OPTION ); echo wp_json_encode( array( (int) $r['browser']['pages'], count( $r['pages'] ), (bool) get_option( SCCM_Scanner::BROWSER_OPTION ), (bool) get_option( SCCM_Scanner::STATE_OPTION ) ) );`));
 check('S3 back on a plugin page the scan continues and finishes every page', after[0] === after[1] && after[0] >= 15 && !after[2] && !after[3], JSON.stringify(after));
 wp('eval', `foreach ( ${JSON.stringify(extra)} as $id ) { wp_delete_post( $id, true ); }`);
+
+// Review: CSV export, settings export/import, "Ask all visitors again".
+{
+	wp('eval', `SCCM_Consent_Log::delete_all(); SCCM_Consent_Log::insert( array( 'consent_id' => '12121212-3434-4565-8787-909090909090', 'choice' => 'accept_all', 'categories' => array( 'analytics' ), 'url' => home_url( '/?ref==SUM(1)' ) ) );`);
+	await page.goto(admin('records'));
+	const [csvDownload] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("Export CSV")')]);
+	const csv = fs.readFileSync(await csvDownload.path(), 'utf8');
+	check('R1 CSV export: header row and the record with its consent ID, choice and categories', /^id,consent_id,date_time_utc,choice,categories,gpc,consent_version,url,ip,user_agent/.test(csv) && csv.includes('12121212-3434-4565-8787-909090909090') && csv.includes('accept_all') && csv.includes('necessary,analytics'), csv.split('\n')[0]);
+	check('R1 CSV export: no cell starts with a formula', !csv.split('\n').slice(1).some((line) => /(^|,)"?[=+@-]/.test(line)), csv.split('\n')[1]);
+	wp('eval', `global $wpdb; $wpdb->update( SCCM_Consent_Log::table(), array( 'ip' => '203.0.113.***' ), array( 'consent_id' => '12121212-3434-4565-8787-909090909090' ) );`);
+	await page.goto(admin('records') + '&search=203.0.113.7');
+	const found = await page.textContent('table.widefat tbody');
+	await page.goto(admin('records') + '&search=192.0.2.7');
+	check('R2 search by IP address finds the record of a shortened IP (203.0.113.***); another network finds nothing', found.includes('12121212-3434') && found.includes('203.0.113.***') && /No consent records/.test(await page.textContent('table.widefat tbody')));
+	wp('eval', `SCCM_Consent_Log::delete_all();`);
+
+	await page.goto(admin('tools'));
+	const [settingsDownload] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("Export settings")')]);
+	const exported = JSON.parse(fs.readFileSync(await settingsDownload.path(), 'utf8'));
+	check('T2 settings export: a JSON file with settings and the cookie list, without the site-specific policy page', exported.plugin === 'smart-cookie-consent-manager' && exported.settings && Array.isArray(exported.cookies) && !('policy_page_id' in exported.settings));
+	wp('eval', `SCCM_Settings::update( array( 'banner_layout' => 'tabs', 'color_button_bg' => '#ff0000' ) );`);
+	const importFile = CONTENT + '/sccm-import-test.json';
+	fs.writeFileSync(importFile, JSON.stringify(exported));
+	await page.goto(admin('tools'));
+	await page.setInputFiles('#sccm-import-file', importFile);
+	page.once('dialog', (d) => d.accept());
+	await Promise.all([page.waitForNavigation(), page.click('button:has-text("Import settings")')]);
+	const restored = option();
+	check('T2 settings import restores the exported settings', restored.banner_layout === exported.settings.banner_layout && restored.color_button_bg === exported.settings.color_button_bg && /Settings imported/.test(await page.textContent('.notice')));
+	fs.rmSync(importFile, { force: true });
+	fs.writeFileSync(importFile, '{"plugin":"something-else","settings":{"enabled":0}}');
+	await page.setInputFiles('#sccm-import-file', importFile);
+	page.once('dialog', (d) => d.accept());
+	await Promise.all([page.waitForNavigation(), page.click('button:has-text("Import settings")')]);
+	check('T2 a file from another plugin is refused and changes nothing', option().enabled === 1 && /not a valid/.test(await page.textContent('.notice')));
+	fs.rmSync(importFile, { force: true });
+
+	const v0 = parseInt(wp('option', 'get', 'sccm_consent_version'), 10);
+	await page.goto(admin('tools'));
+	page.once('dialog', (d) => d.accept());
+	await Promise.all([page.waitForNavigation(), page.click('button:has-text("Ask all visitors again")')]);
+	check('T3 "Ask all visitors again" raises the consent version', parseInt(wp('option', 'get', 'sccm_consent_version'), 10) === v0 + 1);
+}
+
+// Review (security): a logged-in Subscriber cannot use any plugin action, even with a valid nonce of their own.
+{
+	wp('eval', `if ( ! get_user_by( 'login', 'sccm_sub' ) ) { wp_insert_user( array( 'user_login' => 'sccm_sub', 'user_pass' => 'sccm_sub_pass', 'user_email' => 'sub@example.test', 'role' => 'subscriber' ) ); }`);
+	const subCtx = await browser.newContext();
+	const sub = await subCtx.newPage();
+	await sub.goto(BASE + '/wp-login.php');
+	await sub.fill('#user_login', 'sccm_sub');
+	await sub.fill('#user_pass', 'sccm_sub_pass');
+	await Promise.all([sub.waitForNavigation(), sub.click('#wp-submit')]);
+	const pageRes = await sub.goto(admin('dashboard'));
+	check('X4 a Subscriber cannot open the plugin screens', pageRes.status() === 403 || /not allowed|Sorry/.test(await sub.content()));
+	// Nonces the Subscriber could create for themselves (worst case: a leaked/obtained nonce).
+	const subId = wp('eval', `echo get_user_by( 'login', 'sccm_sub' )->ID;`);
+	const nonces = JSON.parse(wp('eval', `wp_set_current_user( ${subId} ); $n = array(); foreach ( array( 'sccm_save', 'sccm_reset_settings', 'sccm_delete_log', 'sccm_export_log', 'sccm_import_settings', 'sccm_test_record', 'sccm_browser_scan' ) as $a ) { $n[ $a ] = wp_create_nonce( $a ); } echo wp_json_encode( $n );`));
+	const before = JSON.stringify(option());
+	const post = (form) => sub.request.post(`${BASE}/wp-admin/admin-post.php`, { form, maxRedirects: 0 });
+	const results = [
+		(await post({ action: 'sccm_save', _wpnonce: nonces.sccm_save, tab: 'banner', 'sccm[enabled]': '0' })).status(),
+		(await post({ action: 'sccm_reset_settings', _wpnonce: nonces.sccm_reset_settings })).status(),
+		(await post({ action: 'sccm_delete_log', _wpnonce: nonces.sccm_delete_log })).status(),
+		(await post({ action: 'sccm_export_log', _wpnonce: nonces.sccm_export_log })).status(),
+		(await post({ action: 'sccm_test_record', _wpnonce: nonces.sccm_test_record })).status()
+	];
+	check('X4 Subscriber: every admin action is refused (403) and settings are unchanged', results.every((code) => code === 403) && JSON.stringify(option()) === before, results.join(','));
+	const ajax = [];
+	for (const action of ['sccm_browser_scan_start', 'sccm_browser_scan_server', 'sccm_browser_scan_report', 'sccm_browser_scan_resume']) {
+		ajax.push((await sub.request.post(`${BASE}/wp-admin/admin-ajax.php`, { form: { action, _ajax_nonce: nonces.sccm_browser_scan } })).status());
+	}
+	check('X4 Subscriber: the scan requests are refused (403)', ajax.every((code) => code === 403), ajax.join(','));
+	const scanPage = await sub.goto(BASE + '/?sccm_scan=abcdefghijklmnopqrstuvwx');
+	check('X4 Subscriber: scan mode cannot be switched on', (await sub.evaluate(() => window.SCCM_CONFIG && window.SCCM_CONFIG.scanMode)) === false && scanPage.ok());
+	await subCtx.close();
+	wp('eval', `require_once ABSPATH . 'wp-admin/includes/user.php'; wp_delete_user( get_user_by( 'login', 'sccm_sub' )->ID );`);
+}
 
 // Spoofed notices: a message in the URL is not shown (notices are kept on the server).
 await page.goto(admin('cookies') + '&sccm_msg=' + encodeURIComponent('Your licence expired, visit evil.example') + '&sccm_notice=1');

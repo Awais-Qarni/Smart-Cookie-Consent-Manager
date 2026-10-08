@@ -103,6 +103,8 @@ class SCCM_Settings {
 
 			// Scanner.
 			'scanner_client'       => 1,
+			'learn_visitors'       => 2,          // Different visitors who must report a cookie before it is listed.
+			'learn_days'           => 14,         // ...within this many days.
 			'scan_schedule'        => 'weekly',   // daily | weekly | off.
 			'alerts_enabled'       => 1,
 			'alert_hour'           => 9,          // Daily email time (0-23, site time zone); sent only when something changed.
@@ -111,7 +113,7 @@ class SCCM_Settings {
 
 			// Consent log.
 			'log_enabled'          => 1,
-			'ip_mode'              => 'anonymize', // anonymize | hash | none.
+			'ip_mode'              => 'anonymize', // anonymize | hash | full | none.
 			'retention_months'     => 24,
 
 			// Advanced.
@@ -271,7 +273,7 @@ class SCCM_Settings {
 			'consent_mode'      => array( 'basic', 'advanced', 'off' ),
 			'gpc_scope'         => array( 'all', 'marketing' ),
 			'scan_schedule'     => array( 'daily', 'weekly', 'off' ),
-			'ip_mode'           => array( 'anonymize', 'hash', 'none' ),
+			'ip_mode'           => array( 'anonymize', 'hash', 'full', 'none' ),
 		);
 		foreach ( $enums as $key => $allowed ) {
 			if ( isset( $input[ $key ] ) ) {
@@ -287,6 +289,8 @@ class SCCM_Settings {
 			'border_radius'       => array( 0, 32 ),
 			'retention_months'    => array( 0, 120 ),
 			'alert_hour'          => array( 0, 23 ),
+			'learn_visitors'      => array( 1, 50 ),
+			'learn_days'          => array( 1, 90 ),
 		);
 		foreach ( $ints as $key => $range ) {
 			if ( isset( $input[ $key ] ) ) {
@@ -363,7 +367,7 @@ class SCCM_Settings {
 					continue;
 				}
 				$rules[] = array(
-					'pattern'  => substr( $pattern, 0, 255 ),
+					'pattern'  => mb_substr( $pattern, 0, 255 ),
 					'category' => $category,
 				);
 			}

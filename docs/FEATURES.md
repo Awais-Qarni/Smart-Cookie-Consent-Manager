@@ -86,8 +86,10 @@ a choice brings the banner back), and again later, centred, with a close button.
 ### 8. Consent record
 - [ ] Every choice stored in DB table `{prefix}sccm_consent_log`: consent ID, choice
       (accept_all / reject_all / custom / gpc), granted categories, GPC flag, consent version,
-      page URL, date/time (UTC), anonymised or hashed IP (setting), user agent.
-- [ ] Admin list with search by consent ID and date filter; CSV export; retention period
+      page URL, date/time (UTC), IP (setting: shortened `203.0.113.***` (default), one-way code,
+      full, or not saved), user agent.
+- [ ] Admin list with search by consent ID or IP address (finds full, shortened and coded
+      records) and date filter; CSV export; retention period
       with automatic purge.
 - [ ] Visitor can see their current choice, its date and their Consent ID (with a Copy button)
       in the About tab (for evidence requests). The ID is also in the `dataLayer`
@@ -96,8 +98,9 @@ a choice brings the banner back), and again later, centred, with a close button.
 ### 9. Cookie scanner
 - [ ] Visitor-side detection: browsers report **cookie** names that are not in the registry
       (names only, never values; rate-limited; never from logged-in users; local storage is not
-      reported). An unknown cookie is listed only after at least two different visitors
-      reported it; at most 50 items wait for review.
+      reported). An unknown cookie is listed only after enough different visitors
+      reported it within a period (settings, default 2 visitors within 14 days); at most 50
+      items wait for review. A known service cookie reported by browsers needs the same, and visitor reports never ask everyone again.
 - [ ] Server-side scan (scheduled + "Scan now"): fetches the planned pages (all pages of a small
       site; 40–80 for bigger ones: main pages first, then sub and sub-sub pages of every
       section), reads `Set-Cookie` headers and third-party scripts/iframes/fonts, matches the

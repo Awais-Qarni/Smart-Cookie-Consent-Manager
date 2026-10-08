@@ -15,7 +15,7 @@ class SCCM_Install {
 	/**
 	 * Database schema version. Bump when the table structure or stored data needs an upgrade step.
 	 */
-	const DB_VERSION = '3';
+	const DB_VERSION = '4';
 
 	/**
 	 * Option that stores the installed schema version.
@@ -79,8 +79,31 @@ class SCCM_Install {
 		if ( false !== $previous && version_compare( (string) $previous, '3', '<' ) ) {
 			self::upgrade_to_3();
 		}
+		if ( false !== $previous && version_compare( (string) $previous, '4', '<' ) ) {
+			self::upgrade_to_4();
+		}
 
 		update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
+	}
+
+	/**
+	 * Version 4: shortened IP addresses show their hidden part as *** instead of 0 (a 0 looked like
+	 * a real address). Records saved before were shortened to "a.b.c.0" (IPv4) or "a:b:c::" (IPv6);
+	 * only that shortening produced those values, so they are rewritten to the new form.
+	 */
+	private static function upgrade_to_4() {
+		global $wpdb;
+		$table = SCCM_Consent_Log::table();
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( $wpdb->prepare( "UPDATE %i SET ip = CONCAT( LEFT( ip, CHAR_LENGTH( ip ) - 1 ), '***' ) WHERE ip REGEXP %s", $table, '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.0$' ) );
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, ip FROM %i WHERE ip LIKE %s", $table, '%::' ), ARRAY_A );
+		// phpcs:enable
+		foreach ( (array) $rows as $row ) {
+			$packed = @inet_pton( $row['ip'] ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			if ( false !== $packed && 16 === strlen( $packed ) && str_repeat( "\0", 10 ) === substr( $packed, 6 ) ) {
+				$wpdb->update( $table, array( 'ip' => SCCM_Consent_Log::anonymize_ip( $row['ip'] ) ), array( 'id' => (int) $row['id'] ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			}
+		}
 	}
 
 	/**
@@ -239,8 +262,11 @@ class SCCM_Install {
 		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . 'sccm_cookies' ) );
 		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $wpdb->prefix . 'sccm_consent_log' ) );
 		// phpcs:enable
+		if ( class_exists( 'SCCM_Cookies', false ) ) { // Not loaded by uninstall.php.
+			SCCM_Cookies::flush();
+		}
 
-		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge', 'sccm_last_mail', 'sccm_scan_state', 'sccm_browser_scan', 'sccm_rest_problem' ) as $option ) {
+		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge', 'sccm_last_mail', 'sccm_scan_state', 'sccm_browser_scan', 'sccm_rest_problem', 'sccm_consent_problem' ) as $option ) {
 			delete_option( $option );
 		}
 

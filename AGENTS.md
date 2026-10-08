@@ -80,8 +80,9 @@ tests/                             Automated checks (see docs/TESTING.md): php/ 
 5. **Security.** Escape all output (`esc_html`, `esc_attr`, `esc_url`, `wp_kses_post`),
    sanitise all input, `check_admin_referer()` + `current_user_can( 'manage_options' )` on
    every admin action, `$wpdb->prepare()` for every query with variables.
-6. **Privacy by design.** Never store cookie *values*. IP addresses are anonymised or hashed
-   (setting). Consent records hold only what is needed as evidence.
+6. **Privacy by design.** Never store cookie *values*. IP addresses are shortened by default
+   (or a one-way code, or not saved; the full IP only if the owner chooses it in the settings).
+   Consent records hold only what is needed as evidence.
 7. **Naming.** PHP prefix `sccm_` / classes `SCCM_*`, JS global `window.SCCM`, CSS prefix
    `sccm-`, text domain `smart-cookie-consent-manager`. All user-facing strings translatable.
 8. **Database changes** only through `SCCM_Install` and a bump of `SCCM_Install::DB_VERSION`.

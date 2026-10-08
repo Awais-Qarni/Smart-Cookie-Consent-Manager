@@ -59,7 +59,7 @@ Browser
 |---|---|
 | Install | `sccm_consent` (and WooCommerce's cookies when active). Not the WordPress login cookies: only logged-in users have them. |
 | Server scan (cron / "Scan now") | Cookies in `Set-Cookie` headers of real pages (known → Active, unknown → Needs review); for each service detected in the HTML, the cookies it always sets. |
-| Visitor reports | Known library cookies → Active at once. Unknown cookies → candidates in option `sccm_candidates`; listed as Needs review only after `SCCM_Cookies::MIN_VISITORS` (2) different visitors reported them. |
+| Visitor reports | Known library cookies → Active at once. Unknown cookies → candidates in option `sccm_candidates`; listed as Needs review only after `SCCM_Cookies::min_visitors()` (setting `learn_visitors`, default 2) different visitors reported them within `learn_days` (default 14) days. |
 
 Guards: pending items are capped (`MAX_PENDING` = 50), ignored cookies are never re-added, a
 scan bumps the consent version at most once (never on the first scan), and approving needs an
@@ -197,11 +197,18 @@ Stable keys make Consent Mode mapping, blocking rules, exports and multi-site im
 predictable. Labels/descriptions are editable; categories can be hidden if unused.
 
 ## Security model
+- Visitor cookie reports are anonymous, so they are treated as hints: every name (known or not)
+  needs `SCCM_Cookies::min_visitors()` different visitors (setting, at least 1), the waiting list is capped, and an
+  addition from reports never bumps the consent version (`bulk( …, false )`).
+- Text stored in sized columns is cut with `mb_substr()` (characters), never `substr()`
+  (bytes): MySQL refuses a value with a broken multi-byte character.
 - Admin: `manage_options` + nonce checked in every admin-post handler and AJAX callback.
   Messages after an action are kept in a per-user transient (`sccm_notice_{user}`), never read
   from the URL.
 - SQL: every query goes through `$wpdb->prepare()`, table names with `%i` (WordPress 6.2+);
-  record filters are one fixed statement (`'' = ''` switches a filter off).
+  record filters are one fixed statement; unset filters use values that match everything
+  (`LIKE '%'`, dates from 1000-01-01 to 9999-12-31) because MySQL in strict mode refuses to
+  compare a DATETIME column with `''` (MariaDB allows it; a WP-CLI check guards this).
 - CSV export: `SCCM_Consent_Log::csv_cell()` prefixes values starting with = + - @ (CSV injection).
 - Texts shown as HTML in the banner are passed through `wp_kses` (links/emphasis) right before
   they go to the browser; all other texts are inserted as plain text.
