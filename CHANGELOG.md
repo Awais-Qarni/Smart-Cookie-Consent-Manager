@@ -85,6 +85,8 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   the next time any Cookie Consent screen is opened. Two tabs never scan at the same time.
 
 ### Changed
+- Tools → Developer reference explains the two JavaScript helpers (`SCCM.hasConsent()` and the
+  `sccm:consent` event) instead of listing them without a description.
 - **Shortened IP addresses show the hidden part as `***`** (203.0.113.***,
   2001:db8:85a3:****:…) instead of `0`, which looked like a real address. Existing records
   are converted on update (database version 4).
