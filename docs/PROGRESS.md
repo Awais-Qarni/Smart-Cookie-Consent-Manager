@@ -10,7 +10,7 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 - **Version:** 1.2.0 (all owner requests so far done; not yet staging-tested on a real site)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); staging test and release are next
-- **Last updated:** 2026-10-08 (session 7)
+- **Last updated:** 2026-10-08 (session 7b)
 - **Tests:** unit 33, WP-CLI 155, visitor e2e 115, admin e2e 66, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI

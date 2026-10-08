@@ -18,7 +18,7 @@ Smart Cookie Consent Manager adds a complete, self-hosted cookie consent system 
 * Blocks scripts, iframes and fonts until the visitor allows their category
 * Google Consent Mode v2 built in
 * Honours Global Privacy Control (GPC)
-* Consent records with CSV export
+* Consent records with CSV export and search by consent ID or IP address (IP shortened, coded, full or not saved)
 * Cookie scanner with email alerts
 * Automatic cookie policy list: [sccm_cookie_policy]
 * Works with page caching and optimisation plugins
