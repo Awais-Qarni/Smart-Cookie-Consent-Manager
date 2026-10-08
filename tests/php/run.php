@@ -107,8 +107,8 @@ check( 'over-long name rejected', ! SCCM_REST::valid_name( str_repeat( 'a', 101 
 
 /* ---------------------------------------------------------------- IP anonymisation */
 
-check( 'IPv4 anonymised', '203.0.113.0' === SCCM_Consent_Log::anonymize_ip( '203.0.113.77' ) );
-check( 'IPv6 anonymised', '2001:db8:85a3::' === SCCM_Consent_Log::anonymize_ip( '2001:db8:85a3:1234:5678:8a2e:370:7334' ) );
+check( 'IPv4 anonymised (hidden part shown as ***)', '203.0.113.***' === SCCM_Consent_Log::anonymize_ip( '203.0.113.77' ) );
+check( 'IPv6 anonymised (hidden part shown as ****)', '2001:db8:85a3:****:****:****:****:****' === SCCM_Consent_Log::anonymize_ip( '2001:db8:85a3:1234:5678:8a2e:370:7334' ) );
 check( 'invalid IP gives empty string', '' === SCCM_Consent_Log::anonymize_ip( 'not-an-ip' ) );
 
 echo "\n" . ( $total - $failures ) . "/{$total} tests passed\n";

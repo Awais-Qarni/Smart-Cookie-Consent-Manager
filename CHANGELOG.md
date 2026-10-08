@@ -4,6 +4,15 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
 
 ## [1.2.0] - 2026-10-06
 ### Added
+- **"Learn from visitors" is adjustable** (Settings → Cookie scan and email alerts): how many
+  different visitors must report a cookie before it is listed (default 2, 1–50) and within how
+  many days (default 14, 1–90). Raise the visitors on busy websites, the days on quiet ones.
+- **IP address: new option "Save the full IP address"** (Settings → Consent records), next to
+  shortened (default), one-way code and not saved. The settings explain that a full IP is
+  personal data under the GDPR.
+- **Search Consent Records by IP address**: the search box takes a consent ID or an IP address
+  and finds the visitor's records whether they were saved full, shortened or as a one-way code.
+  A shortened record (203.0.113.***) is found by any address of the same network.
 - **Scans adapt to the size of the website** (was: at most 10 pages for "Scan now", 15 for
   scheduled scans). Up to 40 pages: everything is scanned. Bigger websites get more pages the
   bigger they are (100 pages → 55, 300 → 72, at most 80). Order: every main page (home, Cookie
@@ -74,6 +83,11 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   background tabs). Leaving the page asks first; if you leave anyway, what was found so far is
   kept, the server part finishes in the background (WP-Cron), and the browser part continues
   the next time any Cookie Consent screen is opened. Two tabs never scan at the same time.
+
+### Changed
+- **Shortened IP addresses show the hidden part as `***`** (203.0.113.***,
+  2001:db8:85a3:****:…) instead of `0`, which looked like a real address. Existing records
+  are converted on update (database version 4).
 
 ### Security
 - **Fake cookie reports can no longer change the cookie list or re-show the banner**: a cookie

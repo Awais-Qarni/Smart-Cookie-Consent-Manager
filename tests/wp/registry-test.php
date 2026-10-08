@@ -18,12 +18,12 @@ $GLOBALS['sccm_total']    = 0;
 // The Cookie Policy page linked before the run; it is linked again at the end.
 $GLOBALS['sccm_policy_id'] = (int) SCCM_Settings::get( 'policy_page_id' );
 
-function sccm_check( $name, $condition ) {
+function sccm_check( $name, $condition, $detail = '' ) {
 	++$GLOBALS['sccm_total'];
 	if ( ! $condition ) {
 		++$GLOBALS['sccm_failures'];
 	}
-	echo ( $condition ? 'PASS  ' : 'FAIL  ' ) . $name . "\n";
+	echo ( $condition ? 'PASS  ' : 'FAIL  ' ) . $name . ( ! $condition && '' !== $detail ? '  [' . $detail . ']' : '' ) . "\n";
 }
 
 function sccm_names( $status = 'pending' ) {
@@ -57,7 +57,7 @@ sccm_check( 'category keys (Consent Mode mapping) are unchanged', array( 'necess
 
 /* ---------------------------------------------------------------- Seeding */
 
-sccm_check( 'a fresh list holds only the plugin cookie (no WordPress login cookies)', array( 'sccm_consent' ) === sccm_names( 'active' ) );
+sccm_check( 'a fresh list holds only the plugin cookie (no WordPress login cookies)', array( 'sccm_consent' ) === sccm_names( 'active' ), implode( ',', sccm_names( 'active' ) ) );
 
 /* ---------------------------------------------------------------- Visitor reports */
 
@@ -554,7 +554,7 @@ $r    = SCCM_REST::store_consent( array( 'consent_id' => 'abababab-7777-4777-877
 $row  = SCCM_Consent_Log::query( array( 'search' => 'abababab' ) )['rows'][0] ?? array();
 sccm_check( 'records: a very long URL with accents and emoji is stored, cut at a character boundary', ! is_wp_error( $r ) && mb_strlen( $row['url'] ?? '' ) <= 2048 && mb_check_encoding( $row['url'] ?? '', 'UTF-8' ) && '' !== ( $row['url'] ?? '' ), is_wp_error( $r ) ? $r->get_error_message() : '' );
 // IP handling (setting): anonymised by default.
-sccm_check( 'records: the IP address is stored anonymised by default', '203.0.113.0' === ( $row['ip'] ?? '' ), $row['ip'] ?? '' );
+sccm_check( 'records: the IP address is stored shortened by default, hidden part shown as ***', '203.0.113.***' === ( $row['ip'] ?? '' ), $row['ip'] ?? '' );
 remove_filter( 'sccm_client_ip', $ip_filter );
 // Rate limit: 60 records an hour from one address, then 429; another address is not affected.
 $ip_filter = $as_ip( '198.51.100.' . wp_rand( 2, 250 ) );
@@ -579,6 +579,67 @@ $purged = SCCM_Consent_Log::purge( 12 );
 sccm_check( 'records: retention deletes only records older than the period', 1 === $purged && $before - 1 === SCCM_Consent_Log::query( array() )['total'] );
 sccm_check( 'records: retention 0 keeps everything', 0 === SCCM_Consent_Log::purge( 0 ) );
 SCCM_Consent_Log::delete_all();
+
+/* ---------------------------------------------------------------- IP address modes, search by IP, upgrade */
+
+SCCM_Consent_Log::delete_all();
+$ip_filter = $as_ip( '198.51.100.23' );
+add_filter( 'sccm_client_ip', $ip_filter );
+$stored = array();
+foreach ( array( 'anonymize', 'hash', 'full', 'none' ) as $mode ) {
+	SCCM_Settings::update( array( 'ip_mode' => $mode ) );
+	$cid = wp_generate_uuid4();
+	SCCM_REST::store_consent( array( 'consent_id' => $cid, 'choice' => 'accept_all' ), false );
+	$stored[ $mode ] = SCCM_Consent_Log::query( array( 'search' => $cid ) )['rows'][0]['ip'] ?? null;
+}
+remove_filter( 'sccm_client_ip', $ip_filter );
+SCCM_Settings::update( array( 'ip_mode' => 'anonymize' ) );
+sccm_check( 'IP mode "shortened": 198.51.100.***', '198.51.100.***' === $stored['anonymize'], (string) $stored['anonymize'] );
+sccm_check( 'IP mode "one-way code": 32 hex characters, not the address', 1 === preg_match( '/^[0-9a-f]{32}$/', (string) $stored['hash'] ) && false === strpos( (string) $stored['hash'], '198.51' ) );
+sccm_check( 'IP mode "full": the full address', '198.51.100.23' === $stored['full'] );
+sccm_check( 'IP mode "do not save": empty', '' === $stored['none'] );
+$by_ip = SCCM_Consent_Log::query( array( 'search' => '198.51.100.23' ) );
+sccm_check( 'search by IP finds the visitor\'s records in every stored form (shortened, code, full)', 3 === $by_ip['total'] );
+// A shortened record stands for every address of its /24 network, so search from another network.
+sccm_check( 'search by an IP of another network finds nothing', 0 === SCCM_Consent_Log::query( array( 'search' => '192.0.2.99' ) )['total'] );
+sccm_check( 'search by a neighbour IP (same /24) finds only the shortened record', 1 === SCCM_Consent_Log::query( array( 'search' => '198.51.100.24' ) )['total'] );
+sccm_check( 'search by IP is MySQL-strict safe (no date compared with an empty value)', false === strpos( $wpdb->last_query, "'' OR created_at" ) );
+
+// Upgrade (DB version 4): old shortened values "a.b.c.0" / "a:b:c::" become "a.b.c.***" / "a:b:c:****:…".
+SCCM_Consent_Log::delete_all();
+$hash_value = SCCM_Consent_Log::hash_ip( '192.0.2.1' );
+foreach ( array( '203.0.113.0', '2001:db8:85a3::', $hash_value, '' ) as $i => $old_ip ) {
+	$wpdb->insert( SCCM_Consent_Log::table(), array( 'consent_id' => sprintf( 'cdcdcdcd-0000-4000-8000-00000000000%d', $i ), 'choice' => 'accept_all', 'categories' => 'necessary', 'ip' => $old_ip, 'created_at' => current_time( 'mysql', true ) ) ); // phpcs:ignore
+}
+update_option( SCCM_Install::DB_VERSION_OPTION, '3' );
+SCCM_Install::maybe_upgrade();
+$ips = array_map( 'strval', $wpdb->get_col( $wpdb->prepare( 'SELECT ip FROM %i ORDER BY consent_id', SCCM_Consent_Log::table() ) ) ); // get_col() gives NULL for ''. // phpcs:ignore
+sccm_check( 'upgrade: old shortened IPv4/IPv6 values show *** instead of 0; codes and empty values untouched', array( '203.0.113.***', '2001:db8:85a3:****:****:****:****:****', $hash_value, '' ) === $ips, implode( ' | ', $ips ) );
+sccm_check( 'upgrade: database version is 4', '4' === get_option( SCCM_Install::DB_VERSION_OPTION ) );
+SCCM_Consent_Log::delete_all();
+
+/* ---------------------------------------------------------------- "Learn from visitors" settings */
+
+$wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE name LIKE 'learn\\_test%'" ); // phpcs:ignore
+delete_option( SCCM_Cookies::CANDIDATES_OPTION );
+SCCM_Settings::update( array( 'learn_visitors' => 3, 'learn_days' => 14 ) );
+sccm_as_visitor( '203.0.113.31', 'learn_test_a' );
+sccm_as_visitor( '203.0.113.32', 'learn_test_a' );
+$after_two = SCCM_Cookies::find_matching( 'learn_test_a' );
+sccm_as_visitor( '203.0.113.33', 'learn_test_a' );
+sccm_check( 'setting "different visitors needed" = 3: two reports are not enough, the third lists it', ! $after_two && SCCM_Cookies::find_matching( 'learn_test_a' ) );
+SCCM_Settings::update( array( 'learn_visitors' => 2, 'learn_days' => 7 ) );
+sccm_as_visitor( '203.0.113.41', 'learn_test_b' );
+$cands = get_option( SCCM_Cookies::CANDIDATES_OPTION );
+$cands['cookie:learn_test_b']['t'] = time() - 8 * DAY_IN_SECONDS; // The first report is 8 days old.
+update_option( SCCM_Cookies::CANDIDATES_OPTION, $cands, false );
+sccm_as_visitor( '203.0.113.42', 'learn_test_b' );
+sccm_check( 'setting "within (days)" = 7: a report older than 7 days no longer counts', ! SCCM_Cookies::find_matching( 'learn_test_b' ) );
+$s = SCCM_Settings::update( array( 'learn_visitors' => 500, 'learn_days' => 0 ) );
+sccm_check( 'learning settings are kept within 1-50 visitors and 1-90 days', 50 === $s['learn_visitors'] && 1 === $s['learn_days'] );
+SCCM_Settings::update( array( 'learn_visitors' => 2, 'learn_days' => 14 ) );
+$wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE name LIKE 'learn\\_test%'" ); // phpcs:ignore
+delete_option( SCCM_Cookies::CANDIDATES_OPTION );
 
 /* ---------------------------------------------------------------- Pre-production review: lifecycle */
 

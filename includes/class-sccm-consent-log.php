@@ -100,7 +100,7 @@ class SCCM_Consent_Log {
 	public static function query( array $args = array() ) {
 		global $wpdb;
 
-		list( $search, $choice, $from, $to ) = self::filters( $args );
+		list( $search, $choice, $from, $to, $ip ) = self::filters( $args );
 		$table                               = self::table();
 		$per_page                            = max( 1, min( 500, absint( $args['per_page'] ?? 50 ) ) );
 		$page                                = max( 1, absint( $args['page'] ?? 1 ) );
@@ -110,24 +110,32 @@ class SCCM_Consent_Log {
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery
 		$total = (int) $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM %i WHERE consent_id LIKE %s AND (%s = '' OR choice = %s) AND created_at >= %s AND created_at <= %s",
-				$table,
-				$search,
-				$choice,
-				$choice,
-				$from,
-				$to
-			)
-		);
-		$rows  = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT * FROM %i WHERE consent_id LIKE %s AND (%s = '' OR choice = %s) AND created_at >= %s AND created_at <= %s ORDER BY id DESC LIMIT %d OFFSET %d",
+				"SELECT COUNT(*) FROM %i WHERE consent_id LIKE %s AND (%s = '' OR choice = %s) AND created_at >= %s AND created_at <= %s AND (%s = '' OR ip IN (%s, %s, %s))",
 				$table,
 				$search,
 				$choice,
 				$choice,
 				$from,
 				$to,
+				$ip[0],
+				$ip[0],
+				$ip[1],
+				$ip[2]
+			)
+		);
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM %i WHERE consent_id LIKE %s AND (%s = '' OR choice = %s) AND created_at >= %s AND created_at <= %s AND (%s = '' OR ip IN (%s, %s, %s)) ORDER BY id DESC LIMIT %d OFFSET %d",
+				$table,
+				$search,
+				$choice,
+				$choice,
+				$from,
+				$to,
+				$ip[0],
+				$ip[0],
+				$ip[1],
+				$ip[2],
 				$per_page,
 				$offset
 			),
@@ -149,7 +157,7 @@ class SCCM_Consent_Log {
 	public static function stream_csv( array $args = array() ) {
 		global $wpdb;
 
-		list( $search, $choice, $from, $to ) = self::filters( $args );
+		list( $search, $choice, $from, $to, $ip ) = self::filters( $args );
 		$table                               = self::table();
 
 		$out = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
@@ -161,13 +169,17 @@ class SCCM_Consent_Log {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM %i WHERE consent_id LIKE %s AND (%s = '' OR choice = %s) AND created_at >= %s AND created_at <= %s ORDER BY id ASC LIMIT %d OFFSET %d",
+					"SELECT * FROM %i WHERE consent_id LIKE %s AND (%s = '' OR choice = %s) AND created_at >= %s AND created_at <= %s AND (%s = '' OR ip IN (%s, %s, %s)) ORDER BY id ASC LIMIT %d OFFSET %d",
 					$table,
 					$search,
 					$choice,
 					$choice,
 					$from,
 					$to,
+					$ip[0],
+					$ip[0],
+					$ip[1],
+					$ip[2],
 					$batch,
 					$offset
 				),
@@ -299,7 +311,9 @@ class SCCM_Consent_Log {
 			case 'none':
 				return '';
 			case 'hash':
-				return substr( hash_hmac( 'sha256', $ip, wp_salt( 'auth' ) ), 0, 32 );
+				return self::hash_ip( $ip );
+			case 'full':
+				return $ip;
 			default:
 				return self::anonymize_ip( $ip );
 		}
@@ -313,16 +327,42 @@ class SCCM_Consent_Log {
 	 */
 	public static function anonymize_ip( $ip ) {
 		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
-			return preg_replace( '/\.\d+$/', '.0', $ip );
+			return preg_replace( '/\.\d+$/', '.***', $ip );
 		}
 		if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
 			$packed = inet_pton( $ip );
 			if ( false !== $packed ) {
-				$packed = substr( $packed, 0, 6 ) . str_repeat( "\0", 10 );
-				return (string) inet_ntop( $packed );
+				// The first 48 bits (the network) are kept, the rest is hidden.
+				$groups = unpack( 'n3', substr( $packed, 0, 6 ) );
+				return vsprintf( '%x:%x:%x', array_values( $groups ) ) . str_repeat( ':****', 5 );
 			}
 		}
 		return '';
+	}
+
+	/**
+	 * The one-way code of an IP address: always the same code for the same address on this
+	 * website (keyed with the site's secret salt), but the address cannot be worked out from it.
+	 *
+	 * @param string $ip IP address.
+	 * @return string 32 hex characters.
+	 */
+	public static function hash_ip( $ip ) {
+		return substr( hash_hmac( 'sha256', $ip, wp_salt( 'auth' ) ), 0, 32 );
+	}
+
+	/**
+	 * Every form an IP address can have in the records (full, shortened, one-way code), so a
+	 * search by IP finds a visitor's records whichever setting was used when they were saved.
+	 *
+	 * @param string $ip IP address.
+	 * @return string[] Three values (full, shortened, code); empty strings for an invalid address.
+	 */
+	public static function ip_forms( $ip ) {
+		if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+			return array( '', '', '' );
+		}
+		return array( $ip, self::anonymize_ip( $ip ), self::hash_ip( $ip ) );
 	}
 
 	/**
@@ -345,15 +385,19 @@ class SCCM_Consent_Log {
 	 * ID ('%'), the choice is '' (switched off in the query) and the dates span every record. Real
 	 * dates are used on purpose: MySQL in strict mode refuses to compare a date column with ''.
 	 *
-	 * @param array $args search, choice, from (Y-m-d), to (Y-m-d).
-	 * @return array array( search LIKE pattern, choice, from datetime, to datetime ).
+	 * @param array $args search (consent ID or IP address), choice, from (Y-m-d), to (Y-m-d).
+	 * @return array array( search LIKE pattern, choice, from datetime, to datetime, IP forms ).
 	 */
 	private static function filters( array $args ) {
 		global $wpdb;
-		$search = ! empty( $args['search'] ) ? '%' . $wpdb->esc_like( sanitize_text_field( $args['search'] ) ) . '%' : '%';
+		$term   = ! empty( $args['search'] ) ? trim( sanitize_text_field( $args['search'] ) ) : '';
+		$is_ip  = '' !== $term && filter_var( $term, FILTER_VALIDATE_IP );
+		// The search box takes a consent ID, or an IP address (found in any stored form).
+		$search = '' !== $term && ! $is_ip ? '%' . $wpdb->esc_like( $term ) . '%' : '%';
+		$ip     = $is_ip ? self::ip_forms( $term ) : array( '', '', '' );
 		$choice = ! empty( $args['choice'] ) && in_array( $args['choice'], self::CHOICES, true ) ? $args['choice'] : '';
 		$from   = ! empty( $args['from'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $args['from'] ) ? $args['from'] . ' 00:00:00' : '1000-01-01 00:00:00';
 		$to     = ! empty( $args['to'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $args['to'] ) ? $args['to'] . ' 23:59:59' : '9999-12-31 23:59:59';
-		return array( $search, $choice, $from, $to );
+		return array( $search, $choice, $from, $to, $ip );
 	}
 }

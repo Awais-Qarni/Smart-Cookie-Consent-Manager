@@ -11,9 +11,29 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); staging test and release are next
 - **Last updated:** 2026-10-08 (session 7)
-- **Tests:** unit 33, WP-CLI 142, visitor e2e 115, admin e2e 63, all passing on **MySQL 8.4
+- **Tests:** unit 33, WP-CLI 155, visitor e2e 115, admin e2e 66, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-10-08 — Session 7b (owner feedback: learning settings, IP display)
+
+**Done**
+- "Learn from visitors" thresholds are settings: `learn_visitors` (default 2, 1–50) and
+  `learn_days` (default 14, 1–90), under Settings → Cookie scan and email alerts.
+  `SCCM_Cookies::min_visitors()` reads them; `MIN_VISITORS` stays as the default.
+- Shortened IPs show the hidden part as `***` (`203.0.113.***`, `2001:db8:85a3:****:…`) instead
+  of `0`; DB version 4 converts old records (`a.b.c.0`, `a:b:c::`).
+- New IP mode `full`; settings text explains GDPR. Search box on Consent Records takes an IP
+  address and matches the full, shortened and coded forms (`SCCM_Consent_Log::ip_forms()`); a
+  shortened record matches every address of its /24 (IPv6: /48).
+- Fixed in passing: `SCCM_Install::remove_all_data()` now clears the cookie-list request cache
+  (`SCCM_Cookies::flush()`), so reinstalling in the same request seeds the plugin cookie again.
+- Tests: WP-CLI 155 (IP modes, search, upgrade, thresholds), admin e2e 66; all suites pass on
+  MySQL 8.4 and MariaDB 11.4, debug.log clean.
+
+**Next:** merge `feature/v1-build` into `main` (PR), staging test, release 1.2.0.
 
 ---
 

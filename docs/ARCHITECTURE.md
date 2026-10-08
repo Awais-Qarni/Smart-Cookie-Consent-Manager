@@ -59,7 +59,7 @@ Browser
 |---|---|
 | Install | `sccm_consent` (and WooCommerce's cookies when active). Not the WordPress login cookies: only logged-in users have them. |
 | Server scan (cron / "Scan now") | Cookies in `Set-Cookie` headers of real pages (known → Active, unknown → Needs review); for each service detected in the HTML, the cookies it always sets. |
-| Visitor reports | Known library cookies → Active at once. Unknown cookies → candidates in option `sccm_candidates`; listed as Needs review only after `SCCM_Cookies::MIN_VISITORS` (2) different visitors reported them. |
+| Visitor reports | Known library cookies → Active at once. Unknown cookies → candidates in option `sccm_candidates`; listed as Needs review only after `SCCM_Cookies::min_visitors()` (setting `learn_visitors`, default 2) different visitors reported them within `learn_days` (default 14) days. |
 
 Guards: pending items are capped (`MAX_PENDING` = 50), ignored cookies are never re-added, a
 scan bumps the consent version at most once (never on the first scan), and approving needs an
@@ -198,7 +198,7 @@ predictable. Labels/descriptions are editable; categories can be hidden if unuse
 
 ## Security model
 - Visitor cookie reports are anonymous, so they are treated as hints: every name (known or not)
-  needs `SCCM_Cookies::MIN_VISITORS` different visitors, the waiting list is capped, and an
+  needs `SCCM_Cookies::min_visitors()` different visitors (setting, at least 1), the waiting list is capped, and an
   addition from reports never bumps the consent version (`bulk( …, false )`).
 - Text stored in sized columns is cut with `mb_substr()` (characters), never `substr()`
   (bytes): MySQL refuses a value with a broken multi-byte character.

@@ -80,8 +80,8 @@ if ( is_array( $sccm_failure ) && time() - (int) $sccm_failure['time'] < WEEK_IN
 <form method="get" class="sccm-filters">
 	<input type="hidden" name="page" value="<?php echo esc_attr( SCCM_Admin::SLUG ); ?>">
 	<input type="hidden" name="tab" value="records">
-	<label><span class="screen-reader-text"><?php esc_html_e( 'Consent ID', 'smart-cookie-consent-manager' ); ?></span>
-		<input type="search" name="search" value="<?php echo esc_attr( $sccm_filters['search'] ?? '' ); ?>" placeholder="<?php esc_attr_e( 'Consent ID', 'smart-cookie-consent-manager' ); ?>"></label>
+	<label><span class="screen-reader-text"><?php esc_html_e( 'Consent ID or IP address', 'smart-cookie-consent-manager' ); ?></span>
+		<input type="search" name="search" value="<?php echo esc_attr( $sccm_filters['search'] ?? '' ); ?>" placeholder="<?php esc_attr_e( 'Consent ID or IP address', 'smart-cookie-consent-manager' ); ?>"></label>
 	<label><span class="screen-reader-text"><?php esc_html_e( 'Choice', 'smart-cookie-consent-manager' ); ?></span>
 		<select name="choice">
 			<?php foreach ( $sccm_choices as $sccm_value => $sccm_label ) : ?>

@@ -42,6 +42,8 @@ Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 == Changelog ==
 
 = 1.2.0 =
+* "Learn from visitors": the number of different visitors needed (default 2) and the number of days (default 14) can be changed in the settings.
+* Consent records: shortened IP addresses show the hidden part as *** instead of 0; new option to save the full IP address; search records by IP address.
 * Fixed: the Consent Records list stayed empty on MySQL 8 hosts (e.g. WP Engine) although records were saved.
 * Security: fake cookie reports cannot add services or re-show the banner; text is trimmed by characters (no lost records with accents or emoji).
 * Tested on MySQL 8.4 (strict mode) and MariaDB 11.4.

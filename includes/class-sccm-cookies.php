@@ -10,8 +10,8 @@
  *    category. Nothing to do for the site owner.
  *  - Unknown cookies seen by the server scan are added as "Needs review".
  *  - Unknown cookies reported by visitors' browsers are added as "Needs review" only after
- *    at least two different visitors reported them (browser extensions and other one-off
- *    noise never reach the list). Logged-in users never report.
+ *    enough different visitors reported them (setting, default 2 within 14 days), so browser
+ *    extensions and other one-off noise never reach the list. Logged-in users never report.
  *
  * @package SmartCookieConsentManager
  */
@@ -35,7 +35,7 @@ class SCCM_Cookies {
 	/**
 	 * Different visitors that must report an unknown cookie before it is listed.
 	 */
-	const MIN_VISITORS = 2;
+	const MIN_VISITORS = 2; // Default of the setting learn_visitors (see min_visitors()).
 
 	/**
 	 * Option that holds cookies reported by visitors but not yet listed.
@@ -112,6 +112,13 @@ class SCCM_Cookies {
 			self::$rows = $rows;
 		}
 		return self::$rows;
+	}
+
+	/**
+	 * Reset the request cache (after the table was emptied or dropped outside this class).
+	 */
+	public static function flush() {
+		self::$rows = null;
 	}
 
 	/**
@@ -445,7 +452,17 @@ class SCCM_Cookies {
 	}
 
 	/**
-	 * Count one visitor's report of an unknown cookie.
+	 * How many different visitors must report a cookie before it is listed (setting
+	 * "learn_visitors", 1-50, default 2).
+	 *
+	 * @return int
+	 */
+	public static function min_visitors() {
+		return max( 1, (int) SCCM_Settings::get( 'learn_visitors' ) );
+	}
+
+	/**
+	 * Count one visitor's report of a cookie (within the days of the setting "learn_days").
 	 *
 	 * @param string $name Cookie name.
 	 * @param string $type Storage type.
@@ -460,7 +477,7 @@ class SCCM_Cookies {
 
 		// Forget stale candidates.
 		foreach ( $candidates as $k => $candidate ) {
-			if ( ! isset( $candidate['t'] ) || $now - (int) $candidate['t'] > 14 * DAY_IN_SECONDS ) {
+			if ( ! isset( $candidate['t'] ) || $now - (int) $candidate['t'] > (int) SCCM_Settings::get( 'learn_days' ) * DAY_IN_SECONDS ) {
 				unset( $candidates[ $k ] );
 			}
 		}
@@ -479,7 +496,7 @@ class SCCM_Cookies {
 			$candidates[ $key ]['t']   = $now;
 		}
 
-		$promote = count( $candidates[ $key ]['v'] ) >= self::MIN_VISITORS;
+		$promote = count( $candidates[ $key ]['v'] ) >= self::min_visitors();
 		if ( $promote ) {
 			unset( $candidates[ $key ] );
 		}

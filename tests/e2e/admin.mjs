@@ -89,10 +89,17 @@ check('S1 "Until the browser is closed" sets 0', (await page.inputValue('#sccm-c
 await page.selectOption('#sccm-expiry-preset', '180');
 await page.locator('summary', { hasText: 'Cookie scan and email alerts' }).click();
 await page.fill('#sccm-alert_email', 'owner@example.com\nteam@example.com\nbroken-address');
+await page.fill('#sccm-learn_visitors', '5');
+await page.fill('#sccm-learn_days', '30');
+await page.locator('summary', { hasText: 'Consent records (the proof)' }).click();
+await page.selectOption('#sccm-ip_mode', 'full');
 await Promise.all([page.waitForNavigation(), page.click('p.submit input[type=submit]')]);
 const saved = option();
 check('S2 expiry saved (180 days)', saved.consent_expiry_days === 180);
 check('S3 two recipients saved, invalid dropped', saved.alert_email === 'owner@example.com, team@example.com', saved.alert_email);
+check('S4 "Learn from visitors" thresholds saved (5 visitors within 30 days)', saved.learn_visitors === 5 && saved.learn_days === 30, `${saved.learn_visitors}/${saved.learn_days}`);
+check('S5 IP address option "Save the full IP address" saved', saved.ip_mode === 'full', saved.ip_mode);
+wp('eval', `SCCM_Settings::update( array( 'learn_visitors' => 2, 'learn_days' => 14, 'ip_mode' => 'anonymize' ) );`);
 await page.locator('summary', { hasText: 'Cookie scan and email alerts' }).click();
 if (fs.existsSync(CONTENT + '/mail-captured.json')) fs.unlinkSync(CONTENT + '/mail-captured.json');
 await Promise.all([page.waitForNavigation(), page.click('button:has-text("Send me a sample email")')]);
@@ -254,6 +261,11 @@ wp('eval', `foreach ( ${JSON.stringify(extra)} as $id ) { wp_delete_post( $id, t
 	const csv = fs.readFileSync(await csvDownload.path(), 'utf8');
 	check('R1 CSV export: header row and the record with its consent ID, choice and categories', /^id,consent_id,date_time_utc,choice,categories,gpc,consent_version,url,ip,user_agent/.test(csv) && csv.includes('12121212-3434-4565-8787-909090909090') && csv.includes('accept_all') && csv.includes('necessary,analytics'), csv.split('\n')[0]);
 	check('R1 CSV export: no cell starts with a formula', !csv.split('\n').slice(1).some((line) => /(^|,)"?[=+@-]/.test(line)), csv.split('\n')[1]);
+	wp('eval', `global $wpdb; $wpdb->update( SCCM_Consent_Log::table(), array( 'ip' => '203.0.113.***' ), array( 'consent_id' => '12121212-3434-4565-8787-909090909090' ) );`);
+	await page.goto(admin('records') + '&search=203.0.113.7');
+	const found = await page.textContent('table.widefat tbody');
+	await page.goto(admin('records') + '&search=192.0.2.7');
+	check('R2 search by IP address finds the record of a shortened IP (203.0.113.***); another network finds nothing', found.includes('12121212-3434') && found.includes('203.0.113.***') && /No consent records/.test(await page.textContent('table.widefat tbody')));
 	wp('eval', `SCCM_Consent_Log::delete_all();`);
 
 	await page.goto(admin('tools'));

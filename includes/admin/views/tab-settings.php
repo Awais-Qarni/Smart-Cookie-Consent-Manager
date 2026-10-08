@@ -175,6 +175,28 @@ SCCM_Admin::form_open( 'settings' );
 			__( 'The scan looks for cookies and third-party services on your pages. Small websites (up to 40 pages) are scanned completely; bigger ones get more pages the bigger they are (100 pages → 55, 300 → 72, at most 80): every main page first, one item of each content type, then sub pages and sub-sub pages from every section in turn.', 'smart-cookie-consent-manager' )
 		);
 		SCCM_Admin::checkbox( 'scanner_client', __( 'Also learn from visitors', 'smart-cookie-consent-manager' ), $settings['scanner_client'], __( 'Catches cookies that only JavaScript sets, which a scan cannot see. Only cookie names are sent (never values), never from logged-in users, and a cookie is listed only after several different visitors reported it, so your list stays short.', 'smart-cookie-consent-manager' ) );
+		SCCM_Admin::input(
+			'learn_visitors',
+			__( 'Different visitors needed', 'smart-cookie-consent-manager' ),
+			$settings['learn_visitors'],
+			'number',
+			__( 'How many different visitors must report a cookie before it is listed. 2 suits most websites; raise it on busy websites so only cookies many visitors have are listed. 1 is not recommended: then a single browser (or someone sending fake reports) is enough.', 'smart-cookie-consent-manager' ),
+			array(
+				'min' => 1,
+				'max' => 50,
+			)
+		);
+		SCCM_Admin::input(
+			'learn_days',
+			__( '…within (days)', 'smart-cookie-consent-manager' ),
+			$settings['learn_days'],
+			'number',
+			__( 'The reports must come within this many days. Use more days on quiet websites (few visitors), fewer on busy ones.', 'smart-cookie-consent-manager' ),
+			array(
+				'min' => 1,
+				'max' => 90,
+			)
+		);
 		SCCM_Admin::checkbox( 'alerts_enabled', __( 'Email about cookie changes', 'smart-cookie-consent-manager' ), $settings['alerts_enabled'], __( 'Once a day the plugin checks whether anything changed in the last 24 hours (cookies added to the banner, cookies waiting for review, new third-party services). Only then it sends one email; no changes, no email.', 'smart-cookie-consent-manager' ) );
 		$sccm_hours = array();
 		for ( $sccm_h = 0; $sccm_h < 24; $sccm_h++ ) {
@@ -256,10 +278,12 @@ SCCM_Admin::form_open( 'settings' );
 			__( 'Visitor IP address', 'smart-cookie-consent-manager' ),
 			$settings['ip_mode'],
 			array(
-				'anonymize' => __( 'Save it shortened (last part removed)', 'smart-cookie-consent-manager' ),
+				'anonymize' => __( 'Save it shortened (last part hidden, e.g. 203.0.113.***)', 'smart-cookie-consent-manager' ),
 				'hash'      => __( 'Save it as a one-way code', 'smart-cookie-consent-manager' ),
+				'full'      => __( 'Save the full IP address', 'smart-cookie-consent-manager' ),
 				'none'      => __( 'Do not save it', 'smart-cookie-consent-manager' ),
-			)
+			),
+			__( 'Shortened (default) is enough as proof for most websites. One-way code: the address cannot be read back, but you can still find a visitor\'s records by searching for their IP address. Full IP address: it is personal data under the GDPR; only choose it if you have a reason to keep it, and mention it in your privacy policy. The search box on Consent Records finds records by IP address in every mode except "Do not save it".', 'smart-cookie-consent-manager' )
 		);
 		SCCM_Admin::input( 'retention_months', __( 'Keep records for (months)', 'smart-cookie-consent-manager' ), $settings['retention_months'], 'number', __( 'Older records are deleted automatically every day. 0 = keep forever.', 'smart-cookie-consent-manager' ), array( 'min' => 0, 'max' => 120 ) );
 		?>

@@ -67,6 +67,8 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
       wrapping buttons), first-visit preview, no "Show details" link, dark-mode-safe email,
       automatic page-cache clearing, other-CMP warning, AMP/page-builder exclusions, .pot
 - [x] Performance review (see `PERFORMANCE.md`)
+- [x] Round 12 (owner feedback): adjustable "learn from visitors" thresholds, shortened IPs shown
+      as `***`, optional full IP, search records by IP address
 - [ ] Review against the live Cookiebot banner and account (not reachable from the build environment)
 
 ## Later (not in scope for 1.0)

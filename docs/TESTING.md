@@ -8,8 +8,8 @@ npm test             # php -l on every PHP file, node --check on JS, PHP unit te
 
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
 SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 115 browser checks (visitor side)
-SCCM_WP=/path/to/wp npm run test:wp                              # 142 checks: cookie list, fake-report protection, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent records (filters, validation, rate limit, retention, emoji URLs, self-repair), CSV safety, banner HTML, deactivate/uninstall (WP-CLI)
-SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 63 checks of the admin screens, incl. consent records, CSV export, settings export/import, "ask again", Subscriber access (403 everywhere), a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
+SCCM_WP=/path/to/wp npm run test:wp                              # 155 checks: cookie list, "learn from visitors" settings, fake-report protection, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent records (filters, validation, rate limit, retention, emoji URLs, self-repair), IP modes (shortened ***, code, full, none), search by IP, upgrade to DB v4, CSV safety, banner HTML, deactivate/uninstall (WP-CLI)
+SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 66 checks of the admin screens, incl. learning/IP settings, search by IP, consent records, CSV export, settings export/import, "ask again", Subscriber access (403 everywhere), a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
 ```
 
 `test:wp` and `e2e:admin` reset the cookie list and settings of the site they run on: dev sites only.
@@ -98,7 +98,9 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
       and read the red notice (the reason the last record was refused).
 - [ ] H1 Visitor's Consent ID (About tab) matches the log row.
 - [ ] H2 CSV export contains consent ID, choice, categories, date/time, GPC, version, URL.
-- [ ] H3 IP shown as anonymised/hashed according to the setting.
+- [ ] H3 IP shown according to the setting: shortened `203.0.113.***` (default), a 32-character
+      code, the full address, or empty. Searching for the visitor's IP address finds the row in
+      the first three modes.
 
 ### I. Scanner (feature 9)
 - [ ] I1 Add a test script that sets `test_unknown_cookie`; browse the site with two different
