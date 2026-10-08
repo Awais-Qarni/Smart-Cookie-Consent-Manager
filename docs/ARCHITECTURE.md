@@ -197,6 +197,11 @@ Stable keys make Consent Mode mapping, blocking rules, exports and multi-site im
 predictable. Labels/descriptions are editable; categories can be hidden if unused.
 
 ## Security model
+- Visitor cookie reports are anonymous, so they are treated as hints: every name (known or not)
+  needs `SCCM_Cookies::MIN_VISITORS` different visitors, the waiting list is capped, and an
+  addition from reports never bumps the consent version (`bulk( …, false )`).
+- Text stored in sized columns is cut with `mb_substr()` (characters), never `substr()`
+  (bytes): MySQL refuses a value with a broken multi-byte character.
 - Admin: `manage_options` + nonce checked in every admin-post handler and AJAX callback.
   Messages after an action are kept in a per-user transient (`sccm_notice_{user}`), never read
   from the URL.

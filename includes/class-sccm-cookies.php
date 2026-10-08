@@ -392,20 +392,31 @@ class SCCM_Cookies {
 
 		$known = SCCM_Services::match_cookie( $name );
 		if ( $known && $known['type'] === $type ) {
-			self::save(
-				array(
-					'name'       => $known['name'],
-					'type'       => $type,
-					'category'   => $known['category'],
-					'provider'   => $known['provider'],
-					'purpose'    => $known['purpose'],
-					'duration'   => $known['duration'],
-					'service'    => $known['service'],
-					'status'     => 'active',
-					'source'     => 'scanner',
-					'first_seen' => $now,
-					'last_seen'  => $now,
-				)
+			// Reports come from anonymous browsers: a known cookie too needs several different
+			// visitors, and it does not ask everyone again (that stays with scans and the admin),
+			// so nobody can add services to the list or re-show the banner with fake reports.
+			if ( 'visitor' === $origin && ! self::add_candidate( $known['name'], $type ) ) {
+				return '';
+			}
+			self::bulk(
+				function () use ( $known, $type, $now ) {
+					self::save(
+						array(
+							'name'       => $known['name'],
+							'type'       => $type,
+							'category'   => $known['category'],
+							'provider'   => $known['provider'],
+							'purpose'    => $known['purpose'],
+							'duration'   => $known['duration'],
+							'service'    => $known['service'],
+							'status'     => 'active',
+							'source'     => 'scanner',
+							'first_seen' => $now,
+							'last_seen'  => $now,
+						)
+					);
+				},
+				'visitor' !== $origin
 			);
 			self::queue_alert( $known['name'], $type, 'active', $known['category'] );
 			return 'active';
@@ -656,12 +667,12 @@ class SCCM_Cookies {
 		$name = preg_replace( '/[^A-Za-z0-9_\-\.\*\[\]:@$%~|]/', '', (string) $row['name'] );
 
 		return array(
-			'name'       => substr( $name, 0, 191 ),
+			'name'       => mb_substr( $name, 0, 191 ),
 			'type'       => in_array( $row['type'], self::TYPES, true ) ? $row['type'] : 'cookie',
 			'category'   => SCCM_Categories::is_valid( $row['category'] ) ? $row['category'] : 'necessary',
-			'provider'   => substr( sanitize_text_field( (string) $row['provider'] ), 0, 191 ),
+			'provider'   => mb_substr( sanitize_text_field( (string) $row['provider'] ), 0, 191 ),
 			'purpose'    => sanitize_textarea_field( (string) $row['purpose'] ),
-			'duration'   => substr( sanitize_text_field( (string) $row['duration'] ), 0, 100 ),
+			'duration'   => mb_substr( sanitize_text_field( (string) $row['duration'] ), 0, 100 ),
 			'service'    => sanitize_key( (string) $row['service'] ),
 			'status'     => in_array( $row['status'], self::STATUSES, true ) ? $row['status'] : 'active',
 			'source'     => in_array( $row['source'], self::SOURCES, true ) ? $row['source'] : 'manual',

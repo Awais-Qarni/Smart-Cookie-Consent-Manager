@@ -799,7 +799,7 @@ class SCCM_Admin {
 		} else {
 			$failed = true;
 			/* translators: 1: HTTP status or 0, 2: reply */
-			$messages[] = sprintf( __( 'Visitor route (admin-ajax.php) from the server: HTTP %1$d, %2$s. A password-protected staging site or a firewall that blocks requests from the server itself can cause this test to fail even when visitors get through.', 'smart-cookie-consent-manager' ), $code, substr( $body, 0, 200 ) );
+			$messages[] = sprintf( __( 'Visitor route (admin-ajax.php) from the server: HTTP %1$d, %2$s. A password-protected staging site or a firewall that blocks requests from the server itself can cause this test to fail even when visitors get through.', 'smart-cookie-consent-manager' ), $code, mb_substr( $body, 0, 200 ) );
 		}
 		self::back( 'records', implode( ' ', $messages ), $failed );
 	}

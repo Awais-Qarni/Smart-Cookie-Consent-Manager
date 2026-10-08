@@ -97,7 +97,8 @@ a choice brings the banner back), and again later, centred, with a close button.
 - [ ] Visitor-side detection: browsers report **cookie** names that are not in the registry
       (names only, never values; rate-limited; never from logged-in users; local storage is not
       reported). An unknown cookie is listed only after at least two different visitors
-      reported it; at most 50 items wait for review.
+      reported it; at most 50 items wait for review. A known service cookie reported by
+      browsers also needs two different visitors, and visitor reports never ask everyone again.
 - [ ] Server-side scan (scheduled + "Scan now"): fetches the planned pages (all pages of a small
       site; 40–80 for bigger ones: main pages first, then sub and sub-sub pages of every
       section), reads `Set-Cookie` headers and third-party scripts/iframes/fonts, matches the

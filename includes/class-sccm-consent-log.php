@@ -68,7 +68,7 @@ class SCCM_Consent_Log {
 			'consent_version' => max( 1, absint( $data['version'] ?? 1 ) ),
 			'url'             => self::clean_url( $data['url'] ?? '' ),
 			'ip'              => self::process_ip( self::client_ip() ),
-			'user_agent'      => substr( sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) ), 0, 255 ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
+			'user_agent'      => mb_substr( sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ?? '' ) ), 0, 255 ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 			'created_at'      => current_time( 'mysql', true ),
 		);
 
@@ -337,7 +337,7 @@ class SCCM_Consent_Log {
 		if ( '' === $url || wp_parse_url( $url, PHP_URL_HOST ) !== $host ) {
 			return '';
 		}
-		return substr( $url, 0, 2048 );
+		return mb_substr( $url, 0, 2048 );
 	}
 
 	/**

@@ -36,9 +36,9 @@ and screenshots go to `tests/e2e/output/` (git-ignored).
 
 | Command | What it covers |
 |---|---|
-| `npm run e2e` | Visitor side: compact banner + Customize, dialog tabs, switches, details, the four button orders, first-visit preview, theme isolation (hostile theme CSS), one-line buttons, vertical buttons in top/bottom bars, Cookie Policy on a dark theme, widget, expiry, scan-mode safety, reporting (102 checks). |
-| `SCCM_WP=/path/to/wp-cli-wrapper npm run test:wp` | Cookie list rules, browser-scan rules, settings, button orders, email recipients and design (dark mode, Outlook button), categories, library details, hashed asset files, Cookie Policy sidebar, cache clearing and throttling, other-CMP detection (WP-CLI, 123 checks; also the scan plan and steps, the daily change email, record filters, records table self-repair, CSV and banner-HTML safety). |
-| `SCCM_WP=… SCCM_E2E_URL=… npm run e2e:admin` | Admin screens as `admin`/`admin`: approve/ignore, expiry, recipients, sample email, positions, button order, banner style, consent records (direct, with credentials, REST blocked → admin-ajax, changed JSON, test button), a real browser scan, leaving it mid-way and resuming, the daily email, GA4 by ID (Strict/Advanced), spoofed notices, CSRF (53 checks). |
+| `npm run e2e` | Visitor side: compact banner + Customize, dialog tabs, switches, details, the four button orders, first-visit preview, theme isolation (hostile theme CSS), one-line buttons, vertical buttons in top/bottom bars, asking again (version, expiry, grace period, damaged cookie), GPC over a stored choice, keyboard focus trap, right-to-left, optimiser attributes, Cookie Policy on a dark theme, widget, expiry, scan-mode safety, reporting (115 checks). |
+| `SCCM_WP=/path/to/wp-cli-wrapper npm run test:wp` | Cookie list rules, browser-scan rules, settings, button orders, email recipients and design (dark mode, Outlook button), categories, library details, hashed asset files, Cookie Policy sidebar, cache clearing and throttling, other-CMP detection (WP-CLI, 142 checks; also the scan plan and steps, the daily change email, record filters, records table self-repair, CSV and banner-HTML safety). |
+| `SCCM_WP=… SCCM_E2E_URL=… npm run e2e:admin` | Admin screens as `admin`/`admin`: approve/ignore, expiry, recipients, sample email, positions, button order, banner style, consent records (direct, with credentials, REST blocked → admin-ajax, changed JSON, test button), CSV export, settings export/import, "ask all visitors again", Subscriber access, a real browser scan, leaving it mid-way and resuming, the daily email, GA4 by ID (Strict/Advanced), spoofed notices, CSRF (63 checks). |
 | `node tests/e2e/admin-shots.mjs <dir>` | Screenshots of every admin tab, for visual review. |
 
 The last three reset the plugin settings and cookie list of the site they run on: use a
@@ -51,6 +51,9 @@ development site only. (The Cookie Policy page link is kept.)
 - `SCCM_WP` can point straight at `wp-cli.phar` (it is run with `php`; set `SCCM_PHP` for
   another PHP binary). Give WP-CLI the WordPress path with a `wp-cli.yml` and
   `WP_CLI_CONFIG_PATH`.
+- Database: run the suites on MySQL 8 too (production hosts such as WP Engine use it in strict
+  mode). A portable MySQL zip next to MariaDB on another port works; switch with a check in
+  wp-config.php (e.g. `DB_HOST` = `127.0.0.1:3307` when a marker file exists).
 - PHP's built-in server is single-threaded on Windows (`PHP_CLI_SERVER_WORKERS` is Unix-only)
   and Chromium's extra connections stall it. Put a small proxy in front that spreads requests
   over several `php -S` processes, or use LocalWP / XAMPP.

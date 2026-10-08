@@ -76,6 +76,12 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   the next time any Cookie Consent screen is opened. Two tabs never scan at the same time.
 
 ### Security
+- **Fake cookie reports can no longer change the cookie list or re-show the banner**: a cookie
+  name of a known service reported by an anonymous browser was added at once and asked every
+  visitor again. Known cookies from visitor reports now also need two different visitors, and
+  additions from visitor reports never ask everyone again (scans and the admin still do).
+- Values are shortened by characters, not bytes (URL, browser name, provider…): a value cut in
+  the middle of an accented letter or emoji made MySQL refuse the whole consent record.
 - **Consent records CSV export is safe to open in Excel**: values that visitors send (page URL,
   browser) can no longer start with a formula (`=`, `+`, `-`, `@`), which spreadsheet programs
   would run (CSV injection).

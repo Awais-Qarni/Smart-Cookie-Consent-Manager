@@ -43,6 +43,8 @@ Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 = 1.2.0 =
 * Fixed: the Consent Records list stayed empty on MySQL 8 hosts (e.g. WP Engine) although records were saved.
+* Security: fake cookie reports cannot add services or re-show the banner; text is trimmed by characters (no lost records with accents or emoji).
+* Tested on MySQL 8.4 (strict mode) and MariaDB 11.4.
 * Consent records are saved on password-protected (staging) sites, from cached pages on another domain, and when the REST API is blocked (admin-ajax fallback); the Consent Records tab explains problems and has a "Test record saving" button.
 * Scans adapt to the size of the website: small sites completely, bigger ones 40–80 pages (main pages, then sub and sub-sub pages of every section), in short steps that never hit time limits.
 * Compact top/bottom banner: buttons stacked vertically.

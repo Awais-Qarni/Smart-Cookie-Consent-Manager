@@ -64,8 +64,13 @@ sccm_check( 'a fresh list holds only the plugin cookie (no WordPress login cooki
 sccm_check( 'unknown cookie from ONE visitor is not listed', '' === sccm_as_visitor( '203.0.113.1', 'mystery_cookie' ) && ! in_array( 'mystery_cookie', sccm_names(), true ) );
 sccm_check( 'the same visitor reporting again still does not list it', '' === sccm_as_visitor( '203.0.113.1', 'mystery_cookie' ) && ! in_array( 'mystery_cookie', sccm_names(), true ) );
 sccm_check( 'a SECOND different visitor lists it as pending', 'pending' === sccm_as_visitor( '203.0.113.2', 'mystery_cookie' ) && in_array( 'mystery_cookie', sccm_names(), true ) );
-sccm_check( 'a known library cookie is added immediately, in the right category', 'active' === sccm_as_visitor( '203.0.113.1', '_hjSession_998877' ) && 'analytics' === SCCM_Cookies::find_matching( '_hjSession_998877' )['category'] );
-sccm_check( 'a conditional library cookie (_fbc) is categorised when seen', 'active' === sccm_as_visitor( '203.0.113.1', '_fbc' ) && 'marketing' === SCCM_Cookies::find_matching( '_fbc' )['category'] );
+$v_before = (int) get_option( 'sccm_consent_version' );
+SCCM_Settings::update( array( 'reask_on_change' => 1 ) );
+sccm_check( 'a known library cookie reported by ONE visitor is not listed (fake reports cannot add services)', '' === sccm_as_visitor( '203.0.113.1', '_hjSession_998877' ) && ! SCCM_Cookies::find_matching( '_hjSession_998877' ) );
+sccm_check( 'a SECOND visitor lists it at once in the right category', 'active' === sccm_as_visitor( '203.0.113.2', '_hjSession_998877' ) && 'analytics' === SCCM_Cookies::find_matching( '_hjSession_998877' )['category'] );
+sccm_check( 'a cookie added from visitor reports does not ask everyone again (no consent version change)', $v_before === (int) get_option( 'sccm_consent_version' ) );
+sccm_as_visitor( '203.0.113.1', '_fbc' );
+sccm_check( 'a conditional library cookie (_fbc) is categorised when seen', 'active' === sccm_as_visitor( '203.0.113.2', '_fbc' ) && 'marketing' === SCCM_Cookies::find_matching( '_fbc' )['category'] );
 
 // Local storage never gets in, through the REST endpoint.
 $request = new WP_REST_Request( 'POST', '/sccm/v1/report' );
@@ -519,6 +524,94 @@ remove_filter( 'option_active_plugins', $fake );
 /* ---------------------------------------------------------------- AMP */
 
 sccm_check( 'AMP detection is off when no AMP plugin is active', false === SCCM_Frontend::is_amp() );
+
+/* ---------------------------------------------------------------- Pre-production review: records */
+
+SCCM_Consent_Log::delete_all();
+$as_ip = function ( $ip ) {
+	return function () use ( $ip ) {
+		return $ip;
+	};
+};
+// Validation of what a visitor's browser sends.
+$ip_filter = $as_ip( '203.0.113.10' );
+add_filter( 'sccm_client_ip', $ip_filter );
+$bad = array(
+	'consent id with markup' => array( 'consent_id' => '<script>alert(1)</script>', 'choice' => 'accept_all' ),
+	'unknown choice'         => array( 'consent_id' => 'eeeeeeee-5555-4555-8555-555555555555', 'choice' => 'accept_everything' ),
+	'not an object'          => 'accept_all',
+);
+foreach ( $bad as $label => $payload ) {
+	$r = SCCM_REST::store_consent( $payload, false );
+	sccm_check( "records: a record with $label is refused", is_wp_error( $r ) && 400 === ( $r->get_error_data()['status'] ?? 0 ) );
+}
+$r   = SCCM_REST::store_consent( array( 'consent_id' => 'ffffffff-6666-4666-8666-666666666666', 'choice' => 'custom', 'categories' => array( 'analytics', 'admin', 'necessary', 'analytics' ), 'url' => 'https://evil.example/phish' ), false );
+$row = SCCM_Consent_Log::query( array( 'search' => 'ffffffff' ) )['rows'][0] ?? array();
+sccm_check( 'records: unknown categories are dropped and a URL of another website is not stored', ! is_wp_error( $r ) && 'necessary,analytics' === ( $row['categories'] ?? '' ) && '' === ( $row['url'] ?? 'x' ) );
+// Long URLs with accents/emoji (MySQL refuses a value cut in the middle of a character).
+$long = home_url( '/' ) . '?q=' . str_repeat( 'é😀', 900 );
+$r    = SCCM_REST::store_consent( array( 'consent_id' => 'abababab-7777-4777-8777-777777777777', 'choice' => 'accept_all', 'url' => $long ), false );
+$row  = SCCM_Consent_Log::query( array( 'search' => 'abababab' ) )['rows'][0] ?? array();
+sccm_check( 'records: a very long URL with accents and emoji is stored, cut at a character boundary', ! is_wp_error( $r ) && mb_strlen( $row['url'] ?? '' ) <= 2048 && mb_check_encoding( $row['url'] ?? '', 'UTF-8' ) && '' !== ( $row['url'] ?? '' ), is_wp_error( $r ) ? $r->get_error_message() : '' );
+// IP handling (setting): anonymised by default.
+sccm_check( 'records: the IP address is stored anonymised by default', '203.0.113.0' === ( $row['ip'] ?? '' ), $row['ip'] ?? '' );
+remove_filter( 'sccm_client_ip', $ip_filter );
+// Rate limit: 60 records an hour from one address, then 429; another address is not affected.
+$ip_filter = $as_ip( '198.51.100.' . wp_rand( 2, 250 ) );
+add_filter( 'sccm_client_ip', $ip_filter );
+$last = null;
+for ( $i = 0; $i < 61; $i++ ) {
+	$last = SCCM_REST::store_consent( array( 'consent_id' => wp_generate_uuid4(), 'choice' => 'reject_all' ) );
+}
+remove_filter( 'sccm_client_ip', $ip_filter );
+sccm_check( 'records: the 61st record within an hour from one address is refused (429)', is_wp_error( $last ) && 429 === ( $last->get_error_data()['status'] ?? 0 ) );
+$ip_filter = $as_ip( '192.0.2.77' );
+add_filter( 'sccm_client_ip', $ip_filter );
+sccm_check( 'records: another visitor address is not affected by that limit', ! is_wp_error( SCCM_REST::store_consent( array( 'consent_id' => wp_generate_uuid4(), 'choice' => 'reject_all' ) ) ) );
+remove_filter( 'sccm_client_ip', $ip_filter );
+delete_option( SCCM_REST::CONSENT_PROBLEM_OPTION );
+// Retention: records older than the period are deleted, newer ones kept.
+$old_id = wp_generate_uuid4();
+SCCM_Consent_Log::insert( array( 'consent_id' => $old_id, 'choice' => 'accept_all' ) );
+$wpdb->update( SCCM_Consent_Log::table(), array( 'created_at' => gmdate( 'Y-m-d H:i:s', strtotime( '-14 months' ) ) ), array( 'consent_id' => $old_id ) ); // phpcs:ignore
+$before = SCCM_Consent_Log::query( array() )['total'];
+$purged = SCCM_Consent_Log::purge( 12 );
+sccm_check( 'records: retention deletes only records older than the period', 1 === $purged && $before - 1 === SCCM_Consent_Log::query( array() )['total'] );
+sccm_check( 'records: retention 0 keeps everything', 0 === SCCM_Consent_Log::purge( 0 ) );
+SCCM_Consent_Log::delete_all();
+
+/* ---------------------------------------------------------------- Pre-production review: lifecycle */
+
+SCCM_Install::schedule_events();
+SCCM_Install::deactivate();
+$left = array_filter(
+	array( 'sccm_scan_event', 'sccm_daily_event', 'sccm_purge_cache_event', 'sccm_scan_continue_event' ),
+	function ( $hook ) {
+		return (bool) wp_next_scheduled( $hook );
+	}
+);
+sccm_check( 'deactivating the plugin removes all its scheduled jobs', ! $left, implode( ',', $left ) );
+SCCM_Install::schedule_events();
+sccm_check( 'activating again schedules the daily job', (bool) wp_next_scheduled( SCCM_Scanner::DAILY_EVENT ) );
+
+// Uninstall with "delete all data": tables, options, jobs and asset copies are gone.
+$keep_settings = get_option( SCCM_Settings::OPTION );
+SCCM_Install::remove_all_data();
+$tables  = $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpdb->prefix . 'sccm_' ) . '%' ) ); // phpcs:ignore
+$options = $wpdb->get_col( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'sccm\\_%'" ); // phpcs:ignore
+$uploads = wp_upload_dir( null, false );
+sccm_check( 'uninstall (delete data on): no plugin tables left', ! $tables, implode( ',', $tables ) );
+sccm_check( 'uninstall (delete data on): no plugin options left', ! $options, implode( ',', $options ) );
+sccm_check( 'uninstall (delete data on): no scheduled jobs left', ! wp_next_scheduled( SCCM_Scanner::DAILY_EVENT ) && ! wp_next_scheduled( 'sccm_scan_event' ) );
+sccm_check( 'uninstall (delete data on): copied asset files removed', ! is_dir( trailingslashit( $uploads['basedir'] ) . 'sccm-assets' ) );
+// Back to a working site.
+SCCM_Install::install();
+update_option( SCCM_Settings::OPTION, $keep_settings );
+SCCM_Settings::flush();
+SCCM_Cookies::seed_defaults();
+sccm_check( 'reinstalling restores the tables', SCCM_Consent_Log::table_exists() && count( SCCM_Cookies::all_rows() ) >= 1 );
+SCCM_Plugin::asset( 'assets/js/sccm-frontend.js' );
+SCCM_Plugin::asset( 'assets/css/sccm-frontend.css' );
 
 // Leave the site tidy (the Cookie Policy page stays linked).
 $wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE service <> 'sccm'" );

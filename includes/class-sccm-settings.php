@@ -363,7 +363,7 @@ class SCCM_Settings {
 					continue;
 				}
 				$rules[] = array(
-					'pattern'  => substr( $pattern, 0, 255 ),
+					'pattern'  => mb_substr( $pattern, 0, 255 ),
 					'category' => $category,
 				);
 			}

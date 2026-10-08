@@ -7,14 +7,15 @@ npm install          # first time only (dev dependency: Playwright)
 npm test             # php -l on every PHP file, node --check on JS, PHP unit tests (tests/php/run.php)
 
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
-SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 102 browser checks (visitor side)
-SCCM_WP=/path/to/wp npm run test:wp                              # 123 checks: cookie list, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent-record filters (MySQL strict mode safe), table self-repair, CSV safety, banner HTML (WP-CLI)
-SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 53 checks of the admin screens, incl. consent records (direct, with credentials, REST blocked, changed JSON, test button), a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
+SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 115 browser checks (visitor side)
+SCCM_WP=/path/to/wp npm run test:wp                              # 142 checks: cookie list, fake-report protection, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent records (filters, validation, rate limit, retention, emoji URLs, self-repair), CSV safety, banner HTML, deactivate/uninstall (WP-CLI)
+SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 63 checks of the admin screens, incl. consent records, CSV export, settings export/import, "ask again", Subscriber access (403 everywhere), a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
 ```
 
 `test:wp` and `e2e:admin` reset the cookie list and settings of the site they run on: dev sites only.
-The local stack uses MariaDB; WP Engine and many hosts use MySQL 8 in strict mode. SQL that only
-MySQL refuses is guarded by a WP-CLI check of the generated query; test on staging as well.
+Run the suites on **MySQL 8** as well as MariaDB: WP Engine and many hosts use MySQL 8 in strict
+mode, which refuses things MariaDB accepts (round 11: an empty records list). The local stack has
+both; see tests/e2e/README.md → Windows.
 
 Release check: WordPress.org **Plugin Check** on the files of the zip (`git archive`): only the
 `mailto:` Author URI is reported.

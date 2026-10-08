@@ -106,7 +106,7 @@ class SCCM_REST {
 			self::CONSENT_PROBLEM_OPTION,
 			array(
 				'code'    => $error->get_error_code(),
-				'message' => substr( wp_strip_all_tags( $error->get_error_message() ), 0, 300 ),
+				'message' => mb_substr( wp_strip_all_tags( $error->get_error_message() ), 0, 300 ),
 				'time'    => time(),
 			),
 			false

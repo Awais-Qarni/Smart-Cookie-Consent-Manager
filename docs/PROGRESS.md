@@ -10,9 +10,39 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 - **Version:** 1.2.0 (all owner requests so far done; not yet staging-tested on a real site)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); staging test and release are next
-- **Last updated:** 2026-10-06 (session 6)
-- **Tests:** unit 33, WP-CLI 123, visitor e2e 102, admin e2e 53, all passing; WordPress.org
+- **Last updated:** 2026-10-08 (session 7)
+- **Tests:** unit 33, WP-CLI 142, visitor e2e 115, admin e2e 63, all passing on **MySQL 8.4
+  and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-10-08 — Session 7 (pre-production review, MySQL 8)
+
+**Set-up:** portable MySQL 8.4.11 (strict sql_mode, port 3307) added next to MariaDB in
+`workspace/sccm-dev`; wp-config switches with the marker file `wp/use-mysql`. All suites run on
+both databases.
+
+**Review (features → security)**
+- Every acceptance criterion of FEATURES.md mapped to tests; gaps filled: asking again (version,
+  expiry, Deny grace period, damaged cookie), GPC over a stored "Allow all", keyboard focus trap
+  and ARIA, right-to-left, optimiser attributes, CSV export, settings export/import (and a
+  foreign file refused), "Ask all visitors again", retention purge, validation of what browsers
+  send, per-IP limit, deactivate (jobs removed) and uninstall with "delete data" (tables,
+  options, jobs, asset copies removed).
+- Security: all inputs mapped (admin-post, AJAX, REST, admin-ajax fallback, shortcodes, GET);
+  every visitor-controlled value is escaped where shown; a Subscriber with valid nonces of their
+  own gets 403 on every admin action and scan request; WordPress.org Plugin Check clean on the
+  release files (only the requested mailto: Author URI); no PHP 8-only syntax (static scan).
+- **Fixed:** anonymous reports of a known service cookie were added at once and re-asked every
+  visitor (abuse: re-show everyone's banner, list unused services). Now two visitors needed and
+  no version bump from reports. **Fixed:** `substr()` → `mb_substr()` for stored text (a value
+  cut inside a multi-byte character makes MySQL refuse the insert → lost consent record).
+- Not tested here: PHP 7.4 at runtime (owner chose not to install it; static check only),
+  multisite, real WP Engine/NitroPack (staging test by the owner).
+
+**Next:** owner installs the zip on staging, purges caches, quick checks from TESTING.md, then
+merges `feature/v1-build` into `main` and goes live.
 
 ---
 
@@ -99,7 +129,7 @@ work on Windows (output path, `SCCM_WP` pointing at `wp-cli.phar`).
 - Dead-code sweep: no unused PHP functions or texts; removed `.sccm-linkbtn` CSS, `.gitkeep`.
 - Tests: unit 33/33, WP-CLI 120/120, e2e 102/102, admin e2e 41/41, no PHP notices with WP_DEBUG.
 
-**Round 11 (same day): the real cause — MySQL strict mode**
+**Round 11 (2026-10-06): the real cause — MySQL strict mode**
 - The new diagnostics showed it: "Test record saving" → Database OK, admin-ajax OK, but the list
   said "Incorrect DATETIME value: ''". Records WERE saved; the list query (rewritten in round 6
   as one fixed statement) compared `created_at` with '' for unset date filters. MySQL 8 strict
