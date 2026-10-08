@@ -58,6 +58,7 @@ defined( 'ABSPATH' ) || exit;
 		<li><code>[sccm_cookie_settings text="Cookie settings" style="link|button"]</code> — <?php esc_html_e( 'opens the cookie settings window', 'smart-cookie-consent-manager' ); ?></li>
 		<li><code>&lt;a href="#sccm-preferences"&gt;</code> — <?php esc_html_e( 'any link (e.g. a menu item) that opens the cookie settings window', 'smart-cookie-consent-manager' ); ?></li>
 		<li><code>&lt;script type="text/plain" data-sccm-category="analytics"&gt;</code> — <?php esc_html_e( 'run a script only after consent', 'smart-cookie-consent-manager' ); ?></li>
-		<li><code>window.SCCM.hasConsent('analytics')</code>, <code>document.addEventListener('sccm:consent', …)</code></li>
+		<li><code>window.SCCM.hasConsent('analytics')</code> — <?php esc_html_e( 'in your own JavaScript: true if the visitor allowed this category (functional, analytics or marketing), false if not', 'smart-cookie-consent-manager' ); ?></li>
+		<li><code>document.addEventListener('sccm:consent', …)</code> — <?php esc_html_e( 'in your own JavaScript: runs the moment a visitor makes or changes their choice, e.g. to start a tool without reloading the page', 'smart-cookie-consent-manager' ); ?></li>
 	</ul>
 </div>
