@@ -11,7 +11,7 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); staging test and release are next
 - **Last updated:** 2026-10-21 (session 8)
-- **Tests:** unit 33, WP-CLI 165, visitor e2e 115, admin e2e 68, all passing on **MySQL 8.4
+- **Tests:** unit 33, WP-CLI 169, visitor e2e 115, admin e2e 68, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
 
@@ -30,6 +30,8 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
   cleared)" (DB v5 converts "Persistent").
 - Fixture: `_ga` now has `max-age` 395 days, so the admin e2e scan proves "13 months".
 - Tests: WP-CLI 165, admin e2e 68, visitor e2e 115; MySQL 8.4 and MariaDB 11.4.
+- Fixed: Banner → "Provider name for your own cookies" was ignored (rows store "This website");
+  `SCCM_Cookies::display_provider()` maps it for the banner details and the policy page (WP-CLI 169).
 
 **Not done (owner's decision pending):** NID → Marketing, storage guard (local branch
 `backup/compliance-changes` has a tested version).

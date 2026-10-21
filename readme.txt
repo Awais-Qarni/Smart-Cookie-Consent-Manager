@@ -42,6 +42,7 @@ Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 == Changelog ==
 
 = 1.2.0 =
+* Fixed: the "Provider name for your own cookies" text was not shown (the cookie list kept "This website").
 * Cookie durations shown to visitors are the real ones measured by the scan (not typical values); the consent cookie shows the "Ask again after" period; local storage says "No expiry date" instead of "Persistent".
 * "Learn from visitors": the number of different visitors needed (default 2) and the number of days (default 14) can be changed in the settings.
 * Consent records: shortened IP addresses show the hidden part as *** instead of 0; new option to save the full IP address; search records by IP address.

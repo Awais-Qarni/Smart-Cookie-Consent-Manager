@@ -618,6 +618,23 @@ sccm_check( 'upgrade: old shortened IPv4/IPv6 values show *** instead of 0; code
 sccm_check( 'upgrade: database version is current', SCCM_Install::DB_VERSION === get_option( SCCM_Install::DB_VERSION_OPTION ) );
 SCCM_Consent_Log::delete_all();
 
+/* ---------------------------------------------------------------- Provider name of the site's own cookies */
+
+SCCM_Settings::update( array( 'texts' => array_merge( (array) SCCM_Settings::get( 'texts' ), array( 'provider_site' => 'Example Company Ltd' ) ) ) );
+SCCM_Cookies::flush();
+$providers = array();
+foreach ( SCCM_Frontend::config()['categories'] as $cat ) {
+	foreach ( $cat['cookies'] as $c ) {
+		$providers[ $c['n'] ] = $c['p'];
+	}
+}
+sccm_check( 'banner details: the site\'s own cookies show the provider name from the Banner tab, not "This website"', 'Example Company Ltd' === ( $providers['sccm_consent'] ?? '' ), (string) ( $providers['sccm_consent'] ?? 'missing' ) );
+$policy_html = SCCM_Shortcodes::policy( array() );
+sccm_check( 'Cookie Policy page: the same provider name', false !== strpos( $policy_html, 'Example Company Ltd' ) && false === strpos( $policy_html, '>This website<' ) );
+sccm_check( 'other providers keep their own name', 'Google LLC' === SCCM_Cookies::display_provider( 'Google LLC' ) );
+SCCM_Settings::update( array( 'texts' => array_merge( (array) SCCM_Settings::get( 'texts' ), array( 'provider_site' => '' ) ) ) );
+sccm_check( 'with the field empty, the default "This website" is shown', 'This website' === SCCM_Cookies::display_provider( 'This website' ) );
+
 /* ---------------------------------------------------------------- Real cookie durations */
 
 $f = array();

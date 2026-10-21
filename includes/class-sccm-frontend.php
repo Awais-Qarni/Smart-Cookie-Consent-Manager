@@ -238,7 +238,7 @@ class SCCM_Frontend {
 			foreach ( $grouped[ $key ] as $row ) {
 				$cookies[] = array(
 					'n' => $row['name'],
-					'p' => $row['provider'],
+					'p' => SCCM_Cookies::display_provider( $row['provider'] ),
 					'u' => $row['purpose'],
 					'd' => $row['duration'],
 					't' => $row['type'],
