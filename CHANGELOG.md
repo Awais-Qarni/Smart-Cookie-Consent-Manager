@@ -72,6 +72,8 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   (the browser also sends plain form fields).
 
 ### Fixed (admin)
+- "Provider name for your own cookies" (Banner tab) is now used: the site's own cookies showed
+  "This website" in the banner details and on the Cookie Policy page whatever you entered.
 - The **Help** button sits in the top right corner of the plugin header.
 - Removed the "Add rule" button from the scan report's "Other third-party files" (it did not
   work); add blocking rules under Settings → Blocking and Google → Your own blocking rules.

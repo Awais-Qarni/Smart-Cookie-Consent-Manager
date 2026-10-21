@@ -126,6 +126,21 @@ class SCCM_Cookies {
 	}
 
 	/**
+	 * The provider name shown to visitors. The site's own cookies are stored with "This website"
+	 * (or no provider); they show the name set in Banner → "Provider name for your own cookies".
+	 *
+	 * @param string $provider Stored provider.
+	 * @return string
+	 */
+	public static function display_provider( $provider ) {
+		$provider = (string) $provider;
+		if ( '' === $provider || in_array( $provider, array( 'This website', __( 'This website', 'smart-cookie-consent-manager' ) ), true ) ) {
+			return wp_strip_all_tags( SCCM_Settings::text( 'provider_site' ) );
+		}
+		return $provider;
+	}
+
+	/**
 	 * How long the plugin's own consent cookie is kept, from the "ask again after" setting, so
 	 * the cookie list always shows the real duration.
 	 *

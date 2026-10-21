@@ -160,7 +160,7 @@ class SCCM_Shortcodes {
 			foreach ( $cookies as $row ) {
 				echo '<tr>';
 				echo '<td data-label="' . esc_attr( $texts['col_name'] ) . '"><code>' . esc_html( $row['name'] ) . '</code>' . ( 'cookie' !== $row['type'] ? ' <small>(' . esc_html( $row['type'] ) . ')</small>' : '' ) . '</td>';
-				echo '<td data-label="' . esc_attr( $texts['col_provider'] ) . '">' . esc_html( $row['provider'] ) . '</td>';
+				echo '<td data-label="' . esc_attr( $texts['col_provider'] ) . '">' . esc_html( SCCM_Cookies::display_provider( $row['provider'] ) ) . '</td>';
 				echo '<td data-label="' . esc_attr( $texts['col_purpose'] ) . '">' . esc_html( $row['purpose'] ) . '</td>';
 				echo '<td data-label="' . esc_attr( $texts['col_duration'] ) . '">' . esc_html( $row['duration'] ) . '</td>';
 				echo '</tr>';
