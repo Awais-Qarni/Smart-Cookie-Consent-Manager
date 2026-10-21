@@ -53,6 +53,46 @@
 				return setItem.apply(this, arguments);
 			};
 		} catch (e) { /* ignore */ }
+
+		// Note how long each cookie a script writes is kept (Max-Age / Expires; 0 = session), so the
+		// cookie list can show the real retention period. Deletions (expiry in the past) are skipped.
+		var lifetimes = w.__sccmScanCookies = {};
+		try {
+			var desc = Object.getOwnPropertyDescriptor(w.Document.prototype, 'cookie');
+			Object.defineProperty(d, 'cookie', {
+				configurable: true,
+				get: function () {
+					return desc.get.call(d);
+				},
+				set: function (value) {
+					try {
+						var parts = String(value).split(';');
+						var name = parts[0].split('=')[0].trim();
+						var seconds = 0; // No Max-Age / Expires: a session cookie.
+						var dated = false;
+						for (var p = 1; p < parts.length; p++) {
+							var attr = parts[p].split('=');
+							var key = attr[0].trim().toLowerCase();
+							var val = attr.slice(1).join('=').trim();
+							if (key === 'max-age') { // Wins over Expires.
+								dated = true;
+								seconds = parseInt(val, 10);
+								break;
+							}
+							if (key === 'expires') {
+								dated = true;
+								seconds = Math.round((Date.parse(val) - Date.now()) / 1000);
+							}
+						}
+						var deleted = dated && !(seconds > 0);
+						if (name && !deleted) {
+							lifetimes[name] = seconds;
+						}
+					} catch (e) { /* ignore */ }
+					desc.set.call(d, value);
+				}
+			});
+		} catch (e) { /* ignore */ }
 	}
 
 	var now = Math.floor(Date.now() / 1000);

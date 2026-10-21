@@ -615,8 +615,71 @@ update_option( SCCM_Install::DB_VERSION_OPTION, '3' );
 SCCM_Install::maybe_upgrade();
 $ips = array_map( 'strval', $wpdb->get_col( $wpdb->prepare( 'SELECT ip FROM %i ORDER BY consent_id', SCCM_Consent_Log::table() ) ) ); // get_col() gives NULL for ''. // phpcs:ignore
 sccm_check( 'upgrade: old shortened IPv4/IPv6 values show *** instead of 0; codes and empty values untouched', array( '203.0.113.***', '2001:db8:85a3:****:****:****:****:****', $hash_value, '' ) === $ips, implode( ' | ', $ips ) );
-sccm_check( 'upgrade: database version is 4', '4' === get_option( SCCM_Install::DB_VERSION_OPTION ) );
+sccm_check( 'upgrade: database version is current', SCCM_Install::DB_VERSION === get_option( SCCM_Install::DB_VERSION_OPTION ) );
 SCCM_Consent_Log::delete_all();
+
+/* ---------------------------------------------------------------- Real cookie durations */
+
+$f = array();
+foreach ( array( 0, 90, 1800, 86400, 14 * DAY_IN_SECONDS, 90 * DAY_IN_SECONDS, 395 * DAY_IN_SECONDS, 730 * DAY_IN_SECONDS - 60 ) as $s ) {
+	$f[] = SCCM_Cookies::format_lifetime( $s );
+}
+sccm_check( 'durations are written like the cookie list (Session, minutes, hours, days, months, years)', array( 'Session', '2 minutes', '30 minutes', '1 day', '14 days', '3 months', '13 months', '2 years' ) === $f, implode( ', ', $f ) );
+
+$h = array();
+foreach ( array( 'a=1; Max-Age=3600; path=/', 'a=1; expires=' . gmdate( 'D, d M Y H:i:s', time() + 7 * DAY_IN_SECONDS ) . ' GMT', 'a=1; path=/', 'a=1; Max-Age=0', 'a=1; expires=Thu, 01 Jan 1970 00:00:00 GMT' ) as $header ) {
+	$lt  = SCCM_Scanner::header_lifetime( new WP_Http_Cookie( $header ) );
+	$h[] = null === $lt ? 'deleted' : SCCM_Cookies::format_lifetime( $lt );
+}
+sccm_check( 'Set-Cookie headers: Max-Age, Expires, none (session) and deletions are read correctly', array( '1 hour', '7 days', 'Session', 'deleted', 'deleted' ) === $h, implode( ', ', $h ) );
+
+$wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE service <> 'sccm'" ); // phpcs:ignore
+delete_option( SCCM_Cookies::MEASURED_OPTION );
+SCCM_Cookies::flush();
+SCCM_Cookies::add_service( 'google-analytics', 'library' );
+SCCM_Cookies::save( array( 'name' => 'owner_typed', 'duration' => '1 year', 'source' => 'scanner', 'status' => 'active', 'category' => 'functional' ) );
+SCCM_Cookies::save( array( 'name' => 'hand_added', 'duration' => '', 'source' => 'manual', 'status' => 'active', 'category' => 'functional' ) );
+SCCM_Cookies::save( array( 'name' => 'found_unknown', 'source' => 'scanner', 'status' => 'pending' ) );
+$version_before = (int) get_option( 'sccm_consent_version' );
+SCCM_Cookies::record_lifetime( '_ga', 395 * DAY_IN_SECONDS );
+SCCM_Cookies::record_lifetime( '_ga_ABC123', 400 * DAY_IN_SECONDS ); // Matches the row _ga_*.
+SCCM_Cookies::record_lifetime( 'owner_typed', 30 * DAY_IN_SECONDS );
+SCCM_Cookies::record_lifetime( 'hand_added', 30 * DAY_IN_SECONDS );
+SCCM_Cookies::record_lifetime( 'found_unknown', 0 );
+$d = wp_list_pluck( SCCM_Cookies::all_rows(), 'duration', 'name' );
+sccm_check( 'a scan replaces the typical library duration with the real one (_ga 395 days → 13 months, _ga_* too)', '13 months' === $d['_ga'] && '13 months' === $d['_ga_*'], $d['_ga'] . ' / ' . $d['_ga_*'] );
+sccm_check( 'a cookie waiting for review gets its real duration (Session)', 'Session' === $d['found_unknown'], (string) $d['found_unknown'] );
+sccm_check( 'a duration the owner typed, and cookies added by hand, are never overwritten', '1 year' === $d['owner_typed'] && '' === $d['hand_added'] );
+SCCM_Cookies::record_lifetime( '_ga', 730 * DAY_IN_SECONDS );
+sccm_check( 'the next scan updates its own measurement (now 2 years)', '2 years' === wp_list_pluck( SCCM_Cookies::all_rows(), 'duration', 'name' )['_ga'] );
+sccm_check( 'a new duration does not ask visitors again', (int) get_option( 'sccm_consent_version' ) === $version_before );
+
+// Upgrade (DB version 5): local storage "Persistent" → "No expiry date (stays until cleared)".
+$wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE service <> 'sccm'" ); // phpcs:ignore
+$now = current_time( 'mysql', true );
+foreach ( array( array( 'gt_autoswitch', 'scanner' ), array( 'my_own_key', 'manual' ) ) as $old_row ) {
+	$wpdb->insert( SCCM_Cookies::table(), array( 'name' => $old_row[0], 'type' => 'localStorage', 'category' => 'functional', 'duration' => 'Persistent', 'source' => $old_row[1], 'status' => 'active', 'created_at' => $now, 'updated_at' => $now ) ); // phpcs:ignore
+}
+update_option( SCCM_Install::DB_VERSION_OPTION, '4' );
+SCCM_Cookies::flush();
+SCCM_Install::maybe_upgrade();
+$d = wp_list_pluck( SCCM_Cookies::all_rows(), 'duration', 'name' );
+sccm_check( 'upgrade v5: local storage says "No expiry date (stays until cleared)" instead of "Persistent"; hand-added rows untouched', 'No expiry date (stays until cleared)' === $d['gt_autoswitch'] && 'Persistent' === $d['my_own_key'], $d['gt_autoswitch'] );
+sccm_check( 'library: no local storage item says "Persistent"', false === strpos( wp_json_encode( SCCM_Services::all() ), 'Persistent' ) );
+$wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE service <> 'sccm'" ); // phpcs:ignore
+delete_option( SCCM_Cookies::MEASURED_OPTION );
+SCCM_Cookies::flush();
+
+// The consent cookie's listed duration follows the "ask again after" setting.
+$durations = array();
+foreach ( array( 365, 180, 45, 0 ) as $days ) {
+	SCCM_Settings::update( array( 'consent_expiry_days' => $days ) );
+	SCCM_Cookies::flush();
+	$durations[] = wp_list_pluck( SCCM_Cookies::all_rows(), 'duration', 'name' )['sccm_consent'] ?? 'missing';
+}
+SCCM_Settings::update( array( 'consent_expiry_days' => 365 ) );
+SCCM_Cookies::flush();
+sccm_check( 'consent cookie duration matches the "ask again after" setting (1 year, 6 months, 45 days, Session)', array( '1 year', '6 months', '45 days', 'Session' ) === $durations, implode( ', ', $durations ) );
 
 /* ---------------------------------------------------------------- "Learn from visitors" settings */
 

@@ -43,6 +43,11 @@ class SCCM_Cookies {
 	const CANDIDATES_OPTION = 'sccm_candidates';
 
 	/**
+	 * Option with the durations last measured by a scan (row id => text), see record_lifetime().
+	 */
+	const MEASURED_OPTION = 'sccm_measured_durations';
+
+	/**
 	 * Request cache of all rows.
 	 *
 	 * @var array|null
@@ -100,6 +105,12 @@ class SCCM_Cookies {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- read once per request, kept in self::$rows.
 			$rows  = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM %i', $table ), ARRAY_A );
 			$rows  = is_array( $rows ) ? $rows : array();
+			foreach ( $rows as $i => $row ) {
+				// The consent cookie is kept as long as the "ask again after" setting says.
+				if ( 'sccm_consent' === $row['name'] && 'sccm' === $row['service'] ) {
+					$rows[ $i ]['duration'] = self::consent_cookie_duration();
+				}
+			}
 			$order = array_flip( SCCM_Categories::KEYS );
 			usort(
 				$rows,
@@ -112,6 +123,89 @@ class SCCM_Cookies {
 			self::$rows = $rows;
 		}
 		return self::$rows;
+	}
+
+	/**
+	 * How long the plugin's own consent cookie is kept, from the "ask again after" setting, so
+	 * the cookie list always shows the real duration.
+	 *
+	 * @return string
+	 */
+	public static function consent_cookie_duration() {
+		return self::format_lifetime( (int) SCCM_Settings::get( 'consent_expiry_days' ) * DAY_IN_SECONDS );
+	}
+
+	/**
+	 * A cookie lifetime as text: "Session", "30 minutes", "24 hours", "14 days", "13 months", "2 years".
+	 *
+	 * @param int $seconds Lifetime in seconds; 0 = session cookie.
+	 * @return string
+	 */
+	public static function format_lifetime( $seconds ) {
+		$seconds = (int) $seconds;
+		if ( $seconds <= 0 ) {
+			return __( 'Session', 'smart-cookie-consent-manager' );
+		}
+		if ( $seconds < HOUR_IN_SECONDS ) {
+			$n = max( 1, (int) round( $seconds / MINUTE_IN_SECONDS ) );
+			/* translators: %d: number of minutes */
+			return sprintf( _n( '%d minute', '%d minutes', $n, 'smart-cookie-consent-manager' ), $n );
+		}
+		if ( $seconds < DAY_IN_SECONDS ) {
+			$n = (int) round( $seconds / HOUR_IN_SECONDS );
+			/* translators: %d: number of hours */
+			return sprintf( _n( '%d hour', '%d hours', $n, 'smart-cookie-consent-manager' ), $n );
+		}
+		$days = $seconds / DAY_IN_SECONDS;
+		if ( $days < 60 ) {
+			$n = (int) round( $days );
+			/* translators: %d: number of days */
+			return sprintf( _n( '%d day', '%d days', $n, 'smart-cookie-consent-manager' ), $n );
+		}
+		$years = $days / 365.25;
+		if ( $years >= 0.98 && abs( $years - round( $years ) ) < 0.03 ) {
+			$n = (int) round( $years );
+			/* translators: %d: number of years */
+			return sprintf( _n( '%d year', '%d years', $n, 'smart-cookie-consent-manager' ), $n );
+		}
+		$n = (int) round( $days / 30.44 );
+		/* translators: %d: number of months */
+		return sprintf( _n( '%d month', '%d months', $n, 'smart-cookie-consent-manager' ), $n );
+	}
+
+	/**
+	 * A scan saw how long the site really keeps a cookie (Set-Cookie header, or the expiry a
+	 * script gave it): show that instead of the library's typical value.
+	 *
+	 * The duration is only replaced while it is still the library's text, empty, or an earlier
+	 * measurement: a duration the site owner typed in, and rows they added by hand, stay.
+	 *
+	 * @param string $name    Cookie name as set (e.g. _ga_ABC123; the row may be the pattern _ga_*).
+	 * @param int    $seconds Lifetime in seconds; 0 = session cookie.
+	 * @return bool True when the listed duration changed.
+	 */
+	public static function record_lifetime( $name, $seconds ) {
+		$row = self::find_matching( (string) $name, 'cookie' );
+		if ( ! $row || 'manual' === $row['source'] || 'sccm' === $row['service'] ) {
+			return false;
+		}
+		$text     = self::format_lifetime( $seconds );
+		$current  = (string) $row['duration'];
+		$measured = get_option( self::MEASURED_OPTION, array() );
+		$measured = is_array( $measured ) ? $measured : array();
+		$known    = SCCM_Services::match_cookie( $row['name'] );
+		$ours     = '' === $current
+			|| ( $known && $known['name'] === $row['name'] && $known['duration'] === $current )
+			|| ( isset( $measured[ $row['id'] ] ) && $measured[ $row['id'] ] === $current );
+		if ( ! $ours ) {
+			return false;
+		}
+		$measured[ $row['id'] ] = $text;
+		update_option( self::MEASURED_OPTION, $measured, false );
+		if ( $text === $current ) {
+			return false;
+		}
+		return (bool) self::save( array( 'duration' => $text ), (int) $row['id'] );
 	}
 
 	/**

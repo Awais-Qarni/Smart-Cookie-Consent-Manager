@@ -10,10 +10,31 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 - **Version:** 1.2.0 (all owner requests so far done; not yet staging-tested on a real site)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); staging test and release are next
-- **Last updated:** 2026-10-08 (session 7b)
-- **Tests:** unit 33, WP-CLI 155, visitor e2e 115, admin e2e 66, all passing on **MySQL 8.4
+- **Last updated:** 2026-10-21 (session 8)
+- **Tests:** unit 33, WP-CLI 165, visitor e2e 115, admin e2e 68, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-10-21 — Session 8 (compliance review, point 6: retention)
+
+**Done** (only point 6, as the owner asked)
+- Real durations: the server scan reads `Set-Cookie` Max-Age / Expires
+  (`SCCM_Scanner::header_lifetime()`), the browser scan wraps `document.cookie` in scan mode and
+  notes the lifetime scripts give (`__sccmScanCookies`). `SCCM_Cookies::record_lifetime()` replaces
+  only a library value, an empty value or its own earlier measurement (option
+  `sccm_measured_durations`); hand-added rows and typed durations stay. Third-party cookies
+  cannot be measured and keep the library value.
+- `sccm_consent` duration from `consent_expiry_days`; local storage "No expiry date (stays until
+  cleared)" (DB v5 converts "Persistent").
+- Fixture: `_ga` now has `max-age` 395 days, so the admin e2e scan proves "13 months".
+- Tests: WP-CLI 165, admin e2e 68, visitor e2e 115; MySQL 8.4 and MariaDB 11.4.
+
+**Not done (owner's decision pending):** NID → Marketing, storage guard (local branch
+`backup/compliance-changes` has a tested version).
+
+**Next:** owner installs on staging, runs Scan now, checks the Details tab.
 
 ---
 

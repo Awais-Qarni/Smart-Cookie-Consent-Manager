@@ -145,6 +145,9 @@ check('BS2 third-party cookies of an embedded service (YouTube YSC) are listed',
 check('BS2 an unknown cookie set by a script waits for review', listed.includes('test_unknown_cookie|pending|necessary'));
 check('BS2 an unknown local storage key set by a script waits for review', listed.includes('test_unknown_storage|pending|necessary'));
 check('BS2 no admin-only cookies are listed', !listed.some((x) => /^wordpress_|^wp-settings/.test(x)));
+const durations = JSON.parse(wp('eval', `echo wp_json_encode( wp_list_pluck( SCCM_Cookies::all_rows(), 'duration', 'name' ) );`));
+check('BS2 the listed duration is the real one the site sets (_ga with a custom 395-day expiry → 13 months, not the typical 2 years)', durations._ga === '13 months', durations._ga);
+check('BS2 a script cookie without an expiry is listed as Session (test_unknown_cookie)', durations.test_unknown_cookie === 'Session', durations.test_unknown_cookie);
 check('BS3 the result message counts what was found', /Scan finished: \d+ page\(s\) opened in your browser\. [1-9]\d* new cookie/.test(await page.textContent('.notice')), (await page.textContent('.notice')).trim().slice(0, 140));
 check('BS4 "Scan now" sends no email itself: the changes wait for the daily check', !fs.existsSync(CONTENT + '/mail-captured.json') && JSON.parse(wp('option', 'get', 'sccm_pending_alert', '--format=json')).length > 0);
 wp('eval', 'SCCM_Scanner::daily();');

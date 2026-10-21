@@ -343,6 +343,10 @@ class SCCM_Scanner {
 				if ( is_object( $cookie ) && ! empty( $cookie->name ) && SCCM_REST::valid_name( $cookie->name ) ) {
 					$results['cookies'][ $cookie->name ] = true;
 					SCCM_Cookies::record_seen( $cookie->name, 'cookie', 'scanner' );
+					$lifetime = self::header_lifetime( $cookie );
+					if ( null !== $lifetime ) {
+						SCCM_Cookies::record_lifetime( $cookie->name, $lifetime );
+					}
 				}
 			}
 
@@ -605,9 +609,28 @@ class SCCM_Scanner {
 	}
 
 	/**
+	 * How long a cookie from a Set-Cookie header is kept: Max-Age wins over Expires; neither
+	 * means a session cookie. Null for a deletion (expiry in the past).
+	 *
+	 * @param WP_Http_Cookie $cookie Cookie parsed by WordPress.
+	 * @return int|null Seconds (0 = session) or null.
+	 */
+	public static function header_lifetime( $cookie ) {
+		$max_age = isset( $cookie->{'max-age'} ) ? $cookie->{'max-age'} : null;
+		if ( null !== $max_age && is_numeric( $max_age ) ) {
+			return (int) $max_age > 0 ? (int) $max_age : null;
+		}
+		if ( isset( $cookie->expires ) && is_numeric( $cookie->expires ) ) { // 0 = 1 Jan 1970: a deletion.
+			$left = (int) $cookie->expires - time();
+			return $left > 0 ? $left : null;
+		}
+		return 0;
+	}
+
+	/**
 	 * Record what the browser scan found.
 	 *
-	 * @param array $data  cookies: [names]; storage: [{n, t, new}]; resources: [urls]; pages, blocked: ints.
+	 * @param array $data  cookies: [names]; lifetimes: {name: seconds}; storage: [{n, t, new}]; resources: [urls]; pages, blocked: ints.
 	 * @param array $token Token data from valid_scan_token().
 	 * @return array Summary: active, pending (added since the scan started), unclassified.
 	 */
@@ -636,6 +659,13 @@ class SCCM_Scanner {
 					}
 					$seen[ $name ] = true;
 					SCCM_Cookies::record_seen( $name, 'cookie', 'scanner' );
+				}
+				// How long the page's scripts keep the cookies they wrote (seconds, 0 = session).
+				foreach ( array_slice( (array) ( $data['lifetimes'] ?? array() ), 0, 200, true ) as $name => $seconds ) {
+					$name = (string) $name;
+					if ( isset( $seen[ $name ] ) && is_numeric( $seconds ) && $seconds >= 0 && $seconds <= 10 * YEAR_IN_SECONDS ) {
+						SCCM_Cookies::record_lifetime( $name, (int) $seconds );
+					}
 				}
 				foreach ( array_slice( (array) ( $data['storage'] ?? array() ), 0, 200 ) as $item ) {
 					$name = isset( $item['n'] ) ? (string) $item['n'] : '';

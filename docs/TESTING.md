@@ -8,8 +8,8 @@ npm test             # php -l on every PHP file, node --check on JS, PHP unit te
 
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
 SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 115 browser checks (visitor side)
-SCCM_WP=/path/to/wp npm run test:wp                              # 155 checks: cookie list, "learn from visitors" settings, fake-report protection, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent records (filters, validation, rate limit, retention, emoji URLs, self-repair), IP modes (shortened ***, code, full, none), search by IP, upgrade to DB v4, CSV safety, banner HTML, deactivate/uninstall (WP-CLI)
-SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 66 checks of the admin screens, incl. learning/IP settings, search by IP, consent records, CSV export, settings export/import, "ask again", Subscriber access (403 everywhere), a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
+SCCM_WP=/path/to/wp npm run test:wp                              # 165 checks: cookie list, "learn from visitors" settings, fake-report protection, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent records (filters, validation, rate limit, retention, emoji URLs, self-repair), IP modes (shortened ***, code, full, none), search by IP, upgrades to DB v4 and v5, real cookie durations (format, Set-Cookie parsing, which rows a scan may update), consent cookie duration, CSV safety, banner HTML, deactivate/uninstall (WP-CLI)
+SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 68 checks of the admin screens, incl. real durations after a browser scan, incl. learning/IP settings, search by IP, consent records, CSV export, settings export/import, "ask again", Subscriber access (403 everywhere), a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
 ```
 
 `test:wp` and `e2e:admin` reset the cookie list and settings of the site they run on: dev sites only.
@@ -110,6 +110,9 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
       your browser). Afterwards cookies set by scripts (e.g. `_ga`, HubSpot) and third-party
       cookies of embedded services (e.g. YouTube, Calendly) are listed in the right category.
       Compare the totals with Cookiebot's report for the same site.
+- [ ] I2b After the scan, the Details tab shows each first-party cookie's real duration (compare
+      with DevTools → Application → Cookies → Expires), local storage says "No expiry date",
+      and `sccm_consent` shows the "Ask again after" period.
 - [ ] I3 Settings → Cookie scan and email alerts → add two addresses → "Send me a sample email":
       both receive a readable HTML email (check spam folder and a mail-logging plugin).
 - [ ] I4 Approving a cookie needs a category choice; "Ignore all" empties the review list.
