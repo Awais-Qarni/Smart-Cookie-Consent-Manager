@@ -123,6 +123,8 @@ a choice brings the banner back), and again later, centred, with a close button.
 - [ ] Preferences window lists cookies per category (from the registry).
 - [ ] Shortcode `[sccm_cookie_policy]` outputs a full table grouped by category; one-click
       "Create Cookie Policy page" in the admin; both update automatically.
+- [ ] Each cookie shows the duration the site really gives it (measured by the scans; typed-in
+      values win); local storage says "No expiry date"; the consent cookie follows "Ask again after".
 
 ### 11. Privacy signal (GPC)
 - [ ] If `navigator.globalPrivacyControl === true`, non-essential categories are treated as

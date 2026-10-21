@@ -58,7 +58,7 @@ Browser
 | Source | What it adds |
 |---|---|
 | Install | `sccm_consent` (and WooCommerce's cookies when active). Not the WordPress login cookies: only logged-in users have them. |
-| Server scan (cron / "Scan now") | Cookies in `Set-Cookie` headers of real pages (known → Active, unknown → Needs review); for each service detected in the HTML, the cookies it always sets. |
+| Server scan (cron / "Scan now") | Cookies in `Set-Cookie` headers of real pages (known → Active, unknown → Needs review), with their real lifetime (Max-Age / Expires → `record_lifetime()`, which only replaces a library value, an empty one or its own earlier measurement); for each service detected in the HTML, the cookies it always sets. |
 | Visitor reports | Known library cookies → Active at once. Unknown cookies → candidates in option `sccm_candidates`; listed as Needs review only after `SCCM_Cookies::min_visitors()` (setting `learn_visitors`, default 2) different visitors reported them within `learn_days` (default 14) days. |
 
 Guards: pending items are capped (`MAX_PENDING` = 50), ignored cookies are never re-added, a
@@ -84,7 +84,8 @@ Admin clicks "Scan now"  (assets/js/sccm-admin.js → browserScan)
      The admin page waits until the frame stops loading files (2–9 s, scrolling for lazy
      content), then reads cookie names, storage keys and performance resource URLs.
   3. AJAX sccm_browser_scan_report → SCCM_Scanner::record_browser_scan():
-       cookies (minus admin-only ones) → record_seen; storage keys written by the page (or
+       cookies (minus admin-only ones) → record_seen; their real lifetimes (scan mode wraps
+       document.cookie and notes Max-Age / Expires) → SCCM_Cookies::record_lifetime(); storage keys written by the page (or
        known to the library) → record_seen; resource URLs → services (their third-party cookies
        come from includes/data/services.php) or "other third-party resources".
 ```

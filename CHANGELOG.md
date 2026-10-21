@@ -85,6 +85,17 @@ All notable changes are listed here. Format: [Keep a Changelog](https://keepacha
   the next time any Cookie Consent screen is opened. Two tabs never scan at the same time.
 
 ### Changed
+- **Cookie durations are the real ones of your site.** Scans read how long each cookie is
+  actually kept: the `Set-Cookie` header (server scan) and the expiry a script gives a cookie
+  (browser scan), and show that instead of the typical value from the library (e.g. a Google
+  Analytics cookie set to 13 months shows 13 months, not 2 years). Durations you typed in, and
+  cookies you added by hand, are never overwritten. Third-party cookies (set on other domains)
+  cannot be read by a website and keep the provider's typical value.
+- The plugin's own consent cookie shows its real duration from "Ask again after" (e.g. 6 months,
+  or Session) instead of always "1 year".
+- Local storage no longer says "Persistent" but "No expiry date (stays until cleared)": local
+  storage has no expiry date, and "Persistent" read like a retention period. Existing lists are
+  updated (database version 5).
 - Tools → Developer reference explains the two JavaScript helpers (`SCCM.hasConsent()` and the
   `sccm:consent` event) instead of listing them without a description.
 - **Shortened IP addresses show the hidden part as `***`** (203.0.113.***,

@@ -206,6 +206,7 @@
 					local: storageKeys(win, 'localStorage'),
 					session: storageKeys(win, 'sessionStorage'),
 					written: win.__sccmScanKeys || { localStorage: {}, sessionStorage: {} },
+					lifetimes: win.__sccmScanCookies || {},
 					resources: resources
 				};
 			});
@@ -293,7 +294,7 @@
 		var batch;
 
 		function newBatch() {
-			batch = { pages: 0, blocked: 0, cookies: {}, storage: {}, resources: {}, done: [] };
+			batch = { pages: 0, blocked: 0, cookies: {}, lifetimes: {}, storage: {}, resources: {}, done: [] };
 		}
 		newBatch();
 
@@ -302,6 +303,7 @@
 				pages: batch.pages,
 				blocked: batch.blocked,
 				cookies: Object.keys(batch.cookies),
+				lifetimes: batch.lifetimes,
 				storage: Object.keys(batch.storage).map(function (key) {
 					return batch.storage[key];
 				}),
@@ -379,6 +381,10 @@
 			}
 			result.cookies.forEach(function (name) {
 				batch.cookies[name] = true;
+			});
+			// How long the page's scripts keep each cookie they wrote (seconds, 0 = session).
+			Object.keys(result.lifetimes).forEach(function (name) {
+				batch.lifetimes[name] = Math.max(batch.lifetimes[name] || 0, result.lifetimes[name]);
 			});
 			// A key is the site's own when the page wrote it during the scan, or when the
 			// browser did not have it before the scan started.

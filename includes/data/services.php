@@ -75,7 +75,7 @@ return array(
 		'patterns' => array( 'google.com/recaptcha', 'gstatic.com/recaptcha', 'recaptcha.net' ), // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- detection patterns, nothing is loaded from here.
 		'cookies'  => array(
 			array( '_GRECAPTCHA', __( '6 months', 'smart-cookie-consent-manager' ), __( 'Protects forms against spam and abuse.', 'smart-cookie-consent-manager' ) ),
-			array( 'rc::a', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Distinguishes humans from bots to protect forms.', 'smart-cookie-consent-manager' ), 'localStorage' ),
+			array( 'rc::a', __( 'No expiry date (stays until cleared)', 'smart-cookie-consent-manager' ), __( 'Distinguishes humans from bots to protect forms.', 'smart-cookie-consent-manager' ), 'localStorage' ),
 			array( 'rc::c', __( 'Session', 'smart-cookie-consent-manager' ), __( 'Distinguishes humans from bots to protect forms.', 'smart-cookie-consent-manager' ), 'sessionStorage' ),
 		),
 	),
@@ -107,7 +107,7 @@ return array(
 		'category' => 'necessary',
 		'patterns' => array(),
 		'cookies'  => array(
-			array( 'elementor', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Stores page layout state for this website (Elementor page builder).', 'smart-cookie-consent-manager' ), 'localStorage' ),
+			array( 'elementor', __( 'No expiry date (stays until cleared)', 'smart-cookie-consent-manager' ), __( 'Stores page layout state for this website (Elementor page builder).', 'smart-cookie-consent-manager' ), 'localStorage' ),
 		),
 	),
 
@@ -135,8 +135,8 @@ return array(
 		'category' => 'necessary',
 		'patterns' => array( 'cdn.gtranslate.net', 'gtranslate.net/widgets', 'translate.google.com/translate_a' ),
 		'cookies'  => array(
-			array( '__GT_TRANSLATE_LANGS', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Stores the languages the website can be translated into.', 'smart-cookie-consent-manager' ), 'localStorage' ),
-			array( 'gt_autoswitch', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Remembers whether the language is chosen automatically from your browser.', 'smart-cookie-consent-manager' ), 'localStorage', false, 'functional' ),
+			array( '__GT_TRANSLATE_LANGS', __( 'No expiry date (stays until cleared)', 'smart-cookie-consent-manager' ), __( 'Stores the languages the website can be translated into.', 'smart-cookie-consent-manager' ), 'localStorage' ),
+			array( 'gt_autoswitch', __( 'No expiry date (stays until cleared)', 'smart-cookie-consent-manager' ), __( 'Remembers whether the language is chosen automatically from your browser.', 'smart-cookie-consent-manager' ), 'localStorage', false, 'functional' ),
 			array( 'googtrans', __( 'Session', 'smart-cookie-consent-manager' ), __( 'Remembers the language you chose.', 'smart-cookie-consent-manager' ), 'cookie', true, 'functional' ),
 		),
 	),
@@ -223,7 +223,7 @@ return array(
 		'category' => 'functional',
 		'patterns' => array( 'code.tidio.co' ),
 		'cookies'  => array(
-			array( 'tidio_state_*', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Keeps the live chat conversation.', 'smart-cookie-consent-manager' ), 'localStorage' ),
+			array( 'tidio_state_*', __( 'No expiry date (stays until cleared)', 'smart-cookie-consent-manager' ), __( 'Keeps the live chat conversation.', 'smart-cookie-consent-manager' ), 'localStorage' ),
 		),
 	),
 	'livechat'           => array(
@@ -455,8 +455,8 @@ return array(
 			array( 'YSC', __( 'Session', 'smart-cookie-consent-manager' ), __( 'Registers a unique ID to keep statistics of which YouTube videos you have seen.', 'smart-cookie-consent-manager' ) ),
 			array( 'VISITOR_INFO1_LIVE', __( '6 months', 'smart-cookie-consent-manager' ), __( 'Estimates your bandwidth on pages with embedded YouTube videos.', 'smart-cookie-consent-manager' ) ),
 			array( 'VISITOR_PRIVACY_METADATA', __( '6 months', 'smart-cookie-consent-manager' ), __( 'Stores your cookie choices for YouTube.', 'smart-cookie-consent-manager' ) ),
-			array( 'yt-remote-device-id', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Stores your YouTube video player preferences.', 'smart-cookie-consent-manager' ), 'localStorage' ),
-			array( 'ytidb::LAST_RESULT_ENTRY_KEY', __( 'Persistent', 'smart-cookie-consent-manager' ), __( 'Stores the last YouTube search or video for the embedded player.', 'smart-cookie-consent-manager' ), 'localStorage' ),
+			array( 'yt-remote-device-id', __( 'No expiry date (stays until cleared)', 'smart-cookie-consent-manager' ), __( 'Stores your YouTube video player preferences.', 'smart-cookie-consent-manager' ), 'localStorage' ),
+			array( 'ytidb::LAST_RESULT_ENTRY_KEY', __( 'No expiry date (stays until cleared)', 'smart-cookie-consent-manager' ), __( 'Stores the last YouTube search or video for the embedded player.', 'smart-cookie-consent-manager' ), 'localStorage' ),
 		),
 	),
 );

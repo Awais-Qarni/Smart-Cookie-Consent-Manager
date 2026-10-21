@@ -15,7 +15,7 @@ class SCCM_Install {
 	/**
 	 * Database schema version. Bump when the table structure or stored data needs an upgrade step.
 	 */
-	const DB_VERSION = '4';
+	const DB_VERSION = '5';
 
 	/**
 	 * Option that stores the installed schema version.
@@ -82,8 +82,25 @@ class SCCM_Install {
 		if ( false !== $previous && version_compare( (string) $previous, '4', '<' ) ) {
 			self::upgrade_to_4();
 		}
+		if ( false !== $previous && version_compare( (string) $previous, '5', '<' ) ) {
+			self::upgrade_to_5();
+		}
 
 		update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
+	}
+
+	/**
+	 * Version 5: local storage has no expiry date, so "Persistent" (which read like a retention
+	 * period) becomes "No expiry date (stays until cleared)". Rows the site owner added by hand
+	 * are left alone.
+	 */
+	private static function upgrade_to_5() {
+		global $wpdb;
+		// The old text as stored: in English, or translated when the site runs in another language.
+		$old = array( 'Persistent', translate( 'Persistent', 'smart-cookie-consent-manager' ) ); // phpcs:ignore WordPress.WP.I18n
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( $wpdb->prepare( 'UPDATE %i SET duration = %s WHERE source <> %s AND type = %s AND duration IN (%s, %s)', SCCM_Cookies::table(), __( 'No expiry date (stays until cleared)', 'smart-cookie-consent-manager' ), 'manual', 'localStorage', $old[0], $old[1] ) );
+		SCCM_Cookies::flush();
 	}
 
 	/**
@@ -266,7 +283,7 @@ class SCCM_Install {
 			SCCM_Cookies::flush();
 		}
 
-		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge', 'sccm_last_mail', 'sccm_scan_state', 'sccm_browser_scan', 'sccm_rest_problem', 'sccm_consent_problem' ) as $option ) {
+		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge', 'sccm_last_mail', 'sccm_scan_state', 'sccm_browser_scan', 'sccm_rest_problem', 'sccm_consent_problem', 'sccm_measured_durations' ) as $option ) {
 			delete_option( $option );
 		}
 

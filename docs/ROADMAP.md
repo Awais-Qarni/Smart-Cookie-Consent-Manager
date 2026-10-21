@@ -69,6 +69,8 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - [x] Performance review (see `PERFORMANCE.md`)
 - [x] Round 12 (owner feedback): adjustable "learn from visitors" thresholds, shortened IPs shown
       as `***`, optional full IP, search records by IP address
+- [x] Compliance review point 6: real cookie durations from scans, consent cookie duration,
+      "No expiry date" for local storage
 - [ ] Review against the live Cookiebot banner and account (not reachable from the build environment)
 
 ## Later (not in scope for 1.0)
