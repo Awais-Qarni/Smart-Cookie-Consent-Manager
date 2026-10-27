@@ -15,7 +15,7 @@ class SCCM_Install {
 	/**
 	 * Database schema version. Bump when the table structure or stored data needs an upgrade step.
 	 */
-	const DB_VERSION = '5';
+	const DB_VERSION = '6';
 
 	/**
 	 * Option that stores the installed schema version.
@@ -85,6 +85,9 @@ class SCCM_Install {
 		if ( false !== $previous && version_compare( (string) $previous, '5', '<' ) ) {
 			self::upgrade_to_5();
 		}
+		if ( false !== $previous && version_compare( (string) $previous, '6', '<' ) ) {
+			self::upgrade_to_6();
+		}
 
 		update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
 	}
@@ -101,6 +104,23 @@ class SCCM_Install {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$wpdb->query( $wpdb->prepare( 'UPDATE %i SET duration = %s WHERE source <> %s AND type = %s AND duration IN (%s, %s)', SCCM_Cookies::table(), __( 'No expiry date (stays until cleared)', 'smart-cookie-consent-manager' ), 'manual', 'localStorage', $old[0], $old[1] ) );
 		SCCM_Cookies::flush();
+	}
+
+	/**
+	 * Version 6: Google Maps is Marketing (was Preferences). The map sets Google's NID cookie,
+	 * which Google also uses for advertising. Rows the site owner added or edited by hand are left
+	 * alone. Visitors are not asked again: the change only blocks more (the map now waits for
+	 * Marketing). The page caches are cleared, so the banner shows the new category.
+	 */
+	private static function upgrade_to_6() {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$moved = $wpdb->query( $wpdb->prepare( 'UPDATE %i SET category = %s WHERE source <> %s AND service = %s AND category = %s', SCCM_Cookies::table(), 'marketing', 'manual', 'google-maps', 'functional' ) );
+		SCCM_Cookies::flush();
+		if ( $moved ) {
+			/** This action is documented in includes/class-sccm-cookies.php */
+			do_action( 'sccm_cookie_list_changed' );
+		}
 	}
 
 	/**
@@ -283,9 +303,10 @@ class SCCM_Install {
 			SCCM_Cookies::flush();
 		}
 
-		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge', 'sccm_last_mail', 'sccm_scan_state', 'sccm_browser_scan', 'sccm_rest_problem', 'sccm_consent_problem', 'sccm_measured_durations' ) as $option ) {
+		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge', 'sccm_last_mail', 'sccm_scan_state', 'sccm_browser_scan', 'sccm_scan_tokens', 'sccm_scan_lock', 'sccm_browser_only', 'sccm_rest_problem', 'sccm_consent_problem', 'sccm_measured_durations' ) as $option ) {
 			delete_option( $option );
 		}
+		delete_metadata( 'user', 0, 'sccm_notice', '', true );
 
 		wp_clear_scheduled_hook( 'sccm_scan_event' );
 		wp_clear_scheduled_hook( 'sccm_daily_event' );

@@ -420,6 +420,11 @@
 	margin-top: 2px;
 }
 
+.sccm-inbox__name .sccm-inbox__note {
+	color: #8a5a00;
+	max-width: 46em;
+}
+
 .sccm-approve {
 	align-items: center;
 	display: flex;

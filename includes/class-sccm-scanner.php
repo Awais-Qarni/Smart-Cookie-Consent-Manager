@@ -46,8 +46,21 @@ class SCCM_Scanner {
 
 	/**
 	 * Lock so two requests (the admin page and WP-Cron) never scan at the same time.
+	 * An option (the time it was taken), not a transient: on hosts with an object cache (Redis,
+	 * Memcached) transients are lost whenever that cache is cleared.
 	 */
 	const LOCK = 'sccm_scan_lock';
+
+	/**
+	 * Scan-mode tokens of "Scan now": token => user, first, counts, expires. Kept in the
+	 * database for the same reason as the lock, so clearing a cache never breaks a scan.
+	 */
+	const TOKENS_OPTION = 'sccm_scan_tokens';
+
+	/**
+	 * Seconds a scan-mode token stays valid (renewed while the scan makes progress).
+	 */
+	const TOKEN_TTL = 1800;
 
 	/**
 	 * Seconds of scanning per request for scheduled scans and "Scan now" (hosts stop requests
@@ -221,11 +234,8 @@ class SCCM_Scanner {
 		if ( ! is_array( $state ) || empty( $state['urls'] ) || $state['done'] >= count( $state['urls'] ) ) {
 			return true;
 		}
-		if ( ! $ignore_lock ) {
-			if ( get_transient( self::LOCK ) ) {
-				return false;
-			}
-			set_transient( self::LOCK, 1, 2 * MINUTE_IN_SECONDS );
+		if ( ! $ignore_lock && ! self::lock() ) {
+			return false;
 		}
 		$start   = time();
 		$results = $state['results'];
@@ -261,9 +271,23 @@ class SCCM_Scanner {
 		$state['results']   = $results;
 		update_option( self::STATE_OPTION, $state, false );
 		if ( ! $ignore_lock ) {
-			delete_transient( self::LOCK );
+			delete_option( self::LOCK );
 		}
 		return $state['done'] >= count( $state['urls'] );
+	}
+
+	/**
+	 * Take the scan lock. A lock older than two minutes belongs to a request that died.
+	 *
+	 * @return bool False while another request holds it.
+	 */
+	private static function lock() {
+		$since = (int) get_option( self::LOCK, 0 );
+		if ( $since && time() - $since < 2 * MINUTE_IN_SECONDS ) {
+			return false;
+		}
+		update_option( self::LOCK, time(), false );
+		return true;
 	}
 
 	/**
@@ -513,9 +537,10 @@ class SCCM_Scanner {
 		$state['done'] = array_values( array_intersect( $state['urls'], array_unique( array_merge( $state['done'], array_map( 'strval', $done ) ) ) ) );
 		$state['beat'] = $leaving ? 0 : time();
 		update_option( self::BROWSER_OPTION, $state, false );
-		$data = get_transient( 'sccm_scan_' . $state['token'] );
-		if ( is_array( $data ) ) {
-			set_transient( 'sccm_scan_' . $state['token'], $data, 30 * MINUTE_IN_SECONDS );
+		$tokens = self::tokens();
+		if ( isset( $tokens[ $state['token'] ] ) ) {
+			$tokens[ $state['token'] ]['expires'] = time() + self::TOKEN_TTL;
+			update_option( self::TOKENS_OPTION, $tokens, false );
 		}
 		return array_values( array_diff( $state['urls'], $state['done'] ) );
 	}
@@ -537,7 +562,9 @@ class SCCM_Scanner {
 	public static function browser_end() {
 		$state = get_option( self::BROWSER_OPTION );
 		if ( is_array( $state ) ) {
-			delete_transient( 'sccm_scan_' . $state['token'] );
+			$tokens = self::tokens();
+			unset( $tokens[ $state['token'] ] );
+			update_option( self::TOKENS_OPTION, $tokens, false );
 		}
 		delete_option( self::BROWSER_OPTION );
 	}
@@ -550,17 +577,32 @@ class SCCM_Scanner {
 	 * @return string
 	 */
 	public static function scan_token( $first = false, array $counts = array() ) {
-		$token = strtolower( wp_generate_password( 24, false, false ) );
-		set_transient(
-			'sccm_scan_' . $token,
-			array(
-				'user'   => get_current_user_id(),
-				'first'  => (bool) $first,
-				'counts' => $counts,
-			),
-			30 * MINUTE_IN_SECONDS
+		$token            = strtolower( wp_generate_password( 24, false, false ) );
+		$tokens           = self::tokens();
+		$tokens[ $token ] = array(
+			'user'    => get_current_user_id(),
+			'first'   => (bool) $first,
+			'counts'  => $counts,
+			'expires' => time() + self::TOKEN_TTL,
 		);
+		update_option( self::TOKENS_OPTION, $tokens, false );
 		return $token;
+	}
+
+	/**
+	 * Scan-mode tokens that have not expired.
+	 *
+	 * @return array token => data.
+	 */
+	private static function tokens() {
+		$tokens = get_option( self::TOKENS_OPTION, array() );
+		$now    = time();
+		return array_filter(
+			is_array( $tokens ) ? $tokens : array(),
+			static function ( $data ) use ( $now ) {
+				return is_array( $data ) && (int) ( $data['expires'] ?? 0 ) > $now;
+			}
+		);
 	}
 
 	/**
@@ -573,7 +615,8 @@ class SCCM_Scanner {
 		if ( ! preg_match( '/^[a-z0-9]{24}$/', (string) $token ) || ! get_current_user_id() ) {
 			return false;
 		}
-		$data = get_transient( 'sccm_scan_' . $token );
+		$tokens = self::tokens();
+		$data   = $tokens[ $token ] ?? null;
 		return ( is_array( $data ) && (int) $data['user'] === get_current_user_id() ) ? $data : false;
 	}
 
@@ -693,15 +736,26 @@ class SCCM_Scanner {
 			empty( $token['first'] )
 		);
 
+		// Cookies that were only in the admin's browser (no page wrote them): settled at the end
+		// of the scan, see settle_unconfirmed().
+		$unconfirmed = array();
+		foreach ( array_slice( (array) ( $data['unconfirmed'] ?? array() ), 0, 200 ) as $name ) {
+			$name = (string) $name;
+			if ( SCCM_REST::valid_name( $name ) && ! self::is_admin_cookie( $name ) ) {
+				$unconfirmed[] = $name;
+			}
+		}
+
 		// Reports of one scan arrive in batches: add them up.
 		$before                  = isset( $results['browser'] ) && '' !== $token_id && ( $results['browser']['token'] ?? '' ) === $token_id ? $results['browser'] : array();
 		$results['unclassified'] = array_values( $results['unclassified'] );
 		$results['browser']      = array(
-			'token'   => $token_id,
-			'time'    => time(),
-			'pages'   => (int) ( $before['pages'] ?? 0 ) + absint( $data['pages'] ?? 0 ),
-			'blocked' => (int) ( $before['blocked'] ?? 0 ) + absint( $data['blocked'] ?? 0 ),
-			'found'   => array_values( array_unique( array_merge( (array) ( $before['found'] ?? array() ), array_keys( $seen ) ) ) ),
+			'token'       => $token_id,
+			'time'        => time(),
+			'pages'       => (int) ( $before['pages'] ?? 0 ) + absint( $data['pages'] ?? 0 ),
+			'blocked'     => (int) ( $before['blocked'] ?? 0 ) + absint( $data['blocked'] ?? 0 ),
+			'found'       => array_values( array_unique( array_merge( (array) ( $before['found'] ?? array() ), array_keys( $seen ) ) ) ),
+			'unconfirmed' => array_slice( array_values( array_unique( array_merge( (array) ( $before['unconfirmed'] ?? array() ), $unconfirmed ) ) ), 0, 200 ),
 		);
 		update_option( self::RESULT_OPTION, $results, false );
 
@@ -712,6 +766,39 @@ class SCCM_Scanner {
 			'pending'      => max( 0, $now['pending'] - (int) ( $before['pending'] ?? $now['pending'] ) ),
 			'unclassified' => count( $results['unclassified'] ),
 		);
+	}
+
+	/**
+	 * End of "Scan now": cookies that were only in the admin's own browser. The scan opens the
+	 * pages in that browser, which also holds cookies of admin tools, other plugins' dashboards
+	 * and extensions. A cookie counts as the website's only with proof: the server part received
+	 * it as a new visitor, a scanned page wrote it, or it appeared during the scan. The others:
+	 * - "Learn from visitors" on: not listed; real visitors' browsers report it if the website
+	 *   sets it for them too (then it is listed as usual), admin-only cookies never come back.
+	 * - "Learn from visitors" off: nothing else would find them, so they wait for review, marked
+	 *   "Only found in your browser". Nothing is dropped without a way back.
+	 *
+	 * @return int How many cookies were only in the admin's browser.
+	 */
+	public static function settle_unconfirmed() {
+		$results = get_option( self::RESULT_OPTION );
+		$browser = is_array( $results ) ? (array) ( $results['browser'] ?? array() ) : array();
+		$names   = array_diff( (array) ( $browser['unconfirmed'] ?? array() ), (array) ( $browser['found'] ?? array() ) );
+		$names   = array_values(
+			array_filter(
+				$names,
+				static function ( $name ) {
+					// Already in the list (any status): nothing to decide.
+					return ! SCCM_Cookies::find_matching( $name, 'cookie' );
+				}
+			)
+		);
+		if ( $names && ! SCCM_Settings::get( 'scanner_client' ) ) {
+			foreach ( $names as $name ) {
+				SCCM_Cookies::record_unconfirmed( $name );
+			}
+		}
+		return count( $names );
 	}
 
 	/**

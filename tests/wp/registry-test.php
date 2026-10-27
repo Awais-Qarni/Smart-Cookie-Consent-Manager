@@ -687,6 +687,32 @@ $wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE service <> 'sccm'
 delete_option( SCCM_Cookies::MEASURED_OPTION );
 SCCM_Cookies::flush();
 
+// Google Maps is Marketing: its NID cookie is also used by Google for advertising.
+$maps = SCCM_Services::all()['google-maps'];
+$nid  = SCCM_Services::match_cookie( 'NID' );
+sccm_check( 'library: Google Maps and its NID cookie are Marketing', 'marketing' === $maps['category'] && $nid && 'marketing' === $nid['category'], $maps['category'] );
+$rules = wp_list_pluck( SCCM_Services::rules(), 'category', 'pattern' );
+sccm_check( 'blocking: a Google Maps embed waits for Marketing', 'marketing' === ( $rules['google.com/maps'] ?? '' ), wp_json_encode( $rules['google.com/maps'] ?? null ) );
+sccm_check( 'Preferences description no longer mentions maps', false === stripos( SCCM_Categories::all()['functional']['description'], 'map' ) );
+
+// Upgrade (DB version 6): existing Google Maps rows move to Marketing; hand-edited rows stay.
+$now = current_time( 'mysql', true );
+foreach ( array( array( 'NID', 'scanner' ), array( 'NID_HAND', 'manual' ) ) as $old_row ) {
+	$wpdb->insert( SCCM_Cookies::table(), array( 'name' => $old_row[0], 'type' => 'cookie', 'category' => 'functional', 'service' => 'google-maps', 'source' => $old_row[1], 'status' => 'active', 'created_at' => $now, 'updated_at' => $now ) ); // phpcs:ignore
+}
+update_option( SCCM_Install::DB_VERSION_OPTION, '5' );
+SCCM_Cookies::flush();
+$version_before = (int) get_option( 'sccm_consent_version' );
+$purges_before  = did_action( 'sccm_cookie_list_changed' );
+SCCM_Install::maybe_upgrade();
+$c = wp_list_pluck( SCCM_Cookies::all_rows(), 'category', 'name' );
+sccm_check( 'upgrade v6: Google Maps (NID) moves from Preferences to Marketing; hand-edited rows untouched', 'marketing' === $c['NID'] && 'functional' === $c['NID_HAND'], wp_json_encode( $c ) );
+sccm_check( 'upgrade v6: visitors are not asked again (the change only blocks more)', (int) get_option( 'sccm_consent_version' ) === $version_before );
+sccm_check( 'upgrade v6: the page caches are cleared so the banner shows the new category', did_action( 'sccm_cookie_list_changed' ) > $purges_before );
+sccm_check( 'upgrade v6: database version is current', SCCM_Install::DB_VERSION === get_option( SCCM_Install::DB_VERSION_OPTION ) );
+$wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE service <> 'sccm'" ); // phpcs:ignore
+SCCM_Cookies::flush();
+
 // The consent cookie's listed duration follows the "ask again after" setting.
 $durations = array();
 foreach ( array( 365, 180, 45, 0 ) as $days ) {

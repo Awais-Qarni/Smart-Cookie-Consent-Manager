@@ -110,6 +110,11 @@ a choice brings the banner back), and again later, centred, with a close button.
       cached, stored or logged). Cookie and storage names set by scripts, and the third-party
       services the pages load, are recorded; third-party cookies come from the service library.
       Keeps going in a background tab; if the page is left it continues on the next plugin page.
+- [ ] Cookies that were only in the admin's own browser (admin tools, other plugins' dashboards,
+      extensions) are not taken as the website's: a cookie counts only when a scanned page wrote
+      it, it appeared during the scan, or the server got it as a new visitor. The others are
+      left to real visitors ("Learn from visitors"); with that setting off they wait for review,
+      marked "Only found in your browser". No cookie is dropped without a way back.
 - [ ] Known cookies are added automatically as Active in the right category; only cookies the
       service always sets are added (conditional ones are categorised when actually seen).
 - [ ] Unknown cookies appear under **Needs review** in the Cookies tab; the admin must choose a

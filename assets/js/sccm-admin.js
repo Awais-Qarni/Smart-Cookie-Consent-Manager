@@ -132,6 +132,68 @@
 		});
 	}
 
+	/**
+	 * POST to admin-ajax.php. Resolves with the reply's data, rejects with a readable reason.
+	 * Short hiccups of the host (no answer, 429, 502–504) are tried again twice when retry is set.
+	 *
+	 * @param {Object}  body  Request fields.
+	 * @param {boolean} retry The request is safe to send again.
+	 * @return {Promise}
+	 */
+	function ajax(body, retry) {
+		var tries = retry ? 2 : 0;
+		return new Promise(function (resolve, reject) {
+			(function send() {
+				$.post(A.ajaxUrl, body).done(function (response) {
+					if (response && response.success) {
+						resolve(response.data);
+					} else {
+						reject(failReason(null, response));
+					}
+				}).fail(function (xhr) {
+					if (tries > 0 && [0, 429, 502, 503, 504].indexOf(xhr.status) !== -1) {
+						tries--;
+						wait(3000).then(send);
+						return;
+					}
+					reject(failReason(xhr, xhr.responseJSON));
+				});
+			})();
+		});
+	}
+
+	/**
+	 * Why a request failed: the plugin's own message, else what the reply says about the cause
+	 * (expired login, firewall, server error…).
+	 *
+	 * @param {Object|null} xhr      Failed request (null when the reply came with status 200).
+	 * @param {*}           response Parsed reply, if any.
+	 * @return {string}
+	 */
+	function failReason(xhr, response) {
+		var errors = A.errors || {};
+		if (response && response.data && response.data.message) {
+			return response.data.message;
+		}
+		var status = xhr ? xhr.status : 200;
+		var text = String(xhr ? xhr.responseText || '' : (typeof response === 'string' ? response : '')).trim();
+		var reason;
+		if (text === '-1') {
+			reason = errors.expired;
+		} else if (status === 0) {
+			reason = errors.offline;
+		} else if (status === 400 && text === '0') {
+			reason = errors.stripped;
+		} else if (status >= 500) {
+			reason = errors.server;
+		} else if (status >= 400) {
+			reason = errors.blocked;
+		} else {
+			reason = errors.unexpected;
+		}
+		return (status && status !== 200 ? 'HTTP ' + status + '. ' : '') + (reason || '');
+	}
+
 	function cookieNames(doc) {
 		return (doc.cookie || '').split(';').map(function (part) {
 			return part.split('=')[0].trim();
@@ -222,14 +284,10 @@
 	function browserScan($form) {
 		var ui = scanUi($form, $form.find('button'));
 		ui.say(A.scanServer);
-		$.post(A.ajaxUrl, { action: 'sccm_browser_scan_start', _ajax_nonce: A.scanNonce }).done(function (response) {
-			if (!response || !response.success) {
-				ui.fail(response && response.data && response.data.message);
-				return;
-			}
-			runScan(response.data, ui, true);
-		}).fail(function (xhr) {
-			ui.fail(xhr && xhr.status ? 'HTTP ' + xhr.status : '');
+		ajax({ action: 'sccm_browser_scan_start', _ajax_nonce: A.scanNonce }, false).then(function (data) {
+			runScan(data, ui, true);
+		}, function (message) {
+			ui.fail(message);
 		});
 	}
 
@@ -286,15 +344,17 @@
 		var opened = data.opened || 0;
 		var next = 0;
 		var finished = false;
-		// Storage keys the browser already has (from the dashboard or extensions) are "old".
+		// Cookies and storage keys the browser already has (from admin tools, other plugins'
+		// dashboards or extensions) are "old": they count only when a scanned page writes them.
 		var baseline = {
+			cookies: cookieNames(document),
 			localStorage: storageKeys(window, 'localStorage'),
 			sessionStorage: storageKeys(window, 'sessionStorage')
 		};
 		var batch;
 
 		function newBatch() {
-			batch = { pages: 0, blocked: 0, cookies: {}, lifetimes: {}, storage: {}, resources: {}, done: [] };
+			batch = { pages: 0, blocked: 0, cookies: {}, unconfirmed: {}, lifetimes: {}, storage: {}, resources: {}, done: [] };
 		}
 		newBatch();
 
@@ -303,6 +363,9 @@
 				pages: batch.pages,
 				blocked: batch.blocked,
 				cookies: Object.keys(batch.cookies),
+				unconfirmed: Object.keys(batch.unconfirmed).filter(function (name) {
+					return !batch.cookies[name];
+				}),
 				lifetimes: batch.lifetimes,
 				storage: Object.keys(batch.storage).map(function (key) {
 					return batch.storage[key];
@@ -316,17 +379,7 @@
 		function report(final) {
 			var body = { action: 'sccm_browser_scan_report', _ajax_nonce: A.scanNonce, token: data.token, data: payload(), final: final ? 1 : 0 };
 			newBatch();
-			return new Promise(function (resolve, reject) {
-				$.post(A.ajaxUrl, body).done(function (result) {
-					if (result && result.success) {
-						resolve(result.data);
-					} else {
-						reject(result && result.data && result.data.message);
-					}
-				}).fail(function (xhr) {
-					reject(xhr && xhr.status ? 'HTTP ' + xhr.status : '');
-				});
-			});
+			return ajax(body, true);
 		}
 
 		// Leaving the page: warn first; if left anyway, send the rest with sendBeacon (no reply needed).
@@ -355,19 +408,11 @@
 				return Promise.resolve();
 			}
 			var before = step.done;
-			return new Promise(function (resolve, reject) {
-				$.post(A.ajaxUrl, { action: 'sccm_browser_scan_server', _ajax_nonce: A.scanNonce }).done(function (response) {
-					if (response && response.success) {
-						// No progress means the background part is busy with a step: ask again shortly.
-						var pause = response.data.done === before && !response.data.finished ? wait(3000) : Promise.resolve();
-						pause.then(function () {
-							resolve(serverSteps(response.data));
-						});
-					} else {
-						reject(response && response.data && response.data.message);
-					}
-				}).fail(function (xhr) {
-					reject(xhr && xhr.status ? 'HTTP ' + xhr.status : '');
+			return ajax({ action: 'sccm_browser_scan_server', _ajax_nonce: A.scanNonce }, true).then(function (next) {
+				// No progress means the background part is busy with a step: ask again shortly.
+				var pause = next.done === before && !next.finished ? wait(3000) : Promise.resolve();
+				return pause.then(function () {
+					return serverSteps(next);
 				});
 			});
 		}
@@ -379,8 +424,12 @@
 				batch.blocked++;
 				return;
 			}
+			// A cookie is the site's own when the page wrote it during the scan, or when the browser
+			// did not have it before the scan started (also cookies the server sets on requests
+			// of the page). One that was only there already is "unconfirmed": real visitors decide.
 			result.cookies.forEach(function (name) {
-				batch.cookies[name] = true;
+				var own = Object.prototype.hasOwnProperty.call(result.lifetimes, name) || baseline.cookies.indexOf(name) === -1;
+				batch[own ? 'cookies' : 'unconfirmed'][name] = true;
 			});
 			// How long the page's scripts keep each cookie they wrote (seconds, 0 = session).
 			Object.keys(result.lifetimes).forEach(function (name) {

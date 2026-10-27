@@ -11,6 +11,10 @@
  * At most one clear per request, at the end of it. Clears that are not started by an
  * administrator (e.g. a cookie added from a visitor's report) are throttled to one per
  * THROTTLE seconds; a clear asked for in between runs from WP-Cron when the wait is over.
+ * While "Scan now" runs, clears wait for the end of the scan (at most DEFER seconds).
+ *
+ * Only page caches are cleared, never the object cache (Redis, Memcached): that cache holds
+ * data of the whole site, and the page caches are what serve the out-of-date copies.
  *
  * @package SmartCookieConsentManager
  */
@@ -40,6 +44,37 @@ class SCCM_Cache {
 	private static $queued = false;
 
 	/**
+	 * Seconds a clear may wait for a running scan to end (an abandoned scan still gets one).
+	 */
+	const DEFER = 600;
+
+	/**
+	 * Whether this request is a step of a running scan (see defer()).
+	 *
+	 * @var bool
+	 */
+	private static $deferred = false;
+
+	/**
+	 * This request is a step of a running scan: a clear it asks for waits until the scan ends,
+	 * so the whole site cache is not rebuilt every few pages.
+	 */
+	public static function defer() {
+		self::$deferred = true;
+	}
+
+	/**
+	 * The scan ends: run a clear that was waiting for it at the end of this request.
+	 */
+	public static function release() {
+		self::$deferred = false;
+		if ( wp_next_scheduled( self::EVENT ) ) {
+			wp_clear_scheduled_hook( self::EVENT );
+			self::request();
+		}
+	}
+
+	/**
 	 * Register hooks.
 	 */
 	public static function init() {
@@ -65,6 +100,12 @@ class SCCM_Cache {
 	 */
 	public static function flush_queued() {
 		self::$queued = false;
+		if ( self::$deferred ) {
+			if ( ! wp_next_scheduled( self::EVENT ) ) {
+				wp_schedule_single_event( time() + self::DEFER, self::EVENT );
+			}
+			return;
+		}
 		$wait = (int) get_option( 'sccm_last_cache_purge', 0 ) + self::THROTTLE - time();
 		if ( $wait > 0 && ! current_user_can( 'manage_options' ) ) {
 			if ( ! wp_next_scheduled( self::EVENT ) ) {
@@ -109,15 +150,10 @@ class SCCM_Cache {
 	 */
 	private static function purge_all() {
 		$calls = array(
-			// WP Engine.
+			// WP Engine (page cache only; its Memcached object cache is left alone).
 			static function () {
-				if ( class_exists( 'WpeCommon' ) ) {
-					if ( method_exists( 'WpeCommon', 'purge_memcached' ) ) {
-						WpeCommon::purge_memcached();
-					}
-					if ( method_exists( 'WpeCommon', 'purge_varnish_cache' ) ) {
-						WpeCommon::purge_varnish_cache();
-					}
+				if ( class_exists( 'WpeCommon' ) && method_exists( 'WpeCommon', 'purge_varnish_cache' ) ) {
+					WpeCommon::purge_varnish_cache();
 				}
 			},
 			// NitroPack.
@@ -132,9 +168,11 @@ class SCCM_Cache {
 					rocket_clean_domain();
 				}
 			},
-			// W3 Total Cache.
+			// W3 Total Cache (its page cache; "flush all" would also empty its object cache).
 			static function () {
-				if ( function_exists( 'w3tc_flush_all' ) ) {
+				if ( function_exists( 'w3tc_pgcache_flush' ) ) {
+					w3tc_pgcache_flush();
+				} elseif ( function_exists( 'w3tc_flush_all' ) ) {
 					w3tc_flush_all();
 				}
 			},

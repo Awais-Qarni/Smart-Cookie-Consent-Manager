@@ -8,6 +8,10 @@ add_action( 'wp_head', function () {
 	echo "<script>!function(f){f.fbq=function(){(f.fbq.q=f.fbq.q||[]).push(arguments)};}(window);fbq('init','123');document.cookie='_fbp=fb.1.123; path=/';window.__fbRan=true;</script>\n";
 	echo "<script>window.__necessaryRan=true;document.cookie='test_unknown_cookie=1; path=/';try{localStorage.setItem('test_unknown_storage','1')}catch(e){}</script>\n";
 	echo "<script type=\"text/plain\" data-sccm-category=\"functional\">window.__manualFunctionalRan=true;</script>\n";
+	// A script that sets its cookie only when the browser does not have it yet (admin e2e BU).
+	if ( get_option( 'sccm_test_once' ) ) {
+		echo "<script>if(document.cookie.indexOf('test_once_cookie=')<0){document.cookie='test_once_cookie=1; max-age=31536000; path=/';}</script>\n";
+	}
 }, 20 );
 add_action( 'wp_footer', function () {
 	echo '<div id="video-wrap"><iframe id="yt" width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube video" frameborder="0" allowfullscreen></iframe></div>';

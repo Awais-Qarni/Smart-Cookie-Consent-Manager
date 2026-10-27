@@ -2,6 +2,50 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.3] - 2026-10-27
+### Changed
+- **Google Maps is Marketing** (was Preferences). The map sets Google's `NID` cookie, which
+  Google also uses for advertising, so embedded maps now wait for Marketing consent (the
+  click-to-load placeholder shows until then). The Preferences description no longer mentions
+  maps.
+- Upgrade (database version 6): existing Google Maps cookies move to Marketing; cookies the
+  site owner added or edited by hand stay as they are. Visitors are not asked again (the change
+  only blocks more), and page caches are cleared so the banner shows the new category.
+
+## [1.2.2] - 2026-10-27
+### Fixed
+- **"Scan now" listed cookies that were only in the admin's own browser** (for example
+  `nitropack_preview_mode`, `nitropack_webhook_sync` and an Intercom cookie from NitroPack's
+  dashboard). The scan opens the pages in the admin's browser, which also holds cookies of admin
+  tools, other plugins and extensions. Now a cookie counts as the website's only with proof: a
+  scanned page sets it, it appears during the scan, or the server gets it as a new visitor. No
+  list of admin cookies is needed, so it works on any website.
+- Cookies without that proof are never dropped silently: with "Learn from visitors" on, real
+  visitors decide (a cookie the website really sets, even one a script sets only once, is listed
+  after the usual number of visitors); with it off, they wait under Needs review, marked "Only
+  found in your browser". The scan result says how many there were.
+- The scan also notices cookies set with the Cookie Store API (`cookieStore.set`).
+
+### Added
+- Intercom's `intercom-device-id-*` cookie in the service library (Preferences, 9 months).
+
+## [1.2.1] - 2026-10-27
+### Fixed
+- **"Scan now" failed with "The scan could not finish: HTTP 400" on hosts with an object cache**
+  (WP Engine, Redis, Memcached). The scan kept its pass in a transient, which lives in the object
+  cache on those hosts; when the scan found cookies, the plugin cleared the caches, the object
+  cache was emptied and the pass was gone. The scan pass and the scan lock are now kept in the
+  database, so no cache clear (by this plugin, the host or another plugin) can break a scan.
+- **The plugin no longer empties the object cache** when it clears page caches: WP Engine gets a
+  page (Varnish) purge only, W3 Total Cache a page cache flush only.
+- **During "Scan now" the page caches are cleared once, at the end** (or at the latest 10 minutes
+  after the last step if the scan is left), not every few pages.
+- **"Settings saved" / "Scan finished" messages could vanish** on hosts with an object cache;
+  they are now kept with the user account until shown.
+- **A failed scan says why**: the plugin's own message, or what the reply means (login or page
+  expired, blocked by a firewall or security plugin, server error, no answer). No answer, 429,
+  502, 503 and 504 replies are tried again twice before the scan gives up.
+
 ## [1.2.0] - 2026-10-06
 ### Added
 - **"Learn from visitors" is adjustable** (Settings → Cookie scan and email alerts): how many

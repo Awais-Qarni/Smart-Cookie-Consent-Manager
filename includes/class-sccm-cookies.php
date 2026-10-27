@@ -33,6 +33,11 @@ class SCCM_Cookies {
 	const MAX_PENDING = 50;
 
 	/**
+	 * Names of review items that were only found in the admin's browser (see record_unconfirmed()).
+	 */
+	const BROWSER_ONLY_OPTION = 'sccm_browser_only';
+
+	/**
 	 * Different visitors that must report an unknown cookie before it is listed.
 	 */
 	const MIN_VISITORS = 2; // Default of the setting learn_visitors (see min_visitors()).
@@ -558,6 +563,61 @@ class SCCM_Cookies {
 		);
 		self::queue_alert( $name, $type, 'pending', '' );
 		return 'pending';
+	}
+
+	/**
+	 * A cookie that was only in the admin's own browser during "Scan now" (no scanned page wrote
+	 * it) while "Learn from visitors" is off: it waits for review, even when the library knows it,
+	 * and the review list marks it "Only found in your browser". Known details are filled in.
+	 *
+	 * @param string $name Cookie name.
+	 * @return bool Whether it was added.
+	 */
+	public static function record_unconfirmed( $name ) {
+		if ( self::find_matching( $name, 'cookie' ) || self::pending_count() >= self::MAX_PENDING ) {
+			return false;
+		}
+		$now   = current_time( 'mysql', true );
+		$known = SCCM_Services::match_cookie( $name );
+		$known = $known && 'cookie' === $known['type'] ? $known : null;
+		$row   = array(
+			'name'       => $known ? $known['name'] : $name,
+			'type'       => 'cookie',
+			'category'   => 'necessary',
+			'status'     => 'pending',
+			'source'     => 'scanner',
+			'first_seen' => $now,
+			'last_seen'  => $now,
+		);
+		if ( $known ) {
+			foreach ( array( 'provider', 'purpose', 'duration', 'service' ) as $field ) {
+				$row[ $field ] = $known[ $field ];
+			}
+		}
+		if ( ! self::save( $row ) ) {
+			return false;
+		}
+		// Keep the marks of items still waiting for review (approved / ignored ones are forgotten).
+		$pending = array();
+		foreach ( self::all_rows() as $item ) {
+			if ( 'pending' === $item['status'] ) {
+				$pending[] = $item['name'];
+			}
+		}
+		$marked = array_intersect( (array) get_option( self::BROWSER_ONLY_OPTION, array() ), $pending );
+		update_option( self::BROWSER_ONLY_OPTION, array_values( array_unique( array_merge( $marked, array( $row['name'] ) ) ) ), false );
+		self::queue_alert( $row['name'], 'cookie', 'pending', '' );
+		return true;
+	}
+
+	/**
+	 * Whether a row waiting for review was only found in the admin's browser (see record_unconfirmed()).
+	 *
+	 * @param array $row Registry row.
+	 * @return bool
+	 */
+	public static function only_in_admin_browser( array $row ) {
+		return 'pending' === $row['status'] && 'cookie' === $row['type'] && in_array( $row['name'], (array) get_option( self::BROWSER_ONLY_OPTION, array() ), true );
 	}
 
 	/**

@@ -30,7 +30,7 @@ class SCCM_Categories {
 			),
 			'functional' => array(
 				'label'       => __( 'Preferences', 'smart-cookie-consent-manager' ),
-				'description' => __( 'Preference cookies let the website remember choices that change how it looks or behaves, such as your language or region, and provide extra features like embedded maps, fonts and chat.', 'smart-cookie-consent-manager' ),
+				'description' => __( 'Preference cookies let the website remember choices that change how it looks or behaves, such as your language or region, and provide extra features such as fonts and chat.', 'smart-cookie-consent-manager' ),
 			),
 			'analytics'  => array(
 				'label'       => __( 'Statistics', 'smart-cookie-consent-manager' ),

@@ -132,7 +132,28 @@ check('B3 tabbed banner shows the tabs and all three buttons in the chosen order
 await front.close();
 
 // Browser scan: finds cookies set by JavaScript and third-party cookies, from a nearly empty list.
-wp('eval', `global $wpdb; $wpdb->query("DELETE FROM " . SCCM_Cookies::table() . " WHERE service <> 'sccm'"); delete_option('sccm_last_scan');`);
+// It runs on a simulated host with an object cache (WP Engine, Redis, Memcached): every cache
+// clear also loses all transients, as emptying Memcached does. The scan must still finish.
+const HOST = CONTENT + '/mu-plugins/zz-sccm-hostcache.php';
+fs.writeFileSync(HOST, `<?php
+function sccm_test_drop_transients() {
+	global $wpdb;
+	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\\\_transient\\\\_%' OR option_name LIKE '\\\\_site\\\\_transient\\\\_%'" );
+	wp_cache_flush();
+}
+class WpeCommon {
+	public static function purge_memcached() {
+		sccm_test_drop_transients();
+		update_option( 'sccm_test_memcached', (int) get_option( 'sccm_test_memcached', 0 ) + 1, false );
+	}
+	public static function purge_varnish_cache() {
+		update_option( 'sccm_test_varnish', (int) get_option( 'sccm_test_varnish', 0 ) + 1, false );
+	}
+}
+// Another cache plugin that also empties the object cache when the page cache is cleared.
+add_action( 'sccm_cache_purged', 'sccm_test_drop_transients' );
+`);
+wp('eval', `global $wpdb; $wpdb->query("DELETE FROM " . SCCM_Cookies::table() . " WHERE service <> 'sccm'"); delete_option('sccm_last_scan'); delete_option('sccm_last_cache_purge'); delete_option('sccm_test_memcached'); delete_option('sccm_test_varnish');`);
 await page.goto(admin('cookies'));
 await page.click('.sccm-scanstrip button');
 await page.waitForSelector('.sccm-scan-status');
@@ -155,6 +176,70 @@ const daily = fs.existsSync(CONTENT + '/mail-captured.json') ? JSON.parse(fs.rea
 check('BS4 the daily check then sends one email about the changes found by the scan (admin + listed addresses)', daily && /need(s)? review|added to your cookie banner/.test(daily.subject) && daily.to.includes(adminEmail) && daily.to.includes('owner@example.com'), daily && daily.subject);
 const leftover = await page.evaluate(() => document.querySelectorAll('iframe[sandbox]').length);
 check('BS3 the hidden frames are removed afterwards', leftover === 0);
+const purges = JSON.parse(wp('eval', `echo wp_json_encode( array( (int) get_option( 'sccm_test_memcached', 0 ), (int) get_option( 'sccm_test_varnish', 0 ), (bool) wp_next_scheduled( SCCM_Cache::EVENT ) ) );`));
+check('BS5 with an object cache that loses transients on every cache clear, the scan still finishes (above)', true);
+check('BS5 the host object cache (WP Engine Memcached) is never emptied by the plugin', purges[0] === 0, JSON.stringify(purges));
+check('BS5 the page cache is cleared once, when the scan ends (not every few pages)', purges[1] === 1 && !purges[2], JSON.stringify(purges));
+fs.rmSync(HOST, { force: true });
+wp('eval', `delete_option( 'sccm_test_memcached' ); delete_option( 'sccm_test_varnish' );`);
+
+// A failed scan request shows the real reason, not only the HTTP status.
+const failWith = async (status, body, type) => {
+	await page.route('**/admin-ajax.php', (r) => (/sccm_browser_scan_start/.test(r.request().postData() || '') ? r.fulfill({ status, contentType: type, body }) : r.continue()));
+	await page.goto(admin('cookies'));
+	await page.click('.sccm-scanstrip button');
+	await page.waitForFunction(() => /could not finish/.test((document.querySelector('.sccm-scan-status__text') || {}).textContent || ''));
+	const text = await page.textContent('.sccm-scan-status__text');
+	await page.unroute('**/admin-ajax.php');
+	return text;
+};
+let shown = await failWith(400, JSON.stringify({ success: false, data: { message: 'The scan took too long. Please start it again.' } }), 'application/json');
+check('BS6 an error reply of the plugin (HTTP 400) shows its message', /took too long/.test(shown), shown);
+shown = await failWith(403, '-1', 'text/html');
+check('BS6 an expired login / nonce says so', /HTTP 403\. Your login or this page has expired/.test(shown), shown);
+shown = await failWith(403, '<html>Blocked by firewall</html>', 'text/html');
+check('BS6 a firewall block names the likely cause', /HTTP 403\. A security plugin, firewall/.test(shown), shown);
+
+// Cookies that were only in the admin's own browser (admin tools, other plugins' dashboards,
+// extensions) are not listed by the scan: real visitors decide. A site cookie that a script sets
+// only when the browser does not have it yet is not lost either.
+const rows = () => JSON.parse(wp('eval', `echo wp_json_encode( array_map( function ( $r ) { return $r['name'] . '|' . $r['status']; }, SCCM_Cookies::all_rows() ) );`));
+const scanNow = async () => {
+	await page.goto(admin('cookies'));
+	await page.click('.sccm-scanstrip button');
+	await page.waitForURL(/sccm_notice/, { timeout: 150000 });
+	return { notice: (await page.textContent('.notice')).trim(), rows: rows() };
+};
+wp('eval', `global $wpdb; $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE service <> 'sccm'", SCCM_Cookies::table() ) ); $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '%sccm\\\\_rl\\\\_%'" ); delete_option( SCCM_Cookies::BROWSER_ONLY_OPTION ); delete_option( 'sccm_candidates' ); update_option( 'sccm_test_once', 1 ); SCCM_Settings::update( array( 'scanner_client' => 1, 'learn_visitors' => 1 ) );`);
+const host = new URL(BASE).hostname;
+await ctx.addCookies([
+	{ name: 'admin_tool_cookie', value: '1', domain: host, path: '/' },
+	{ name: 'test_once_cookie', value: '1', domain: host, path: '/' },
+]);
+let scan = await scanNow();
+check('BU1 a cookie that was only in the admin browser is not listed', !scan.rows.some((r) => /^(admin_tool_cookie|test_once_cookie)\|/.test(r)), scan.rows.join(', '));
+check('BU1 cookies the pages write are listed although the admin browser already had them (_ga, test_unknown_cookie)', scan.rows.includes('_ga|active') && scan.rows.includes('test_unknown_cookie|pending'), scan.rows.join(', '));
+check('BU1 the result says how many were only in the admin browser and that visitors decide', /2 cookies were only in your own browser .*listed if your visitors get them too/.test(scan.notice), scan.notice.slice(0, 300));
+
+const visitorCtx = await browser.newContext();
+const visitor = await visitorCtx.newPage();
+const reported = visitor.waitForResponse((r) => r.url().includes('/sccm/v1/report'), { timeout: 30000 }).catch(() => null);
+await visitor.goto(BASE + '/');
+const reply = await reported;
+await visitorCtx.close();
+const visited = rows();
+check('BU2 the site cookie set only once (the admin browser had it) is listed as soon as a real visitor gets it', visited.includes('test_once_cookie|pending'), (reply ? reply.status() : 'no report') + ' ' + visited.join(', '));
+check('BU2 the admin-only cookie never comes back (visitors do not have it)', !visited.some((r) => r.startsWith('admin_tool_cookie|')));
+
+wp('eval', `global $wpdb; $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE name IN ( 'test_once_cookie', 'admin_tool_cookie' )", SCCM_Cookies::table() ) ); SCCM_Settings::update( array( 'scanner_client' => 0 ) );`);
+scan = await scanNow();
+check('BU3 with "Learn from visitors" off, cookies only in the admin browser wait for review instead (nothing dropped)', scan.rows.includes('admin_tool_cookie|pending') && scan.rows.includes('test_once_cookie|pending'), scan.rows.join(', '));
+check('BU3 they are marked "Only found in your browser" in the review list', /Only found in your browser/.test(await page.locator('.sccm-inbox tr', { hasText: 'admin_tool_cookie' }).textContent()));
+check('BU3 the result message says so', /2 cookies were only in your own browser, not set by your pages/.test(scan.notice), scan.notice.slice(0, 300));
+check('BU3 other review items carry no such mark', !/Only found in your browser/.test(await page.locator('.sccm-inbox tr', { hasText: 'test_unknown_cookie' }).textContent()));
+wp('eval', `global $wpdb; $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE name IN ( 'test_once_cookie', 'admin_tool_cookie' )", SCCM_Cookies::table() ) ); delete_option( 'sccm_test_once' ); delete_option( SCCM_Cookies::BROWSER_ONLY_OPTION ); SCCM_Settings::update( array( 'scanner_client' => 1, 'learn_visitors' => 2 ) );`);
+await ctx.clearCookies({ name: 'admin_tool_cookie' }).catch(() => {});
+await ctx.clearCookies({ name: 'test_once_cookie' }).catch(() => {});
 
 // Dashboard switch off / on
 await page.goto(admin('dashboard'));
