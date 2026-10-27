@@ -7,13 +7,30 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.2.2 (1.2.x is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.2.3 (1.2.x is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); production hotfix 1.2.1
 - **Last updated:** 2026-10-27 (session 9)
-- **Tests:** unit 33, WP-CLI 169, visitor e2e 115, admin e2e 83, all passing on **MySQL 8.4
+- **Tests:** unit 33, WP-CLI 176, visitor e2e 115, admin e2e 83, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-10-27 — Session 9c (1.2.3: Google Maps → Marketing)
+
+**Done** (owner approved; only the Google Maps part of local branch `backup/compliance-changes`)
+- Library: `google-maps` moved to the Marketing section (NID is also used by Google for ads);
+  Preferences description without "embedded maps".
+- DB v6 `upgrade_to_6()`: rows of service `google-maps` in Preferences → Marketing, except
+  `source = manual`; no re-ask; fires `sccm_cookie_list_changed` (page cache clear).
+- WP-CLI checks: library + blocking rule + description + upgrade (176).
+- Owner confirmed `test_cookie` (DoubleClick) stays in Marketing.
+
+**Still open (owner's decision):** the rest of `backup/compliance-changes`: Google's documented
+durations (IDE 13 months, test_cookie 15 minutes, _gcl_* 90 days) and the storage guard.
+
+**Next:** owner installs 1.2.3 on production.
 
 ---
 

@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.2
+Stable tag: 1.2.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,9 @@ Use the floating button, the [sccm_cookie_settings] shortcode, or a menu link to
 Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 == Changelog ==
+
+= 1.2.3 =
+* Google Maps is now Marketing (was Preferences): the map sets Google's NID cookie, which Google also uses for advertising. Embedded maps wait until the visitor allows Marketing. Existing cookie lists are updated automatically (cookies you edited yourself stay as they are); visitors are not asked again.
 
 = 1.2.2 =
 * "Scan now" no longer lists cookies that were only in your own browser (from admin tools such as a cache plugin's dashboard, or from extensions). A cookie counts only when one of your pages sets it during the scan; the others are left to your real visitors ("Learn from visitors"). With that setting off they wait for review, marked "Only found in your browser".

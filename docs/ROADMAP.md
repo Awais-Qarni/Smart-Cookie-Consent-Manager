@@ -76,6 +76,7 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
       (WP Engine, Redis, Memcached); page-cache-only clears; readable scan errors
 - [x] 1.2.2 (production, 2026-10-27): "Scan now" ignores cookies that were only in the admin's
       browser (proof rule, real visitors decide); Intercom device cookie in the library
+- [x] 1.2.3 (2026-10-27): Google Maps is Marketing (NID is used for ads); DB v6 moves existing rows
 
 ## Later (not in scope for 1.0)
 - Geo-targeting (different banner per region)

@@ -150,15 +150,6 @@ return array(
 		'patterns' => array( 'fonts.googleapis.com', 'fonts.gstatic.com' ),
 		'cookies'  => array(),
 	),
-	'google-maps'        => array(
-		'name'     => 'Google Maps',
-		'provider' => 'Google Maps (Google LLC)',
-		'category' => 'functional',
-		'patterns' => array( 'maps.googleapis.com', 'google.com/maps', 'maps.google.' ),
-		'cookies'  => array(
-			array( 'NID', __( '6 months', 'smart-cookie-consent-manager' ), __( 'Remembers your Google preferences and is used for personalised ads.', 'smart-cookie-consent-manager' ) ),
-		),
-	),
 	'vimeo'              => array(
 		'name'     => 'Vimeo',
 		'provider' => 'Vimeo, Inc.',
@@ -445,6 +436,15 @@ return array(
 		'patterns' => array( 'redditstatic.com/ads', "rdt('init'", 'rdt("init"' ),
 		'cookies'  => array(
 			array( '_rdt_uuid', __( '3 months', 'smart-cookie-consent-manager' ), __( 'Measures Reddit ad performance.', 'smart-cookie-consent-manager' ) ),
+		),
+	),
+	'google-maps'        => array(
+		'name'     => 'Google Maps',
+		'provider' => 'Google Maps (Google LLC)',
+		'category' => 'marketing', // The map sets Google's NID cookie, which Google also uses for advertising.
+		'patterns' => array( 'maps.googleapis.com', 'google.com/maps', 'maps.google.' ),
+		'cookies'  => array(
+			array( 'NID', __( '6 months', 'smart-cookie-consent-manager' ), __( 'Remembers your Google preferences and is used for personalised ads.', 'smart-cookie-consent-manager' ) ),
 		),
 	),
 	'youtube'            => array(

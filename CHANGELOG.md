@@ -2,6 +2,16 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.3] - 2026-10-27
+### Changed
+- **Google Maps is Marketing** (was Preferences). The map sets Google's `NID` cookie, which
+  Google also uses for advertising, so embedded maps now wait for Marketing consent (the
+  click-to-load placeholder shows until then). The Preferences description no longer mentions
+  maps.
+- Upgrade (database version 6): existing Google Maps cookies move to Marketing; cookies the
+  site owner added or edited by hand stay as they are. Visitors are not asked again (the change
+  only blocks more), and page caches are cleared so the banner shows the new category.
+
 ## [1.2.2] - 2026-10-27
 ### Fixed
 - **"Scan now" listed cookies that were only in the admin's own browser** (for example
