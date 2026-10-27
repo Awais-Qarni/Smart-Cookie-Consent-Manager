@@ -7,13 +7,33 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.2.1 (1.2.0 is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.2.2 (1.2.x is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); production hotfix 1.2.1
 - **Last updated:** 2026-10-27 (session 9)
-- **Tests:** unit 33, WP-CLI 169, visitor e2e 115, admin e2e 74, all passing on **MySQL 8.4
+- **Tests:** unit 33, WP-CLI 169, visitor e2e 115, admin e2e 83, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-10-27 — Session 9b (1.2.2: admin-browser cookies in "Scan now")
+
+**Problem (production):** the review list showed `intercom-device-id-d5v9p9vg`,
+`nitropack_preview_mode`, `nitropack_webhook_sync`. The site has no chat; they come from the
+admin's browser (NitroPack dashboard). The browser scan read every cookie of the admin's
+cookie jar. The owner rejected a list of admin-only cookies (cannot cover thousands of sites).
+
+**Done**
+- Proof rule: `runScan` notes the browser's cookie names before the scan; a cookie counts when
+  a page writes it (`document.cookie` / `cookieStore.set` wrapped in scan mode) or it is new.
+  The rest is `unconfirmed` → `SCCM_Scanner::settle_unconfirmed()`: learning on → left to
+  visitor reports; learning off → `SCCM_Cookies::record_unconfirmed()` (pending, marked via
+  option `sccm_browser_only`, note in the inbox). Result message counts them.
+- Library: `intercom-device-id-*`. Help, FEATURES (9), ARCHITECTURE, TESTING I11/I12.
+- Tests: admin e2e BU1–BU3 (fixture option `sccm_test_once`: a cookie set only when missing).
+
+**Next:** owner installs 1.2.2, ignores the three cookies already waiting, runs Scan now.
 
 ---
 

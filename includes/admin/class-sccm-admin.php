@@ -712,7 +712,8 @@ class SCCM_Admin {
 			wp_send_json_success( array( 'left' => count( $left ) ) );
 		}
 		SCCM_Scanner::browser_end();
-		$browser = (array) ( get_option( SCCM_Scanner::RESULT_OPTION )['browser'] ?? array() );
+		$only_mine = SCCM_Scanner::settle_unconfirmed();
+		$browser   = (array) ( get_option( SCCM_Scanner::RESULT_OPTION )['browser'] ?? array() );
 		$pages   = (int) ( $browser['pages'] ?? 0 );
 		$blocked = (int) ( $browser['blocked'] ?? 0 );
 
@@ -723,6 +724,19 @@ class SCCM_Admin {
 			$sum['active'],
 			$sum['pending']
 		);
+		if ( $only_mine && SCCM_Settings::get( 'scanner_client' ) ) {
+			$message .= ' ' . sprintf(
+				/* translators: %d: number of cookies */
+				_n( '%d cookie was only in your own browser (from admin tools or extensions, not from your pages). It will be listed if your visitors get it too.', '%d cookies were only in your own browser (from admin tools or extensions, not from your pages). They will be listed if your visitors get them too.', $only_mine, 'smart-cookie-consent-manager' ),
+				$only_mine
+			);
+		} elseif ( $only_mine ) {
+			$message .= ' ' . sprintf(
+				/* translators: %d: number of cookies */
+				_n( '%d cookie was only in your own browser, not set by your pages: it waits for your review, marked "Only found in your browser".', '%d cookies were only in your own browser, not set by your pages: they wait for your review, marked "Only found in your browser".', $only_mine, 'smart-cookie-consent-manager' ),
+				$only_mine
+			);
+		}
 		if ( $blocked && $blocked >= $pages ) {
 			$message .= ' ' . __( 'Your website did not allow itself to be opened in a frame (a security header), so only the server scan ran. Cookies set by scripts may be missing.', 'smart-cookie-consent-manager' );
 		}

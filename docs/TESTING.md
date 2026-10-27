@@ -9,7 +9,7 @@ npm test             # php -l on every PHP file, node --check on JS, PHP unit te
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
 SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 115 browser checks (visitor side)
 SCCM_WP=/path/to/wp npm run test:wp                              # 169 checks: provider name of the site's own cookies, cookie list, "learn from visitors" settings, fake-report protection, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent records (filters, validation, rate limit, retention, emoji URLs, self-repair), IP modes (shortened ***, code, full, none), search by IP, upgrades to DB v4 and v5, real cookie durations (format, Set-Cookie parsing, which rows a scan may update), consent cookie duration, CSV safety, banner HTML, deactivate/uninstall (WP-CLI)
-SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 74 checks of the admin screens, incl. a scan on a host whose cache clears lose transients (WP Engine, Redis, Memcached), readable scan errors, real durations after a browser scan, incl. learning/IP settings, search by IP, consent records, CSV export, settings export/import, "ask again", Subscriber access (403 everywhere), a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
+SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 83 checks of the admin screens, incl. cookies only in the admin's browser (not listed; visitors decide; marked when learning is off), a scan on a host whose cache clears lose transients (WP Engine, Redis, Memcached), readable scan errors, real durations after a browser scan, incl. learning/IP settings, search by IP, consent records, CSV export, settings export/import, "ask again", Subscriber access (403 everywhere), a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
 ```
 
 `test:wp` and `e2e:admin` reset the cookie list and settings of the site they run on: dev sites only.
@@ -129,6 +129,12 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 - [ ] I10 During "Scan now", switch to another browser tab for a minute: the scan keeps counting
       pages. Click another Cookie Consent tab mid-scan: the browser asks "Leave site?"; after
       leaving, the new screen shows "Cookie scan: continuing where it stopped…" and finishes.
+- [ ] I11 Open another plugin's dashboard first (e.g. NitroPack), then "Scan now": cookies of
+      that dashboard (`nitropack_preview_mode`, `intercom-device-id-…`) are not listed; the
+      result says "… cookie(s) were only in your own browser". With "Learn from visitors" off
+      they appear under Needs review marked "Only found in your browser".
+- [ ] I12 On a host with an object cache (WP Engine, Redis, Memcached) "Scan now" finishes and
+      shows "Scan finished"; a failed scan names the reason, not only "HTTP 400".
 - [ ] I8 Settings shows "Last email: … handed to your server". "Last email failed" means the host
       cannot send mail: install an SMTP plugin (e.g. WP Mail SMTP).
 - [ ] I6 Open the sample email in a mail app in dark mode (Outlook, Gmail app, Apple Mail):

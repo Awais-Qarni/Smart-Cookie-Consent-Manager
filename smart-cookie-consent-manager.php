@@ -3,7 +3,7 @@
  * Plugin Name:       Smart Cookie Consent Manager
  * Plugin URI:        https://github.com/Awais-Qarni/Smart-Cookie-Consent-Manager
  * Description:       Plug-and-play cookie consent: Accept / Reject / Manage Preferences banner, blocking until consent, Google Consent Mode v2, GPC, consent records, cookie scanner and an automatic cookie policy.
- * Version:           1.2.1
+ * Version:           1.2.2
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            Muhammad Awais
@@ -18,7 +18,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SCCM_VERSION', '1.2.1' );
+define( 'SCCM_VERSION', '1.2.2' );
 define( 'SCCM_FILE', __FILE__ );
 define( 'SCCM_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SCCM_URL', plugin_dir_url( __FILE__ ) );

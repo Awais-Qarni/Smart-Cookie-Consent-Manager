@@ -215,6 +215,7 @@ return array(
 		'cookies'  => array(
 			array( 'intercom-id-*', __( '9 months', 'smart-cookie-consent-manager' ), __( 'Identifies the chat visitor.', 'smart-cookie-consent-manager' ) ),
 			array( 'intercom-session-*', __( '1 week', 'smart-cookie-consent-manager' ), __( 'Keeps the chat session.', 'smart-cookie-consent-manager' ) ),
+			array( 'intercom-device-id-*', __( '9 months', 'smart-cookie-consent-manager' ), __( 'Recognises the device so the chat can show earlier conversations.', 'smart-cookie-consent-manager' ) ),
 		),
 	),
 	'tidio'              => array(

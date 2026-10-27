@@ -121,6 +121,9 @@ $sccm_sources    = array(
 								?>
 							<?php endif; ?>
 						</small>
+						<?php if ( SCCM_Cookies::only_in_admin_browser( $sccm_row ) ) : ?>
+							<small class="sccm-inbox__note"><?php esc_html_e( 'Only found in your browser: none of your pages set it during the scan. It may come from your admin tools or a browser extension. Ignore it if your visitors do not get it.', 'smart-cookie-consent-manager' ); ?></small>
+						<?php endif; ?>
 					</td>
 					<td>
 						<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="sccm-approve">

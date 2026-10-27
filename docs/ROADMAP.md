@@ -74,6 +74,8 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - [ ] Review against the live Cookiebot banner and account (not reachable from the build environment)
 - [x] Hotfix 1.2.1 (production, 2026-10-27): "Scan now" works on hosts with an object cache
       (WP Engine, Redis, Memcached); page-cache-only clears; readable scan errors
+- [x] 1.2.2 (production, 2026-10-27): "Scan now" ignores cookies that were only in the admin's
+      browser (proof rule, real visitors decide); Intercom device cookie in the library
 
 ## Later (not in scope for 1.0)
 - Geo-targeting (different banner per region)

@@ -736,15 +736,26 @@ class SCCM_Scanner {
 			empty( $token['first'] )
 		);
 
+		// Cookies that were only in the admin's browser (no page wrote them): settled at the end
+		// of the scan, see settle_unconfirmed().
+		$unconfirmed = array();
+		foreach ( array_slice( (array) ( $data['unconfirmed'] ?? array() ), 0, 200 ) as $name ) {
+			$name = (string) $name;
+			if ( SCCM_REST::valid_name( $name ) && ! self::is_admin_cookie( $name ) ) {
+				$unconfirmed[] = $name;
+			}
+		}
+
 		// Reports of one scan arrive in batches: add them up.
 		$before                  = isset( $results['browser'] ) && '' !== $token_id && ( $results['browser']['token'] ?? '' ) === $token_id ? $results['browser'] : array();
 		$results['unclassified'] = array_values( $results['unclassified'] );
 		$results['browser']      = array(
-			'token'   => $token_id,
-			'time'    => time(),
-			'pages'   => (int) ( $before['pages'] ?? 0 ) + absint( $data['pages'] ?? 0 ),
-			'blocked' => (int) ( $before['blocked'] ?? 0 ) + absint( $data['blocked'] ?? 0 ),
-			'found'   => array_values( array_unique( array_merge( (array) ( $before['found'] ?? array() ), array_keys( $seen ) ) ) ),
+			'token'       => $token_id,
+			'time'        => time(),
+			'pages'       => (int) ( $before['pages'] ?? 0 ) + absint( $data['pages'] ?? 0 ),
+			'blocked'     => (int) ( $before['blocked'] ?? 0 ) + absint( $data['blocked'] ?? 0 ),
+			'found'       => array_values( array_unique( array_merge( (array) ( $before['found'] ?? array() ), array_keys( $seen ) ) ) ),
+			'unconfirmed' => array_slice( array_values( array_unique( array_merge( (array) ( $before['unconfirmed'] ?? array() ), $unconfirmed ) ) ), 0, 200 ),
 		);
 		update_option( self::RESULT_OPTION, $results, false );
 
@@ -755,6 +766,39 @@ class SCCM_Scanner {
 			'pending'      => max( 0, $now['pending'] - (int) ( $before['pending'] ?? $now['pending'] ) ),
 			'unclassified' => count( $results['unclassified'] ),
 		);
+	}
+
+	/**
+	 * End of "Scan now": cookies that were only in the admin's own browser. The scan opens the
+	 * pages in that browser, which also holds cookies of admin tools, other plugins' dashboards
+	 * and extensions. A cookie counts as the website's only with proof: the server part received
+	 * it as a new visitor, a scanned page wrote it, or it appeared during the scan. The others:
+	 * - "Learn from visitors" on: not listed; real visitors' browsers report it if the website
+	 *   sets it for them too (then it is listed as usual), admin-only cookies never come back.
+	 * - "Learn from visitors" off: nothing else would find them, so they wait for review, marked
+	 *   "Only found in your browser". Nothing is dropped without a way back.
+	 *
+	 * @return int How many cookies were only in the admin's browser.
+	 */
+	public static function settle_unconfirmed() {
+		$results = get_option( self::RESULT_OPTION );
+		$browser = is_array( $results ) ? (array) ( $results['browser'] ?? array() ) : array();
+		$names   = array_diff( (array) ( $browser['unconfirmed'] ?? array() ), (array) ( $browser['found'] ?? array() ) );
+		$names   = array_values(
+			array_filter(
+				$names,
+				static function ( $name ) {
+					// Already in the list (any status): nothing to decide.
+					return ! SCCM_Cookies::find_matching( $name, 'cookie' );
+				}
+			)
+		);
+		if ( $names && ! SCCM_Settings::get( 'scanner_client' ) ) {
+			foreach ( $names as $name ) {
+				SCCM_Cookies::record_unconfirmed( $name );
+			}
+		}
+		return count( $names );
 	}
 
 	/**

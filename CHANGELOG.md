@@ -2,6 +2,23 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.2.2] - 2026-10-27
+### Fixed
+- **"Scan now" listed cookies that were only in the admin's own browser** (for example
+  `nitropack_preview_mode`, `nitropack_webhook_sync` and an Intercom cookie from NitroPack's
+  dashboard). The scan opens the pages in the admin's browser, which also holds cookies of admin
+  tools, other plugins and extensions. Now a cookie counts as the website's only with proof: a
+  scanned page sets it, it appears during the scan, or the server gets it as a new visitor. No
+  list of admin cookies is needed, so it works on any website.
+- Cookies without that proof are never dropped silently: with "Learn from visitors" on, real
+  visitors decide (a cookie the website really sets, even one a script sets only once, is listed
+  after the usual number of visitors); with it off, they wait under Needs review, marked "Only
+  found in your browser". The scan result says how many there were.
+- The scan also notices cookies set with the Cookie Store API (`cookieStore.set`).
+
+### Added
+- Intercom's `intercom-device-id-*` cookie in the service library (Preferences, 9 months).
+
 ## [1.2.1] - 2026-10-27
 ### Fixed
 - **"Scan now" failed with "The scan could not finish: HTTP 400" on hosts with an object cache**

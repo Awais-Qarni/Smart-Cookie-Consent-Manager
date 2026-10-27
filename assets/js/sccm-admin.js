@@ -344,15 +344,17 @@
 		var opened = data.opened || 0;
 		var next = 0;
 		var finished = false;
-		// Storage keys the browser already has (from the dashboard or extensions) are "old".
+		// Cookies and storage keys the browser already has (from admin tools, other plugins'
+		// dashboards or extensions) are "old": they count only when a scanned page writes them.
 		var baseline = {
+			cookies: cookieNames(document),
 			localStorage: storageKeys(window, 'localStorage'),
 			sessionStorage: storageKeys(window, 'sessionStorage')
 		};
 		var batch;
 
 		function newBatch() {
-			batch = { pages: 0, blocked: 0, cookies: {}, lifetimes: {}, storage: {}, resources: {}, done: [] };
+			batch = { pages: 0, blocked: 0, cookies: {}, unconfirmed: {}, lifetimes: {}, storage: {}, resources: {}, done: [] };
 		}
 		newBatch();
 
@@ -361,6 +363,9 @@
 				pages: batch.pages,
 				blocked: batch.blocked,
 				cookies: Object.keys(batch.cookies),
+				unconfirmed: Object.keys(batch.unconfirmed).filter(function (name) {
+					return !batch.cookies[name];
+				}),
 				lifetimes: batch.lifetimes,
 				storage: Object.keys(batch.storage).map(function (key) {
 					return batch.storage[key];
@@ -419,8 +424,12 @@
 				batch.blocked++;
 				return;
 			}
+			// A cookie is the site's own when the page wrote it during the scan, or when the browser
+			// did not have it before the scan started (also cookies the server sets on requests
+			// of the page). One that was only there already is "unconfirmed": real visitors decide.
 			result.cookies.forEach(function (name) {
-				batch.cookies[name] = true;
+				var own = Object.prototype.hasOwnProperty.call(result.lifetimes, name) || baseline.cookies.indexOf(name) === -1;
+				batch[own ? 'cookies' : 'unconfirmed'][name] = true;
 			});
 			// How long the page's scripts keep each cookie they wrote (seconds, 0 = session).
 			Object.keys(result.lifetimes).forEach(function (name) {

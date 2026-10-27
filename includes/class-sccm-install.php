@@ -283,7 +283,7 @@ class SCCM_Install {
 			SCCM_Cookies::flush();
 		}
 
-		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge', 'sccm_last_mail', 'sccm_scan_state', 'sccm_browser_scan', 'sccm_scan_tokens', 'sccm_scan_lock', 'sccm_rest_problem', 'sccm_consent_problem', 'sccm_measured_durations' ) as $option ) {
+		foreach ( array( SCCM_Settings::OPTION, 'sccm_consent_version', self::DB_VERSION_OPTION, 'sccm_last_scan', 'sccm_pending_alert', 'sccm_last_alert', 'sccm_candidates', 'sccm_last_cache_purge', 'sccm_last_mail', 'sccm_scan_state', 'sccm_browser_scan', 'sccm_scan_tokens', 'sccm_scan_lock', 'sccm_browser_only', 'sccm_rest_problem', 'sccm_consent_problem', 'sccm_measured_durations' ) as $option ) {
 			delete_option( $option );
 		}
 		delete_metadata( 'user', 0, 'sccm_notice', '', true );

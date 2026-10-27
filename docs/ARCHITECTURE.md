@@ -93,6 +93,24 @@ Admin clicks "Scan now"  (assets/js/sccm-admin.js → browserScan)
 If a security header forbids framing the site, the scan reports it and the server scan result
 stands.
 
+**Cookies the admin's browser already had.** The frames share the admin's cookie jar, which
+also holds cookies of admin tools (e.g. NitroPack's dashboard, its Intercom support chat),
+other plugins and extensions. No list of such cookies could ever be complete, so the rule is
+proof, not names: before the first page opens, `runScan` notes the cookie names the browser
+has. A cookie counts as the website's when a scanned page writes it (scan mode wraps
+`document.cookie` and `cookieStore.set`), or when it was not there before (also covers cookies
+set by responses to the page's requests). The rest is sent as `unconfirmed` and settled at the
+end by `SCCM_Scanner::settle_unconfirmed()`:
+- "Learn from visitors" on: not listed. Real visitors' browsers report unknown cookie names
+  (never from logged-in users), so a cookie the website really sets — even one a script sets
+  only when it is missing, which the admin's browser already had — is listed after the usual
+  number of visitors; admin-only cookies never come back.
+- "Learn from visitors" off: `SCCM_Cookies::record_unconfirmed()` puts them under Needs review
+  (even when the library knows them), marked "Only found in your browser" (option
+  `sccm_browser_only`).
+Server-set cookies are not affected: the server part requests pages without cookies, like a
+first-time visitor. Regression tests: admin e2e BU1–BU3.
+
 ## Scan plan (which pages, how many)
 
 `SCCM_Scanner::urls()` → `scan_budget( count_pages() )` pages (all published items of public

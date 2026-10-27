@@ -54,8 +54,9 @@
 			};
 		} catch (e) { /* ignore */ }
 
-		// Note how long each cookie a script writes is kept (Max-Age / Expires; 0 = session), so the
-		// cookie list can show the real retention period. Deletions (expiry in the past) are skipped.
+		// Note every cookie a script writes and how long it is kept (Max-Age / Expires; 0 = session):
+		// the cookie list shows the real retention period, and a cookie the admin's browser already
+		// had counts as the site's own only when a page writes it. Deletions are skipped.
 		var lifetimes = w.__sccmScanCookies = {};
 		try {
 			var desc = Object.getOwnPropertyDescriptor(w.Document.prototype, 'cookie');
@@ -92,6 +93,24 @@
 					desc.set.call(d, value);
 				}
 			});
+		} catch (e) { /* ignore */ }
+
+		// The same for scripts that use the Cookie Store API (cookieStore.set(name, value) or
+		// cookieStore.set({ name, value, expires })).
+		try {
+			if (w.cookieStore && w.cookieStore.set) {
+				var storeSet = w.cookieStore.set;
+				w.cookieStore.set = function (first) {
+					try {
+						var options = first && typeof first === 'object' ? first : { name: first };
+						var expires = options.expires ? Math.round((Number(options.expires) - Date.now()) / 1000) : 0;
+						if (options.name && !(options.expires && expires <= 0)) {
+							lifetimes[String(options.name)] = expires;
+						}
+					} catch (e) { /* ignore */ }
+					return storeSet.apply(this, arguments);
+				};
+			}
 		} catch (e) { /* ignore */ }
 	}
 

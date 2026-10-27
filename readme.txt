@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,10 @@ Use the floating button, the [sccm_cookie_settings] shortcode, or a menu link to
 Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 == Changelog ==
+
+= 1.2.2 =
+* "Scan now" no longer lists cookies that were only in your own browser (from admin tools such as a cache plugin's dashboard, or from extensions). A cookie counts only when one of your pages sets it during the scan; the others are left to your real visitors ("Learn from visitors"). With that setting off they wait for review, marked "Only found in your browser".
+* Intercom's device cookie (intercom-device-id-…) is recognised.
 
 = 1.2.1 =
 * Fixed: "Scan now" stopped with "The scan could not finish: HTTP 400" on hosts with an object cache (WP Engine, Redis, Memcached). The scan now keeps its data in the database, so clearing any cache never breaks it.
