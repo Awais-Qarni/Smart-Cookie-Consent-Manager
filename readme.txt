@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,12 @@ Use the floating button, the [sccm_cookie_settings] shortcode, or a menu link to
 Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 == Changelog ==
+
+= 1.2.1 =
+* Fixed: "Scan now" stopped with "The scan could not finish: HTTP 400" on hosts with an object cache (WP Engine, Redis, Memcached). The scan now keeps its data in the database, so clearing any cache never breaks it.
+* The plugin no longer empties the host's object cache (WP Engine Memcached, W3 Total Cache object cache) when it clears page caches; during "Scan now" the page caches are cleared once, when the scan ends.
+* "Saved" and "Scan finished" messages are no longer lost on hosts with an object cache.
+* A failed scan now says why (expired login, firewall, server error) instead of only the HTTP status, and short host hiccups are retried.
 
 = 1.2.0 =
 * Fixed: the "Provider name for your own cookies" text was not shown (the cookie list kept "This website").

@@ -132,7 +132,28 @@ check('B3 tabbed banner shows the tabs and all three buttons in the chosen order
 await front.close();
 
 // Browser scan: finds cookies set by JavaScript and third-party cookies, from a nearly empty list.
-wp('eval', `global $wpdb; $wpdb->query("DELETE FROM " . SCCM_Cookies::table() . " WHERE service <> 'sccm'"); delete_option('sccm_last_scan');`);
+// It runs on a simulated host with an object cache (WP Engine, Redis, Memcached): every cache
+// clear also loses all transients, as emptying Memcached does. The scan must still finish.
+const HOST = CONTENT + '/mu-plugins/zz-sccm-hostcache.php';
+fs.writeFileSync(HOST, `<?php
+function sccm_test_drop_transients() {
+	global $wpdb;
+	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\\\_transient\\\\_%' OR option_name LIKE '\\\\_site\\\\_transient\\\\_%'" );
+	wp_cache_flush();
+}
+class WpeCommon {
+	public static function purge_memcached() {
+		sccm_test_drop_transients();
+		update_option( 'sccm_test_memcached', (int) get_option( 'sccm_test_memcached', 0 ) + 1, false );
+	}
+	public static function purge_varnish_cache() {
+		update_option( 'sccm_test_varnish', (int) get_option( 'sccm_test_varnish', 0 ) + 1, false );
+	}
+}
+// Another cache plugin that also empties the object cache when the page cache is cleared.
+add_action( 'sccm_cache_purged', 'sccm_test_drop_transients' );
+`);
+wp('eval', `global $wpdb; $wpdb->query("DELETE FROM " . SCCM_Cookies::table() . " WHERE service <> 'sccm'"); delete_option('sccm_last_scan'); delete_option('sccm_last_cache_purge'); delete_option('sccm_test_memcached'); delete_option('sccm_test_varnish');`);
 await page.goto(admin('cookies'));
 await page.click('.sccm-scanstrip button');
 await page.waitForSelector('.sccm-scan-status');
@@ -155,6 +176,29 @@ const daily = fs.existsSync(CONTENT + '/mail-captured.json') ? JSON.parse(fs.rea
 check('BS4 the daily check then sends one email about the changes found by the scan (admin + listed addresses)', daily && /need(s)? review|added to your cookie banner/.test(daily.subject) && daily.to.includes(adminEmail) && daily.to.includes('owner@example.com'), daily && daily.subject);
 const leftover = await page.evaluate(() => document.querySelectorAll('iframe[sandbox]').length);
 check('BS3 the hidden frames are removed afterwards', leftover === 0);
+const purges = JSON.parse(wp('eval', `echo wp_json_encode( array( (int) get_option( 'sccm_test_memcached', 0 ), (int) get_option( 'sccm_test_varnish', 0 ), (bool) wp_next_scheduled( SCCM_Cache::EVENT ) ) );`));
+check('BS5 with an object cache that loses transients on every cache clear, the scan still finishes (above)', true);
+check('BS5 the host object cache (WP Engine Memcached) is never emptied by the plugin', purges[0] === 0, JSON.stringify(purges));
+check('BS5 the page cache is cleared once, when the scan ends (not every few pages)', purges[1] === 1 && !purges[2], JSON.stringify(purges));
+fs.rmSync(HOST, { force: true });
+wp('eval', `delete_option( 'sccm_test_memcached' ); delete_option( 'sccm_test_varnish' );`);
+
+// A failed scan request shows the real reason, not only the HTTP status.
+const failWith = async (status, body, type) => {
+	await page.route('**/admin-ajax.php', (r) => (/sccm_browser_scan_start/.test(r.request().postData() || '') ? r.fulfill({ status, contentType: type, body }) : r.continue()));
+	await page.goto(admin('cookies'));
+	await page.click('.sccm-scanstrip button');
+	await page.waitForFunction(() => /could not finish/.test((document.querySelector('.sccm-scan-status__text') || {}).textContent || ''));
+	const text = await page.textContent('.sccm-scan-status__text');
+	await page.unroute('**/admin-ajax.php');
+	return text;
+};
+let shown = await failWith(400, JSON.stringify({ success: false, data: { message: 'The scan took too long. Please start it again.' } }), 'application/json');
+check('BS6 an error reply of the plugin (HTTP 400) shows its message', /took too long/.test(shown), shown);
+shown = await failWith(403, '-1', 'text/html');
+check('BS6 an expired login / nonce says so', /HTTP 403\. Your login or this page has expired/.test(shown), shown);
+shown = await failWith(403, '<html>Blocked by firewall</html>', 'text/html');
+check('BS6 a firewall block names the likely cause', /HTTP 403\. A security plugin, firewall/.test(shown), shown);
 
 // Dashboard switch off / on
 await page.goto(admin('dashboard'));

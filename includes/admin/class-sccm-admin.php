@@ -115,6 +115,14 @@ class SCCM_Admin {
 				'scanSaving' => __( 'Saving what was found…', 'smart-cookie-consent-manager' ),
 				/* translators: %s: error message */
 				'scanFailed' => __( 'The scan could not finish: %s', 'smart-cookie-consent-manager' ),
+				'errors'     => array(
+					'expired'    => __( 'Your login or this page has expired. Reload the page and try again.', 'smart-cookie-consent-manager' ),
+					'offline'    => __( 'No answer from the server (the connection was lost or the request took too long). Please try again.', 'smart-cookie-consent-manager' ),
+					'stripped'   => __( 'WordPress did not receive the request in full. A firewall or a server limit may have removed its data.', 'smart-cookie-consent-manager' ),
+					'server'     => __( 'The server had an error or ran out of time. Please try again; if it happens again, check the PHP error log or ask your host.', 'smart-cookie-consent-manager' ),
+					'blocked'    => __( 'A security plugin, firewall or the host blocked the request. Allow requests to admin-ajax.php from logged-in administrators, or ask your host.', 'smart-cookie-consent-manager' ),
+					'unexpected' => __( 'The server sent an unexpected reply (another plugin may add output to admin-ajax.php).', 'smart-cookie-consent-manager' ),
+				),
 				'scanResume' => (bool) SCCM_Scanner::browser_state(),
 				'scanResuming' => __( 'Cookie scan: continuing where it stopped…', 'smart-cookie-consent-manager' ),
 				'scanBusy'   => __( 'A cookie scan is running in another browser tab.', 'smart-cookie-consent-manager' ),
@@ -143,9 +151,11 @@ class SCCM_Admin {
 		if ( ! $screen || 'toplevel_page_' . self::SLUG !== $screen->id ) {
 			return;
 		}
-		$notice = get_transient( 'sccm_notice_' . get_current_user_id() );
-		if ( is_array( $notice ) && '' !== $notice['msg'] ) {
-			delete_transient( 'sccm_notice_' . get_current_user_id() );
+		$notice = get_user_meta( get_current_user_id(), 'sccm_notice', true );
+		if ( $notice ) {
+			delete_user_meta( get_current_user_id(), 'sccm_notice' );
+		}
+		if ( is_array( $notice ) && '' !== $notice['msg'] && time() - (int) ( $notice['time'] ?? 0 ) < 5 * MINUTE_IN_SECONDS ) {
 			echo '<div class="notice notice-' . ( $notice['error'] ? 'error' : 'success' ) . ' is-dismissible"><p>' . esc_html( $notice['msg'] ) . '</p></div>';
 		}
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
@@ -451,19 +461,22 @@ class SCCM_Admin {
 
 	/**
 	 * Keep a message for the next admin page view of the current user. Messages are not put in
-	 * the URL, so a link cannot show a made-up message in the plugin screens.
+	 * the URL, so a link cannot show a made-up message in the plugin screens. Stored as user meta,
+	 * not a transient: saving often clears the caches, and on hosts with an object cache that
+	 * would drop a transient before the next page is shown.
 	 *
 	 * @param string $msg   Message.
 	 * @param bool   $error Error flag.
 	 */
 	private static function flash( $msg, $error = false ) {
-		set_transient(
-			'sccm_notice_' . get_current_user_id(),
+		update_user_meta(
+			get_current_user_id(),
+			'sccm_notice',
 			array(
 				'msg'   => (string) $msg,
 				'error' => (bool) $error,
-			),
-			5 * MINUTE_IN_SECONDS
+				'time'  => time(),
+			)
 		);
 	}
 
@@ -597,6 +610,7 @@ class SCCM_Admin {
 			wp_send_json_error( array( 'message' => __( 'You are not allowed to do this.', 'smart-cookie-consent-manager' ) ), 403 );
 		}
 		check_ajax_referer( 'sccm_browser_scan' );
+		SCCM_Cache::defer();
 		$first   = false === get_option( SCCM_Scanner::RESULT_OPTION );
 		$counts  = SCCM_Cookies::counts();
 		SCCM_Scanner::begin( true );
@@ -644,6 +658,7 @@ class SCCM_Admin {
 			wp_send_json_error( array( 'message' => __( 'You are not allowed to do this.', 'smart-cookie-consent-manager' ) ), 403 );
 		}
 		check_ajax_referer( 'sccm_browser_scan' );
+		SCCM_Cache::defer();
 		SCCM_Scanner::browser_touch();
 		wp_send_json_success( self::scan_server_step() );
 	}
@@ -683,6 +698,12 @@ class SCCM_Admin {
 		}
 		$data = isset( $_POST['data'] ) ? json_decode( wp_unslash( $_POST['data'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- every value is validated in record_browser_scan().
 		$data = is_array( $data ) ? $data : array();
+		// Clear the page caches once when the scan ends, not after every few pages.
+		if ( empty( $_POST['final'] ) ) {
+			SCCM_Cache::defer();
+		} else {
+			SCCM_Cache::release();
+		}
 		$sum  = SCCM_Scanner::record_browser_scan( $data, $valid, $token );
 		$left = SCCM_Scanner::browser_progress( (array) ( $data['done'] ?? array() ), ! empty( $_POST['leaving'] ) );
 

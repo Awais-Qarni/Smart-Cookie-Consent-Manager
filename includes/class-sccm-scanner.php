@@ -46,8 +46,21 @@ class SCCM_Scanner {
 
 	/**
 	 * Lock so two requests (the admin page and WP-Cron) never scan at the same time.
+	 * An option (the time it was taken), not a transient: on hosts with an object cache (Redis,
+	 * Memcached) transients are lost whenever that cache is cleared.
 	 */
 	const LOCK = 'sccm_scan_lock';
+
+	/**
+	 * Scan-mode tokens of "Scan now": token => user, first, counts, expires. Kept in the
+	 * database for the same reason as the lock, so clearing a cache never breaks a scan.
+	 */
+	const TOKENS_OPTION = 'sccm_scan_tokens';
+
+	/**
+	 * Seconds a scan-mode token stays valid (renewed while the scan makes progress).
+	 */
+	const TOKEN_TTL = 1800;
 
 	/**
 	 * Seconds of scanning per request for scheduled scans and "Scan now" (hosts stop requests
@@ -221,11 +234,8 @@ class SCCM_Scanner {
 		if ( ! is_array( $state ) || empty( $state['urls'] ) || $state['done'] >= count( $state['urls'] ) ) {
 			return true;
 		}
-		if ( ! $ignore_lock ) {
-			if ( get_transient( self::LOCK ) ) {
-				return false;
-			}
-			set_transient( self::LOCK, 1, 2 * MINUTE_IN_SECONDS );
+		if ( ! $ignore_lock && ! self::lock() ) {
+			return false;
 		}
 		$start   = time();
 		$results = $state['results'];
@@ -261,9 +271,23 @@ class SCCM_Scanner {
 		$state['results']   = $results;
 		update_option( self::STATE_OPTION, $state, false );
 		if ( ! $ignore_lock ) {
-			delete_transient( self::LOCK );
+			delete_option( self::LOCK );
 		}
 		return $state['done'] >= count( $state['urls'] );
+	}
+
+	/**
+	 * Take the scan lock. A lock older than two minutes belongs to a request that died.
+	 *
+	 * @return bool False while another request holds it.
+	 */
+	private static function lock() {
+		$since = (int) get_option( self::LOCK, 0 );
+		if ( $since && time() - $since < 2 * MINUTE_IN_SECONDS ) {
+			return false;
+		}
+		update_option( self::LOCK, time(), false );
+		return true;
 	}
 
 	/**
@@ -513,9 +537,10 @@ class SCCM_Scanner {
 		$state['done'] = array_values( array_intersect( $state['urls'], array_unique( array_merge( $state['done'], array_map( 'strval', $done ) ) ) ) );
 		$state['beat'] = $leaving ? 0 : time();
 		update_option( self::BROWSER_OPTION, $state, false );
-		$data = get_transient( 'sccm_scan_' . $state['token'] );
-		if ( is_array( $data ) ) {
-			set_transient( 'sccm_scan_' . $state['token'], $data, 30 * MINUTE_IN_SECONDS );
+		$tokens = self::tokens();
+		if ( isset( $tokens[ $state['token'] ] ) ) {
+			$tokens[ $state['token'] ]['expires'] = time() + self::TOKEN_TTL;
+			update_option( self::TOKENS_OPTION, $tokens, false );
 		}
 		return array_values( array_diff( $state['urls'], $state['done'] ) );
 	}
@@ -537,7 +562,9 @@ class SCCM_Scanner {
 	public static function browser_end() {
 		$state = get_option( self::BROWSER_OPTION );
 		if ( is_array( $state ) ) {
-			delete_transient( 'sccm_scan_' . $state['token'] );
+			$tokens = self::tokens();
+			unset( $tokens[ $state['token'] ] );
+			update_option( self::TOKENS_OPTION, $tokens, false );
 		}
 		delete_option( self::BROWSER_OPTION );
 	}
@@ -550,17 +577,32 @@ class SCCM_Scanner {
 	 * @return string
 	 */
 	public static function scan_token( $first = false, array $counts = array() ) {
-		$token = strtolower( wp_generate_password( 24, false, false ) );
-		set_transient(
-			'sccm_scan_' . $token,
-			array(
-				'user'   => get_current_user_id(),
-				'first'  => (bool) $first,
-				'counts' => $counts,
-			),
-			30 * MINUTE_IN_SECONDS
+		$token            = strtolower( wp_generate_password( 24, false, false ) );
+		$tokens           = self::tokens();
+		$tokens[ $token ] = array(
+			'user'    => get_current_user_id(),
+			'first'   => (bool) $first,
+			'counts'  => $counts,
+			'expires' => time() + self::TOKEN_TTL,
 		);
+		update_option( self::TOKENS_OPTION, $tokens, false );
 		return $token;
+	}
+
+	/**
+	 * Scan-mode tokens that have not expired.
+	 *
+	 * @return array token => data.
+	 */
+	private static function tokens() {
+		$tokens = get_option( self::TOKENS_OPTION, array() );
+		$now    = time();
+		return array_filter(
+			is_array( $tokens ) ? $tokens : array(),
+			static function ( $data ) use ( $now ) {
+				return is_array( $data ) && (int) ( $data['expires'] ?? 0 ) > $now;
+			}
+		);
 	}
 
 	/**
@@ -573,7 +615,8 @@ class SCCM_Scanner {
 		if ( ! preg_match( '/^[a-z0-9]{24}$/', (string) $token ) || ! get_current_user_id() ) {
 			return false;
 		}
-		$data = get_transient( 'sccm_scan_' . $token );
+		$tokens = self::tokens();
+		$data   = $tokens[ $token ] ?? null;
 		return ( is_array( $data ) && (int) $data['user'] === get_current_user_id() ) ? $data : false;
 	}
 

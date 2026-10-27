@@ -7,13 +7,43 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.2.0 (all owner requests so far done; not yet staging-tested on a real site)
+- **Version:** 1.2.1 (1.2.0 is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
-- **Phase:** 5b done (see `ROADMAP.md`); staging test and release are next
-- **Last updated:** 2026-10-21 (session 8)
-- **Tests:** unit 33, WP-CLI 169, visitor e2e 115, admin e2e 68, all passing on **MySQL 8.4
+- **Phase:** 5b done (see `ROADMAP.md`); production hotfix 1.2.1
+- **Last updated:** 2026-10-27 (session 9)
+- **Tests:** unit 33, WP-CLI 169, visitor e2e 115, admin e2e 74, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-10-27 — Session 9 (production hotfix 1.2.1: "Scan now" HTTP 400)
+
+**Problem (production, WP Engine):** "Scan now" ended with "The scan could not finish: HTTP 400".
+The scan token was a transient; with WP Engine's Memcached object cache, transients live only in
+memory. Cookies found during the scan → `SCCM_Cache` cleared caches → `WpeCommon::purge_memcached()`
+emptied the object cache → token gone → `ajax_scan_report` answered 400 "The scan took too
+long", and the admin JS showed only "HTTP 400". Never seen locally: the dev stack has no object
+cache, so transients were in the database.
+
+**Done**
+- Scan tokens (`sccm_scan_tokens`, own expiry) and scan lock (`sccm_scan_lock`) are options;
+  admin messages are user meta (`sccm_notice`). No cross-request state in transients any more
+  (rule written down in ARCHITECTURE.md → Page caches).
+- `SCCM_Cache` clears page caches only (no WP Engine Memcached purge, W3TC page cache flush
+  instead of flush all); scan steps `defer()` the clear, the final report `release()`s it, so one
+  clear per scan.
+- Admin JS: `ajax()` / `failReason()` show the server's message or what the status means
+  (expired nonce, firewall, server error, no answer); retries 0/429/502–504 twice.
+- Regression test admin e2e BS5/BS6: a mu-plugin simulates a host whose cache clears drop all
+  transients (old code: scan never finishes, reproduced; new code: passes), plus readable errors.
+- Version 1.2.1, readme.txt, CHANGELOG, .pot regenerated.
+
+**Next:** owner installs 1.2.1 on production (replace current), purges NitroPack + WP Engine
+caches, runs Scan now.
+
+**Notes:** the dev stack should get a persistent object cache for future runs (BS5 covers the
+scan; other features are not yet run with one).
 
 ---
 

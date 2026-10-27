@@ -167,6 +167,20 @@ visitor's report) are throttled to one per 5 minutes, the rest postponed to a WP
 visitors can never cause a stream of purges. Each integration call is guarded (`function_exists`
 / `try … catch ( Throwable )`): a missing or changed cache plugin never breaks the site.
 
+Only **page** caches are cleared, never the object cache (WP Engine Memcached, W3 Total Cache
+"flush all", Redis): it holds data of the whole site. Steps of "Scan now" call
+`SCCM_Cache::defer()`, so a clear they ask for waits for the scan's final report
+(`SCCM_Cache::release()`), or at the latest `DEFER` (10 minutes) when the scan is left.
+
+**Rule: state that must survive from one request to the next is never kept in a transient.**
+On hosts with a persistent object cache, transients live only in that cache and disappear
+whenever anything (this plugin, the host, another plugin) empties it. The scan tokens
+(`sccm_scan_tokens`, with their own expiry), the scan lock (`sccm_scan_lock`, the time it was
+taken) and admin messages (user meta `sccm_notice`) are therefore options / user meta.
+Transients are used only where losing them is harmless (rate-limit counters, the one-minute
+pass of "Send a test record"). Regression test: admin e2e BS5 (a mu-plugin drops all transients
+on every cache clear).
+
 ## Asset files (why they are copied to uploads)
 
 Page-cache/CDN plugins such as NitroPack and some hosts cache plugin files and ignore the
@@ -204,7 +218,7 @@ predictable. Labels/descriptions are editable; categories can be hidden if unuse
 - Text stored in sized columns is cut with `mb_substr()` (characters), never `substr()`
   (bytes): MySQL refuses a value with a broken multi-byte character.
 - Admin: `manage_options` + nonce checked in every admin-post handler and AJAX callback.
-  Messages after an action are kept in a per-user transient (`sccm_notice_{user}`), never read
+  Messages after an action are kept in user meta (`sccm_notice`, 5 minutes), never read
   from the URL.
 - SQL: every query goes through `$wpdb->prepare()`, table names with `%i` (WordPress 6.2+);
   record filters are one fixed statement; unset filters use values that match everything

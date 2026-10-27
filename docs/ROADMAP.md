@@ -72,6 +72,8 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - [x] Compliance review point 6: real cookie durations from scans, consent cookie duration,
       "No expiry date" for local storage
 - [ ] Review against the live Cookiebot banner and account (not reachable from the build environment)
+- [x] Hotfix 1.2.1 (production, 2026-10-27): "Scan now" works on hosts with an object cache
+      (WP Engine, Redis, Memcached); page-cache-only clears; readable scan errors
 
 ## Later (not in scope for 1.0)
 - Geo-targeting (different banner per region)
