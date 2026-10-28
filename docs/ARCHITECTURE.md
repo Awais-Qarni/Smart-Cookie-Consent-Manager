@@ -204,8 +204,14 @@ on every cache clear).
 Page-cache/CDN plugins such as NitroPack and some hosts cache plugin files and ignore the
 `?ver=` query string, so an update could leave logged-out visitors on old JS. `SCCM_Plugin::asset()`
 copies each CSS/JS file to `uploads/sccm-assets/<name>.<hash>.<ext>` (hash of version, file
-time and size), serves that URL, and deletes older copies. If uploads is not writable it falls
-back to the plugin URL with `?ver=<version>.<file time>`. Uninstall removes the folder.
+time and size) and serves that URL. If uploads is not writable it falls back to the plugin URL
+with `?ver=<version>.<file time>`. Uninstall removes the folder.
+
+Older copies are **not** deleted at once: pages cached before an update still ask for them, and
+a 404 there means no banner. When a new copy is made, the older ones are noted in the option
+`sccm_asset_retired` (file name => time replaced) and deleted when a later copy is made more than
+30 days after that (`SCCM_Plugin::ASSET_KEEP`). A new copy also fires `sccm_assets_changed`,
+which makes `SCCM_Cache` clear the page caches, so cached pages are rebuilt with the new files.
 
 ## Admin structure
 

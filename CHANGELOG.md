@@ -2,6 +2,16 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.3] - 2026-10-28
+### Fixed
+- **The banner could disappear after an update on sites with a page cache** (NitroPack,
+  Cloudflare, WP Engine and others). The plugin serves its script and stylesheet under file
+  names that change with every version, and it deleted the old files right away. Pages cached
+  before the update still asked for the old files, got "not found", and showed no banner until
+  the cache was cleared by hand. Now old files are kept for 30 days, and the page caches are
+  cleared automatically when the plugin's files change, so cached pages keep working and are
+  rebuilt with the new files.
+
 ## [1.3.2] - 2026-10-28
 ### Fixed
 - **Cookies tab: the cookie list is aligned.** Each category is its own table, and the columns

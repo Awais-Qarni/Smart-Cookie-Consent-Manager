@@ -5,8 +5,9 @@
  * Every page carries the banner settings and the cookie list (cache-safe: the same for every
  * visitor), and the Cookie Policy page prints the list too. When those change, cached copies of
  * the pages are out of date, so the page caches of common caching plugins and hosts are cleared:
- * after settings are saved, after the consent version changes, and after the list of cookies
- * shown to visitors changes (approve, edit, delete, a scan adding a known cookie…).
+ * after settings are saved, after the consent version changes, after the list of cookies
+ * shown to visitors changes (approve, edit, delete, a scan adding a known cookie…), and after
+ * an update gives the plugin's CSS/JS new file names (cached pages would ask for the old ones).
  *
  * At most one clear per request, at the end of it. Clears that are not started by an
  * administrator (e.g. a cookie added from a visitor's report) are throttled to one per
@@ -81,6 +82,7 @@ class SCCM_Cache {
 		add_action( 'sccm_settings_saved', array( __CLASS__, 'request' ) );
 		add_action( 'sccm_consent_version_changed', array( __CLASS__, 'request' ) );
 		add_action( 'sccm_cookie_list_changed', array( __CLASS__, 'request' ) );
+		add_action( 'sccm_assets_changed', array( __CLASS__, 'request' ) );
 		add_action( self::EVENT, array( __CLASS__, 'run' ) );
 	}
 
@@ -159,7 +161,7 @@ class SCCM_Cache {
 			// NitroPack.
 			static function () {
 				if ( function_exists( 'nitropack_sdk_purge' ) ) {
-					nitropack_sdk_purge( null, null, 'Smart Cookie Consent Manager: cookie settings changed' );
+					nitropack_sdk_purge( null, null, 'Smart Cookie Consent Manager: banner, cookie list or plugin files changed' );
 				}
 			},
 			// WP Rocket.

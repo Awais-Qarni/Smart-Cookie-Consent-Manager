@@ -192,6 +192,52 @@ list( $asset_url ) = SCCM_Plugin::asset( 'assets/js/sccm-frontend.js' );
 sccm_check( 'hashed copies can be switched off with a filter', 0 === strpos( $asset_url, SCCM_URL ) );
 remove_filter( 'sccm_versioned_asset_files', '__return_false' );
 
+// Stale page cache after an update: a page cached before the update must keep its banner files.
+$sccm_src   = SCCM_PATH . 'assets/js/sccm-frontend.js';
+$sccm_dir   = $uploads['basedir'] . '/sccm-assets/';
+$sccm_mtime = filemtime( $sccm_src );
+$sccm_page  = wp_remote_retrieve_body( wp_remote_get( home_url( '/?sccm_stale=' . time() ), array( 'timeout' => 20 ) ) );
+preg_match_all( '#[^"\'\s]+/sccm-assets/[^"\'\s?]+#', $sccm_page, $sccm_m );
+$sccm_cached = array_unique( $sccm_m[0] );
+list( $sccm_before ) = SCCM_Plugin::asset( 'assets/js/sccm-frontend.js' );
+$sccm_changed = 0;
+$sccm_count   = function () use ( &$sccm_changed ) {
+	++$sccm_changed;
+};
+add_action( 'sccm_assets_changed', $sccm_count );
+touch( $sccm_src, $sccm_mtime + 60 ); // What an update does: the file changes, so its hash changes.
+clearstatcache();
+list( $sccm_after ) = SCCM_Plugin::asset( 'assets/js/sccm-frontend.js' );
+sccm_check( 'after an update the script gets a new file name', $sccm_after !== $sccm_before && file_exists( $sccm_dir . basename( $sccm_after ) ) );
+sccm_check( 'the old copy is kept for pages cached before the update', file_exists( $sccm_dir . basename( $sccm_before ) ) );
+$sccm_status = array();
+foreach ( $sccm_cached as $sccm_url ) {
+	$sccm_status[ basename( $sccm_url ) ] = wp_remote_retrieve_response_code( wp_remote_get( $sccm_url, array( 'timeout' => 20 ) ) );
+}
+sccm_check( 'a page cached before the update still loads every banner file (no 404)', count( $sccm_status ) >= 2 && array( 200 ) === array_values( array_unique( $sccm_status ) ), wp_json_encode( $sccm_status ) );
+sccm_check( 'a new copy asks for the page caches to be cleared', 1 === $sccm_changed && false !== has_action( 'sccm_assets_changed', array( 'SCCM_Cache', 'request' ) ) );
+SCCM_Plugin::asset( 'assets/js/sccm-frontend.js' );
+sccm_check( 'no cache clear when nothing changed', 1 === $sccm_changed );
+$sccm_retired = get_option( SCCM_Plugin::RETIRED_OPTION );
+sccm_check( 'the old copy is noted with the time it was replaced', isset( $sccm_retired[ basename( $sccm_before ) ] ) && ! isset( $sccm_retired[ basename( $sccm_after ) ] ) );
+$sccm_retired[ basename( $sccm_before ) ] = time() - SCCM_Plugin::ASSET_KEEP - 1;
+update_option( SCCM_Plugin::RETIRED_OPTION, $sccm_retired, false );
+touch( $sccm_src, $sccm_mtime + 120 ); // The next update, 30 days later.
+clearstatcache();
+list( $sccm_next ) = SCCM_Plugin::asset( 'assets/js/sccm-frontend.js' );
+sccm_check( 'copies older than 30 days are deleted, the previous one stays', ! file_exists( $sccm_dir . basename( $sccm_before ) ) && file_exists( $sccm_dir . basename( $sccm_after ) ) && file_exists( $sccm_dir . basename( $sccm_next ) ) );
+// Back to the real file time; drop the test copies.
+touch( $sccm_src, $sccm_mtime );
+clearstatcache();
+list( $sccm_real ) = SCCM_Plugin::asset( 'assets/js/sccm-frontend.js' );
+sccm_check( 'going back to a version recreates its copy', basename( $sccm_real ) === basename( $sccm_before ) && file_exists( $sccm_dir . basename( $sccm_real ) ) );
+wp_delete_file( $sccm_dir . basename( $sccm_after ) );
+wp_delete_file( $sccm_dir . basename( $sccm_next ) );
+remove_action( 'sccm_assets_changed', $sccm_count );
+$sccm_retired = get_option( SCCM_Plugin::RETIRED_OPTION );
+unset( $sccm_retired[ basename( $sccm_after ) ], $sccm_retired[ basename( $sccm_next ) ] );
+update_option( SCCM_Plugin::RETIRED_OPTION, $sccm_retired, false );
+
 /* ---------------------------------------------------------------- Consent records: filters and CSV safety */
 
 SCCM_Consent_Log::delete_all();

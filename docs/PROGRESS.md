@@ -7,13 +7,32 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.3.2 (1.2.x is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.3.3 (1.3.2 is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); 1.3.0 admin redesign after production feedback
-- **Last updated:** 2026-10-28 (session 10)
-- **Tests:** unit 33, WP-CLI 191, visitor e2e 116, admin e2e 104, all passing on **MySQL 8.4
+- **Last updated:** 2026-10-28 (session 10d)
+- **Tests:** unit 33, WP-CLI 199, visitor e2e 116, admin e2e 104, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-10-28 — Session 10d (1.3.3: no banner on cached pages after an update)
+
+**Found on production:** after installing 1.3.2, prima.systems showed no banner. NitroPack and
+Cloudflare served pages cached before the update; they asked for
+`uploads/sccm-assets/sccm-frontend.393027daa5.js`, which `SCCM_Plugin::asset()` had deleted when
+it made the new copy, so the script was a 404. An uncached page used the new file and worked.
+
+**Done:** `SCCM_Plugin::asset()` keeps old copies (`retire_old_copies()`, option
+`sccm_asset_retired`, deleted 30 days after being replaced) and fires `sccm_assets_changed`, on
+which `SCCM_Cache` clears the page caches. New WP-CLI checks simulate the stale cache: fetch a
+page, "update" (change the file time), then every asset URL in the old page must still return
+200. With the old code that check fails with the same 404 as production. WP-CLI 199, unit 33,
+visitor e2e 116, admin e2e 104 (MySQL 8.4).
+
+**Next:** owner purges NitroPack + WP Engine once now (the 1.3.2 files are already gone), then
+installs 1.3.3; from 1.3.3 on, updates need no manual purge.
 
 ---
 
