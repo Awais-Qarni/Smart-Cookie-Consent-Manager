@@ -52,7 +52,7 @@ scanner, with no coding and no subscription. All data stays on your own server.
 1. Download the plugin zip (GitHub → Code → Download ZIP) or clone this repo.
 2. WordPress → Plugins → Add New → Upload Plugin → choose the zip → Activate.
    *(Tip: rename the folder to `smart-cookie-consent-manager` for clean updates.)*
-3. Go to **Cookie Consent** in the admin menu. The **Dashboard** tells you what to do:
+3. Go to **Compliance** in the admin menu (hover it for every tab). The **Dashboard** tells you what to do:
    - "Create the page" makes your Cookie Policy page.
    - "Scan now", then approve any cookies under **Needs review** in the **Cookies** tab.
    - **Banner**: pick the position, colours and wording.

@@ -398,7 +398,10 @@ class SCCM_Scanner {
 				if ( ! $url ) {
 					continue;
 				}
-				if ( 'link' === strtolower( $tag[1] ) && ! preg_match( '/rel\s*=\s*["\']?[^"\'>]*(stylesheet|preconnect|dns-prefetch|preload)/i', $attrs ) ) {
+				// <link>: only tags that load a file count. Preconnect / dns-prefetch are speed
+				// hints: they open a connection early, load nothing and set no cookies, so they
+				// prove nothing about the page and are never reported as third-party files.
+				if ( 'link' === strtolower( $tag[1] ) && ! preg_match( '/rel\s*=\s*["\']?[^"\'>]*(stylesheet|preload)/i', $attrs ) ) {
 					continue;
 				}
 				self::classify_url( html_entity_decode( $url, ENT_QUOTES ), $site_host, strtolower( $tag[1] ), $results );
@@ -696,7 +699,7 @@ class SCCM_Scanner {
 		SCCM_Cookies::bulk(
 			function () use ( $data, $site_host, &$results, &$seen ) {
 				foreach ( array_slice( (array) ( $data['cookies'] ?? array() ), 0, 200 ) as $name ) {
-					$name = (string) $name;
+					$name = is_scalar( $name ) ? (string) $name : '';
 					if ( ! SCCM_REST::valid_name( $name ) || self::is_admin_cookie( $name ) ) {
 						continue;
 					}
@@ -711,8 +714,8 @@ class SCCM_Scanner {
 					}
 				}
 				foreach ( array_slice( (array) ( $data['storage'] ?? array() ), 0, 200 ) as $item ) {
-					$name = isset( $item['n'] ) ? (string) $item['n'] : '';
-					$type = isset( $item['t'] ) ? (string) $item['t'] : '';
+					$name = isset( $item['n'] ) && is_string( $item['n'] ) ? $item['n'] : '';
+					$type = isset( $item['t'] ) && is_string( $item['t'] ) ? $item['t'] : '';
 					if ( ! SCCM_REST::valid_name( $name ) || ! in_array( $type, array( 'localStorage', 'sessionStorage' ), true ) ) {
 						continue;
 					}
@@ -726,7 +729,7 @@ class SCCM_Scanner {
 					SCCM_Cookies::record_seen( $name, $type, 'scanner' );
 				}
 				foreach ( array_slice( (array) ( $data['resources'] ?? array() ), 0, 500 ) as $url ) {
-					$url = esc_url_raw( (string) $url );
+					$url = is_string( $url ) ? esc_url_raw( $url ) : '';
 					if ( $url ) {
 						self::classify_url( $url, $site_host, 'browser', $results );
 					}
@@ -740,7 +743,7 @@ class SCCM_Scanner {
 		// of the scan, see settle_unconfirmed().
 		$unconfirmed = array();
 		foreach ( array_slice( (array) ( $data['unconfirmed'] ?? array() ), 0, 200 ) as $name ) {
-			$name = (string) $name;
+			$name = is_scalar( $name ) ? (string) $name : '';
 			if ( SCCM_REST::valid_name( $name ) && ! self::is_admin_cookie( $name ) ) {
 				$unconfirmed[] = $name;
 			}
@@ -1218,8 +1221,8 @@ class SCCM_Scanner {
 			/* translators: 1: site name, 2: number of cookies */
 			$subject = sprintf( _n( '[%1$s] %2$d cookie was added to your cookie banner', '[%1$s] %2$d cookies were added to your cookie banner', $n_auto, 'smart-cookie-consent-manager' ), $site, $n_auto );
 		} else {
-			/* translators: 1: site name, 2: number of resources */
-			$subject = sprintf( _n( '[%1$s] %2$d new third-party resource found', '[%1$s] %2$d new third-party resources found', max( 1, $n_other ), 'smart-cookie-consent-manager' ), $site, max( 1, $n_other ) );
+			/* translators: 1: site name, 2: number of files */
+			$subject = sprintf( _n( '[%1$s] %2$d new third-party file found', '[%1$s] %2$d new third-party files found', max( 1, $n_other ), 'smart-cookie-consent-manager' ), $site, max( 1, $n_other ) );
 		}
 		if ( $test ) {
 			/* translators: %s: subject */
@@ -1285,17 +1288,28 @@ class SCCM_Scanner {
 			$h .= '</td></tr>';
 		}
 
-		// Summary numbers.
-		$h .= '<tr><td class="sccm-e-pad" style="padding:16px 32px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>';
-		$h .= self::email_stat( $n_review, _n( 'needs review', 'need review', $n_review, 'smart-cookie-consent-manager' ), $n_review ? '#d97706' : '#9ca3af' );
-		$h .= '<td class="sccm-e-gap" width="12" style="width:12px;">&nbsp;</td>';
-		$h .= self::email_stat( $n_auto, __( 'added automatically', 'smart-cookie-consent-manager' ), '#16a34a' );
-		$h .= '</tr></table></td></tr>';
+		// Summary numbers: what changed. The cookie boxes only when a cookie changed, so an email
+		// about a new third-party file does not lead with two zeros.
+		$stats = array();
+		if ( $n_review || $n_auto ) {
+			$stats[] = array( $n_review, _n( 'needs review', 'need review', $n_review, 'smart-cookie-consent-manager' ), $n_review ? '#d97706' : '#9ca3af' );
+			$stats[] = array( $n_auto, __( 'added automatically', 'smart-cookie-consent-manager' ), $n_auto ? '#16a34a' : '#9ca3af' );
+		}
+		if ( $n_other ) {
+			$stats[] = array( $n_other, _n( 'new third-party file', 'new third-party files', $n_other, 'smart-cookie-consent-manager' ), '#2563eb' );
+		}
+		if ( $stats ) {
+			$h .= '<tr><td class="sccm-e-pad" style="padding:16px 32px 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>';
+			foreach ( $stats as $i => $stat ) {
+				$h .= ( $i ? '<td class="sccm-e-gap" width="12" style="width:12px;">&nbsp;</td>' : '' ) . self::email_stat( $stat[0], $stat[1], $stat[2], (int) floor( 100 / count( $stats ) ) );
+			}
+			$h .= '</tr></table></td></tr>';
+		}
 
 		// Needs review.
 		if ( $n_review ) {
 			$h .= '<tr><td class="sccm-e-pad" style="padding:20px 32px 0;">';
-			$h .= self::email_heading( __( 'Needs review', 'smart-cookie-consent-manager' ), __( 'We could not tell what these cookies are for. Someone who manages the website should choose a category for each one in WordPress under Cookie Consent → Cookies. Until then they are not shown to visitors.', 'smart-cookie-consent-manager' ), $font );
+			$h .= self::email_heading( __( 'Needs review', 'smart-cookie-consent-manager' ), __( 'We could not tell what these cookies are for. Someone who manages the website should choose a category for each one in WordPress under Compliance → Cookies. Until then they are not shown to visitors.', 'smart-cookie-consent-manager' ), $font );
 			$h .= self::email_rows( array_slice( $groups['pending'], 0, $limit ), $font, $mono, 'pending' );
 			$h .= self::email_more( count( $groups['pending'] ) - $limit, $font );
 			$h .= '</td></tr>';
@@ -1310,14 +1324,14 @@ class SCCM_Scanner {
 			$h .= '</td></tr>';
 		}
 
-		// Other third-party resources.
+		// Other third-party files (the same name as in the Cookies tab → Scan report).
 		if ( $n_other ) {
 			$hosts = array();
 			foreach ( array_slice( $groups['unclassified'], 0, 8 ) as $item ) {
 				$hosts[] = $item['name'];
 			}
 			$h .= '<tr><td class="sccm-e-pad" style="padding:24px 32px 0;">';
-			$h .= self::email_heading( __( 'Other third-party resources', 'smart-cookie-consent-manager' ), __( 'External files were found that are not in the service library, so they are not blocked. If one of them tracks visitors, a blocking rule can be added in WordPress under Cookie Consent → Settings.', 'smart-cookie-consent-manager' ), $font );
+			$h .= self::email_heading( __( 'Other third-party files', 'smart-cookie-consent-manager' ), __( 'Scripts, frames or stylesheets from other websites that are not in the service library, so they are not blocked. The full addresses are in WordPress under Compliance → Cookies → Scan report (details) → Other third-party files. If one of them tracks visitors, add a blocking rule under Compliance → Settings → Blocking and Google → Your own blocking rules.', 'smart-cookie-consent-manager' ), $font );
 			$h .= '<div class="sccm-e-p" style="' . $mono . 'font-size:13px;line-height:20px;color:#374151;word-break:break-all;">' . esc_html( implode( ', ', $hosts ) ) . ( $n_other > 8 ? ' …' : '' ) . '</div>';
 			$h .= '</td></tr>';
 		}
@@ -1335,7 +1349,7 @@ class SCCM_Scanner {
 		}
 		if ( $n_review ) {
 			$t .= __( 'NEEDS REVIEW', 'smart-cookie-consent-manager' ) . ' (' . $n_review . ")\n";
-			$t .= __( 'Someone who manages the website should choose a category for each one in WordPress under Cookie Consent → Cookies. Until then visitors do not see them.', 'smart-cookie-consent-manager' ) . "\n";
+			$t .= __( 'Someone who manages the website should choose a category for each one in WordPress under Compliance → Cookies. Until then visitors do not see them.', 'smart-cookie-consent-manager' ) . "\n";
 			foreach ( array_slice( $groups['pending'], 0, $limit ) as $item ) {
 				$t .= '  - ' . $item['name'] . ' (' . $item['type'] . ")\n";
 			}
@@ -1349,7 +1363,8 @@ class SCCM_Scanner {
 			$t .= "\n";
 		}
 		if ( $n_other ) {
-			$t .= __( 'OTHER THIRD-PARTY RESOURCES (not blocked)', 'smart-cookie-consent-manager' ) . ' (' . $n_other . ")\n";
+			$t .= __( 'OTHER THIRD-PARTY FILES (not blocked)', 'smart-cookie-consent-manager' ) . ' (' . $n_other . ")\n";
+			$t .= __( 'Full addresses: WordPress → Compliance → Cookies → Scan report (details) → Other third-party files.', 'smart-cookie-consent-manager' ) . "\n";
 			foreach ( array_slice( $groups['unclassified'], 0, 8 ) as $item ) {
 				$t .= '  - ' . $item['name'] . "\n";
 			}
@@ -1370,11 +1385,12 @@ class SCCM_Scanner {
 	 * @param int    $number  Number.
 	 * @param string $caption Caption (plain text).
 	 * @param string $accent  Accent colour (number + line).
+	 * @param int    $width   Width in percent (boxes share one row).
 	 * @return string
 	 */
-	private static function email_stat( $number, $caption, $accent ) {
+	private static function email_stat( $number, $caption, $accent, $width = 50 ) {
 		$font = "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;";
-		return '<td class="sccm-e-stat" width="50%" valign="top" bgcolor="#f9fafb" style="width:50%;background:#f9fafb;border-left:4px solid ' . esc_attr( $accent ) . ';border-radius:6px;padding:14px 16px;">'
+		return '<td class="sccm-e-stat" width="' . (int) $width . '%" valign="top" bgcolor="#f9fafb" style="width:' . (int) $width . '%;background:#f9fafb;border-left:4px solid ' . esc_attr( $accent ) . ';border-radius:6px;padding:14px 16px;">'
 			. '<div style="' . $font . 'font-size:30px;line-height:34px;font-weight:700;color:' . esc_attr( $accent ) . ';">' . (int) $number . '</div>'
 			. '<div class="sccm-e-p" style="' . $font . 'font-size:13px;line-height:18px;color:#4b5563;margin-top:2px;">' . esc_html( wp_strip_all_tags( $caption ) ) . '</div></td>';
 	}
@@ -1388,7 +1404,7 @@ class SCCM_Scanner {
 	private static function email_footer( $recipients ) {
 		$hour = wp_date( get_option( 'time_format' ), ( new DateTimeImmutable( 'today', wp_timezone() ) )->setTime( (int) SCCM_Settings::get( 'alert_hour' ), 0 )->getTimestamp() );
 		/* translators: 1: email addresses, 2: time of day */
-		return sprintf( __( 'Sent by Smart Cookie Consent Manager to %1$s. This email is sent once a day at %2$s, only when something changed. The website\'s administrator can change this in WordPress under Cookie Consent → Settings.', 'smart-cookie-consent-manager' ), $recipients, $hour );
+		return sprintf( __( 'Sent by Smart Cookie Consent Manager to %1$s. This email is sent once a day at %2$s, only when something changed. The website\'s administrator can change this in WordPress under Compliance → Settings.', 'smart-cookie-consent-manager' ), $recipients, $hour );
 	}
 
 	/**

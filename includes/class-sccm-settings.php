@@ -160,6 +160,7 @@ class SCCM_Settings {
 			'consent_status'       => __( 'Your current choice', 'smart-cookie-consent-manager' ),
 			'consent_date'         => __( 'Date', 'smart-cookie-consent-manager' ),
 			'consent_id'           => __( 'Your consent ID', 'smart-cookie-consent-manager' ),
+			'consent_version'      => __( 'Banner version', 'smart-cookie-consent-manager' ),
 			'no_choice'            => __( 'You have not made a choice yet.', 'smart-cookie-consent-manager' ),
 			'copy'                 => __( 'Copy', 'smart-cookie-consent-manager' ),
 			'copied'               => __( 'Copied', 'smart-cookie-consent-manager' ),

@@ -175,7 +175,9 @@ class SCCM_REST {
 	 * @return array|WP_Error array( ok, added ) or an error with an HTTP status.
 	 */
 	public static function store_report( $data ) {
-		if ( ! SCCM_Settings::get( 'scanner_client' ) ) {
+		// Never from logged-in users (also checked in the browser): their browsers carry admin
+		// tools and extensions that are not part of the website.
+		if ( ! SCCM_Settings::get( 'scanner_client' ) || is_user_logged_in() ) {
 			return array( 'ok' => true );
 		}
 		if ( self::rate_limited( 'report', 10 ) ) {
@@ -188,8 +190,8 @@ class SCCM_REST {
 			if ( ! is_array( $item ) ) {
 				continue;
 			}
-			$name = isset( $item['n'] ) ? (string) $item['n'] : '';
-			$type = isset( $item['t'] ) ? (string) $item['t'] : 'cookie';
+			$name = isset( $item['n'] ) && is_string( $item['n'] ) ? $item['n'] : '';
+			$type = isset( $item['t'] ) && is_string( $item['t'] ) ? $item['t'] : 'cookie';
 			if ( ! self::valid_name( $name ) || 'cookie' !== $type ) {
 				continue;
 			}

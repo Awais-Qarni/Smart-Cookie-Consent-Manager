@@ -32,6 +32,37 @@ class SCCM_Shortcodes {
 	}
 
 	/**
+	 * The site's Cookie Policy page: the one chosen in the settings, or else an existing published
+	 * page with [sccm_cookie_policy] (left from an earlier install, an uninstall with "delete all
+	 * data", or a settings reset), which is then linked again. So the plugin never creates a
+	 * second Cookie Policy page. Admin and activation only: it may run one query and save.
+	 *
+	 * @return int Page ID, 0 when there is none.
+	 */
+	public static function policy_page() {
+		$page_id = (int) SCCM_Settings::get( 'policy_page_id' );
+		if ( $page_id && 'publish' === get_post_status( $page_id ) ) {
+			return $page_id;
+		}
+		$found = self::find_policy_page();
+		if ( $found ) {
+			SCCM_Settings::update( array( 'policy_page_id' => $found ) );
+		}
+		return $found;
+	}
+
+	/**
+	 * The oldest published page that contains the [sccm_cookie_policy] shortcode.
+	 *
+	 * @return int Page ID or 0.
+	 */
+	public static function find_policy_page() {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT ID FROM %i WHERE post_type = %s AND post_status = %s AND post_content LIKE %s ORDER BY ID ASC LIMIT 1', $wpdb->posts, 'page', 'publish', '%' . $wpdb->esc_like( '[sccm_cookie_policy' ) . '%' ) );
+	}
+
+	/**
 	 * Whether the current front-end request shows the Cookie Policy page chosen in the settings.
 	 *
 	 * @return bool

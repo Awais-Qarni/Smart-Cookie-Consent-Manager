@@ -85,14 +85,17 @@ a choice brings the banner back), and again later, centred, with a close button.
 
 ### 8. Consent record
 - [ ] Every choice stored in DB table `{prefix}sccm_consent_log`: consent ID, choice
-      (accept_all / reject_all / custom / gpc), granted categories, GPC flag, consent version,
+      (accept_all / reject_all / custom / gpc), granted categories, GPC flag, banner (consent)
+      version (never newer than the current one),
       page URL, date/time (UTC), IP (setting: shortened `203.0.113.***` (default), one-way code,
       full, or not saved), user agent.
 - [ ] Admin list with search by consent ID or IP address (finds full, shortened and coded
-      records) and date filter; CSV export; retention period
+      records), choice, banner version and date filters; CSV export; retention period
       with automatic purge.
-- [ ] Visitor can see their current choice, its date and their Consent ID (with a Copy button)
-      in the About tab (for evidence requests). The ID is also in the `dataLayer`
+- [ ] Banner versions can be matched: Consent Records shows the current version, every version
+      with records (start date, reason, count) and marks records of an older version.
+- [ ] Visitor can see their current choice, its date, their Consent ID (with a Copy button) and
+      banner version in the About tab (for evidence requests). The ID is also in the `dataLayer`
       event and available as `SCCM.getConsentId()`.
 
 ### 9. Cookie scanner
@@ -128,6 +131,9 @@ a choice brings the banner back), and again later, centred, with a close button.
 - [ ] Preferences window lists cookies per category (from the registry).
 - [ ] Shortcode `[sccm_cookie_policy]` outputs a full table grouped by category; one-click
       "Create Cookie Policy page" in the admin; both update automatically.
+- [ ] Never a second Cookie Policy page: when no page is linked (reinstall after "delete all
+      data", settings reset), an existing published page with the shortcode is linked again on
+      activation, on the Dashboard and by "Create the page". Uninstall never deletes the page.
 - [ ] Each cookie shows the duration the site really gives it (measured by the scans; typed-in
       values win); local storage says "No expiry date"; the consent cookie follows "Ask again after".
 

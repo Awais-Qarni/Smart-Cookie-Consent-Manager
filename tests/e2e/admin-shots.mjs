@@ -13,16 +13,16 @@ await page.goto(BASE + '/wp-login.php');
 await page.fill('#user_login', 'admin');
 await page.fill('#user_pass', 'admin');
 await Promise.all([page.waitForNavigation(), page.click('#wp-submit')]);
-for (const tab of ['dashboard', 'cookies', 'banner', 'settings', 'records', 'tools']) {
+for (const tab of ['dashboard', 'cookies', 'banner', 'settings', 'records', 'tools', 'help']) {
 	const res = await page.goto(`${BASE}/wp-admin/admin.php?page=sccm&tab=${tab}`);
 	await page.waitForLoadState('load');
 	console.log(tab, res.status());
 	await page.screenshot({ path: `${out}/admin-${tab}.png`, fullPage: true });
 }
-await page.goto(`${BASE}/wp-admin/admin.php?page=sccm&tab=dashboard`);
-await page.click('#sccm-help-toggle');
-await page.waitForTimeout(500);
-console.log('help visible:', await page.isVisible('#sccm-help'));
-await page.screenshot({ path: `${out}/admin-help.png`, fullPage: false });
+// The Compliance menu opens a flyout with the tabs when hovered on another admin page.
+await page.goto(`${BASE}/wp-admin/index.php`);
+await page.hover('#toplevel_page_sccm > a');
+await page.waitForTimeout(400);
+await page.screenshot({ path: `${out}/admin-menu.png`, clip: { x: 0, y: 0, width: 520, height: 700 } });
 console.log('errors:', JSON.stringify(errors));
 await browser.close();

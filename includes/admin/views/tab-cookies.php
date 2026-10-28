@@ -210,7 +210,9 @@ $sccm_sources    = array(
 		<?php if ( ! $sccm_grouped[ $sccm_key ] ) : ?>
 			<p class="description"><?php esc_html_e( 'No cookies in this category.', 'smart-cookie-consent-manager' ); ?></p>
 		<?php else : ?>
-			<table class="widefat striped sccm-table-admin">
+			<table class="widefat striped sccm-table-admin sccm-cookie-list">
+				<?php // Same column widths in every category, so the columns line up from table to table. ?>
+				<colgroup><col class="sccm-col-name"><col class="sccm-col-provider"><col class="sccm-col-purpose"><col class="sccm-col-lasts"><col class="sccm-col-added"><col class="sccm-col-actions"></colgroup>
 				<thead>
 					<tr>
 						<th><?php esc_html_e( 'Name', 'smart-cookie-consent-manager' ); ?></th>
@@ -225,10 +227,10 @@ $sccm_sources    = array(
 				<?php foreach ( $sccm_grouped[ $sccm_key ] as $sccm_row ) : ?>
 					<tr>
 						<td><code><?php echo esc_html( $sccm_row['name'] ); ?></code><?php echo 'cookie' !== $sccm_row['type'] ? '<br><small>' . esc_html( $sccm_types[ $sccm_row['type'] ] ?? $sccm_row['type'] ) . '</small>' : ''; ?></td>
-						<td><?php echo esc_html( $sccm_row['provider'] ); ?></td>
-						<td><?php echo esc_html( $sccm_row['purpose'] ); ?></td>
-						<td><?php echo esc_html( $sccm_row['duration'] ); ?></td>
-						<td><small><?php echo esc_html( $sccm_sources[ $sccm_row['source'] ] ?? $sccm_row['source'] ); ?></small></td>
+						<td data-label="<?php esc_attr_e( 'Provider', 'smart-cookie-consent-manager' ); ?>"><?php echo esc_html( $sccm_row['provider'] ); ?></td>
+						<td data-label="<?php esc_attr_e( 'What it does', 'smart-cookie-consent-manager' ); ?>"><?php echo esc_html( $sccm_row['purpose'] ); ?></td>
+						<td data-label="<?php esc_attr_e( 'Lasts', 'smart-cookie-consent-manager' ); ?>"><?php echo esc_html( $sccm_row['duration'] ); ?></td>
+						<td data-label="<?php esc_attr_e( 'Added', 'smart-cookie-consent-manager' ); ?>"><small><?php echo esc_html( $sccm_sources[ $sccm_row['source'] ] ?? $sccm_row['source'] ); ?></small></td>
 						<td class="sccm-row-actions">
 							<a class="button button-small" href="<?php echo esc_url( SCCM_Admin::url( 'cookies', array( 'edit' => (int) $sccm_row['id'] ) ) ); ?>"><?php esc_html_e( 'Edit', 'smart-cookie-consent-manager' ); ?></a>
 							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">

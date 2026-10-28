@@ -2,6 +2,74 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.2] - 2026-10-28
+### Fixed
+- **Cookies tab: the cookie list is aligned.** Each category is its own table, and the columns
+  were sized by their content, so they did not line up from one category to the next. All
+  categories now share the same column widths; long cookie names wrap inside their column. On
+  phones each cookie is shown as a block with a label for every value instead of a squeezed table.
+
+## [1.3.1] - 2026-10-28
+### Changed
+- **Dashboard**: uses the full width of the screen (the plugin screens were limited to 1100
+  pixels, which left a gap on the right), and starts with the dashboard itself. The big "Your
+  cookie banner is live" box is gone: the banner status (live, Consent Mode, privacy signal,
+  banner version, Preview banner, Switch off) is a card next to the others. A switched-off
+  banner is still shown first, with "Switch on".
+- **"Needs your attention"** appears only when something is to do.
+
+### Fixed
+- **No more duplicate Cookie Policy pages.** After deleting the plugin with "delete all data"
+  and installing it again (or after Tools → Reset), the plugin asked to create the Cookie Policy
+  page again and created a second one. Now the existing page (a published page with
+  `[sccm_cookie_policy]`) is found and linked again automatically, on activation and on the
+  Dashboard, and "Create the page" links an existing page instead of creating a new one. The
+  page is never deleted on uninstall, because you may have edited it or linked it in menus.
+- Tools → Reset kept the settings out of the options WordPress loads with every page, which
+  cost one extra database query per page view until the next save.
+
+## [1.3.0] - 2026-10-28
+### Added
+- **Compliance menu with a submenu**: the sidebar item is now called "Compliance" and opens a
+  flyout with every tab (Dashboard, Cookies, Banner, Settings, Consent Records, Tools, Help) when
+  hovered, like other plugins. Every plugin page is titled "Smart Cookie Consent Manager".
+- **Help tab**: a page of its own, last in the row, instead of the "Help: how it works" panel.
+  It holds getting started, how it works, every tab and option, the banner version, shortcodes
+  and links, code for developers, questions and problems, and a glossary. "How it works" and the
+  developer reference moved there from the Dashboard and Tools.
+- **New Dashboard with charts**: status (Google Consent Mode, privacy signal, banner version),
+  Needs your attention, visitor choices per day for 30 days, acceptance rate and the share of
+  each choice, how many allowed each category, cookies by category, and cookie scan facts (pages,
+  services, other third-party files, waiting for review, next automatic scan). The charts are
+  drawn by the plugin itself: no chart library, nothing loaded from elsewhere.
+- **Banner version everywhere you need to match it**: the "Version" column is now "Banner
+  version" (with an explanation on hover). Consent Records shows the current banner version, a
+  box with every version that has records (when it started, why, how many records), an "older"
+  mark on records of an earlier version and a banner version filter. The visitor's About tab
+  shows their banner version next to the consent ID, Tools names the current and next version,
+  and the CSV column is `banner_version`. New versions are noted with their date and reason.
+
+### Changed
+- The daily email no longer leads with "0 need review / 0 added automatically" when the only
+  change is a new third-party file: it says "1 new third-party file". It uses the same name as
+  the admin screen ("Other third-party files") and says where the full address is (Compliance →
+  Cookies → Scan report (details)).
+- Speed hints (`<link rel="preconnect">` and `dns-prefetch`) are no longer reported as
+  third-party files: they load nothing and set no cookies (an email about `www.google.com` was a
+  false alarm).
+- Admin texts that named "Cookie Consent →" now say "Compliance →".
+
+### Security
+- A consent record can no longer claim a banner version newer than the current one.
+- Records, cookie reports and scan reports refuse lists or objects sent in place of single
+  values (no PHP warnings).
+- Cookie reports from logged-in users are ignored on the server as well as in the browser.
+- Settings import: at most 2 MB and 2000 cookie rows.
+
+### Improved
+- One shared, prepared WHERE clause for the record list, count and CSV export; the CSV export
+  reads in batches by id, so large exports stay fast.
+
 ## [1.2.3] - 2026-10-27
 ### Changed
 - **Google Maps is Marketing** (was Preferences). The map sets Google's `NID` cookie, which

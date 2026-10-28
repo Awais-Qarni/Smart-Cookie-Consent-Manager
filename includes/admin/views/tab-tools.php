@@ -10,10 +10,11 @@ defined( 'ABSPATH' ) || exit;
 ?>
 <div class="sccm-panel">
 	<h2><?php esc_html_e( 'Ask everyone again', 'smart-cookie-consent-manager' ); ?></h2>
+	<?php $sccm_version = (int) get_option( 'sccm_consent_version', 1 ); ?>
 	<p>
 		<?php
-		/* translators: %d: version */
-		printf( esc_html__( 'Current consent version: %d. Increasing it shows the banner again to every visitor, for example after you change your cookie use or policy.', 'smart-cookie-consent-manager' ), (int) get_option( 'sccm_consent_version', 1 ) );
+		/* translators: 1: current banner version, 2: what is known about it, 3: next version */
+		printf( esc_html__( 'Current banner version: %1$d (%2$s). Asking everyone again starts banner version %3$d: every visitor sees the banner again, for example after you change your cookie use or policy. Their new records show version %3$d, so you can tell them apart from older ones in Consent Records.', 'smart-cookie-consent-manager' ), (int) $sccm_version, esc_html( SCCM_Cookies::version_note( $sccm_version ) ? SCCM_Cookies::version_note( $sccm_version ) : __( 'no date known', 'smart-cookie-consent-manager' ) ), (int) $sccm_version + 1 );
 		?>
 	</p>
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
@@ -51,14 +52,12 @@ defined( 'ABSPATH' ) || exit;
 	</form>
 </div>
 
-<div class="sccm-panel">
-	<h2><?php esc_html_e( 'Developer reference', 'smart-cookie-consent-manager' ); ?></h2>
-	<ul class="sccm-list">
-		<li><code>[sccm_cookie_policy]</code> — <?php esc_html_e( 'cookie list grouped by category', 'smart-cookie-consent-manager' ); ?></li>
-		<li><code>[sccm_cookie_settings text="Cookie settings" style="link|button"]</code> — <?php esc_html_e( 'opens the cookie settings window', 'smart-cookie-consent-manager' ); ?></li>
-		<li><code>&lt;a href="#sccm-preferences"&gt;</code> — <?php esc_html_e( 'any link (e.g. a menu item) that opens the cookie settings window', 'smart-cookie-consent-manager' ); ?></li>
-		<li><code>&lt;script type="text/plain" data-sccm-category="analytics"&gt;</code> — <?php esc_html_e( 'run a script only after consent', 'smart-cookie-consent-manager' ); ?></li>
-		<li><code>window.SCCM.hasConsent('analytics')</code> — <?php esc_html_e( 'in your own JavaScript: true if the visitor allowed this category (functional, analytics or marketing), false if not', 'smart-cookie-consent-manager' ); ?></li>
-		<li><code>document.addEventListener('sccm:consent', …)</code> — <?php esc_html_e( 'in your own JavaScript: runs the moment a visitor makes or changes their choice, e.g. to start a tool without reloading the page', 'smart-cookie-consent-manager' ); ?></li>
-	</ul>
-</div>
+<p class="description">
+	<?php
+	printf(
+		/* translators: %s: link to the Help tab */
+		esc_html__( 'Shortcodes, links and code for developers are on the %s page.', 'smart-cookie-consent-manager' ),
+		'<a href="' . esc_url( SCCM_Admin::url( 'help' ) . '#sccm-help-shortcodes' ) . '">' . esc_html__( 'Help', 'smart-cookie-consent-manager' ) . '</a>'
+	);
+	?>
+</p>
