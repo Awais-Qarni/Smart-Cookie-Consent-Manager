@@ -341,7 +341,7 @@ $email = SCCM_Scanner::build_email(
 	)
 );
 sccm_check( 'email subject names the number of cookies to review', false !== strpos( $email['subject'], '1 new cookie needs review' ) );
-sccm_check( 'email HTML lists the cookie and its category, with plain instructions', false !== strpos( $email['html'], 'mystery_cookie' ) && false !== strpos( $email['html'], 'Statistics' ) && false !== strpos( $email['html'], 'Cookie Consent → Cookies' ) );
+sccm_check( 'email HTML lists the cookie and its category, with plain instructions', false !== strpos( $email['html'], 'mystery_cookie' ) && false !== strpos( $email['html'], 'Statistics' ) && false !== strpos( $email['html'], 'Compliance → Cookies' ) );
 sccm_check( 'email has a plain-text version', false !== strpos( $email['text'], 'mystery_cookie' ) && false !== strpos( $email['text'], 'Statistics' ) );
 $escaped = SCCM_Scanner::build_email( array( array( 'name' => '<script>alert(1)</script>', 'type' => 'cookie', 'status' => 'pending', 'category' => '', 'time' => time() ) ) );
 sccm_check( 'cookie names are escaped in the email', false === strpos( $escaped['html'], '<script>alert(1)' ) );
@@ -712,6 +712,71 @@ sccm_check( 'upgrade v6: the page caches are cleared so the banner shows the new
 sccm_check( 'upgrade v6: database version is current', SCCM_Install::DB_VERSION === get_option( SCCM_Install::DB_VERSION_OPTION ) );
 $wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE service <> 'sccm'" ); // phpcs:ignore
 SCCM_Cookies::flush();
+
+/* ---------------------------------------------------------------- 1.3.0: banner version, records, charts, scan, email, hardening */
+
+// Banner version history: every new version has a date and a reason.
+$history_before = get_option( SCCM_Cookies::VERSION_HISTORY_OPTION );
+$manual         = SCCM_Cookies::bump_version( 'manual' );
+$auto           = SCCM_Cookies::bump_version();
+$history        = SCCM_Cookies::version_history();
+sccm_check( 'banner version: each new version is noted with its date and reason', 'manual' === ( $history[ $manual ]['r'] ?? '' ) && 'cookies' === ( $history[ $auto ]['r'] ?? '' ) && abs( time() - (int) $history[ $auto ]['t'] ) < 60, wp_json_encode( array( $manual, $auto, $history[ $manual ] ?? null, $history[ $auto ] ?? null, get_option( 'sccm_consent_version' ) ) ) );
+sccm_check( 'banner version: the note says why ("you asked everyone again" / "the cookie list changed")', false !== strpos( SCCM_Cookies::version_note( $manual ), 'you asked everyone again' ) && false !== strpos( SCCM_Cookies::version_note( $auto ), 'the cookie list changed' ) && '' === SCCM_Cookies::version_note( 999999 ) );
+
+// Records: a banner version newer than the current one is refused; filter by version.
+$current = (int) get_option( 'sccm_consent_version' );
+$ids     = array( wp_generate_uuid4(), wp_generate_uuid4(), wp_generate_uuid4() );
+$future  = SCCM_Consent_Log::insert( array( 'consent_id' => $ids[0], 'choice' => 'accept_all', 'categories' => array( 'analytics', 'marketing' ), 'version' => $current + 1 ) );
+SCCM_Consent_Log::insert( array( 'consent_id' => $ids[1], 'choice' => 'accept_all', 'categories' => array( 'functional', 'analytics', 'marketing' ), 'version' => $current ) );
+SCCM_Consent_Log::insert( array( 'consent_id' => $ids[2], 'choice' => 'custom', 'categories' => array( 'analytics' ), 'version' => $current - 1 ) );
+sccm_check( 'records: a banner version newer than the current one is refused (no made-up evidence)', is_wp_error( $future ) && 'sccm_bad_version' === $future->get_error_code() );
+$by_version = SCCM_Consent_Log::query( array( 'search' => $ids[2], 'version' => $current - 1 ) );
+$wrong      = SCCM_Consent_Log::query( array( 'search' => $ids[2], 'version' => $current ) );
+sccm_check( 'records: the banner version filter finds exactly the records of that version', 1 === $by_version['total'] && 0 === $wrong['total'] );
+$counts = SCCM_Consent_Log::version_counts();
+sccm_check( 'records: records are counted per banner version, newest first', ( $counts[ $current ] ?? 0 ) >= 1 && ( $counts[ $current - 1 ] ?? 0 ) >= 1 && max( array_keys( $counts ) ) === array_key_first( $counts ) );
+$was_learning = SCCM_Settings::get( 'scanner_client' );
+SCCM_Settings::update( array( 'scanner_client' => 1 ) );
+$warnings = array();
+set_error_handler( function ( $no, $str ) use ( &$warnings ) { $warnings[] = $str; return true; } ); // phpcs:ignore
+$odd = SCCM_Consent_Log::insert( array( 'consent_id' => array( 'x' ), 'choice' => array( 'accept_all' ), 'version' => array( 2 ), 'url' => array( 'x' ) ) );
+SCCM_REST::store_report( array( 'items' => array( array( 'n' => array( 'x' ), 't' => array( 'cookie' ) ) ) ) );
+restore_error_handler();
+sccm_check( 'hardening: lists sent instead of single values are refused without PHP warnings', is_wp_error( $odd ) && ! $warnings, implode( ' | ', $warnings ) );
+
+// Dashboard numbers.
+$daily = SCCM_Consent_Log::daily( 30 );
+$today = wp_date( 'Y-m-d' );
+sccm_check( 'dashboard: choices per day cover 30 days ending today (site time)', 30 === count( $daily ) && array_key_last( $daily ) === $today && $daily[ $today ]['accept_all'] >= 1 && $daily[ $today ]['custom'] >= 1, wp_json_encode( $daily[ $today ] ?? null ) );
+$allowed = SCCM_Consent_Log::category_counts( 30 );
+sccm_check( 'dashboard: allowed per category counts each optional category', $allowed['total'] >= 2 && $allowed['analytics'] >= 2 && $allowed['functional'] >= 1 && ! isset( $allowed['necessary'] ), wp_json_encode( $allowed ) );
+foreach ( $ids as $id ) {
+	SCCM_Consent_Log::delete_by_consent_id( $id );
+}
+
+// Visitor reports: never from logged-in users (also on the server).
+$admins = get_users( array( 'role' => 'administrator', 'number' => 1, 'fields' => 'ID' ) );
+wp_set_current_user( (int) $admins[0] );
+$logged = SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'from_an_admin_browser', 't' => 'cookie' ) ) ) );
+wp_set_current_user( 0 );
+sccm_check( 'visitor reports: a logged-in user\'s report is ignored on the server too', ! isset( $logged['added'] ) && ! isset( ( (array) get_option( 'sccm_candidates', array() ) )['cookie:from_an_admin_browser'] ) );
+SCCM_Settings::update( array( 'scanner_client' => $was_learning ) );
+
+// Scan: speed hints (preconnect, dns-prefetch) are not third-party files; stylesheets are.
+$results = array( 'services' => array(), 'unclassified' => array(), 'cookies' => array(), 'pages' => array(), 'notes' => array() );
+SCCM_Scanner::analyse_html( '<link rel="preconnect" href="https://hint.example.org"><link rel="dns-prefetch" href="//dns.example.org"><link rel="stylesheet" href="https://css.example.org/a.css">', 'example.com', $results );
+$hosts = array_keys( $results['unclassified'] );
+sccm_check( 'scan: preconnect / dns-prefetch hints are not reported as third-party files, a stylesheet is', array( 'css.example.org' ) === $hosts, implode( ',', $hosts ) );
+
+// Email about a new third-party file only: says so first, no two zeros, and where to look.
+$file_only = SCCM_Scanner::build_email( array( array( 'name' => 'cdn.example.net', 'type' => 'resource', 'status' => 'unclassified', 'category' => '', 'time' => time() ) ) );
+sccm_check( 'email: a new third-party file alone is named in the subject and the summary (no "0 need review / 0 added")', false !== strpos( $file_only['subject'], '1 new third-party file found' ) && false !== strpos( $file_only['html'], 'new third-party file' ) && false === strpos( $file_only['html'], 'need review' ) && false === strpos( $file_only['html'], 'added automatically' ) );
+sccm_check( 'email: uses the same name as the admin screen and says where to find the full address', false !== strpos( $file_only['html'], 'Other third-party files' ) && false !== strpos( $file_only['html'], 'Compliance → Cookies → Scan report (details)' ) && false !== strpos( $file_only['text'], 'Scan report (details)' ) );
+if ( false === $history_before ) {
+	delete_option( SCCM_Cookies::VERSION_HISTORY_OPTION );
+} else {
+	update_option( SCCM_Cookies::VERSION_HISTORY_OPTION, $history_before, false );
+}
 
 // The consent cookie's listed duration follows the "ask again after" setting.
 $durations = array();

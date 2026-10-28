@@ -209,11 +209,35 @@ back to the plugin URL with `?ver=<version>.<file time>`. Uninstall removes the 
 
 ## Admin structure
 
-Six tabs, each one view file in `includes/admin/views/`: `dashboard`, `cookies`, `banner`,
-`settings`, `records`, `tools`, plus `help.php` (the ⓘ panel, shown on every tab). Old tab
-slugs (`general`, `appearance`, `texts`, `categories`, `blocking`, `scanner`, `log`) are mapped
-in `SCCM_Admin::legacy_tabs()`. Forms that sit inside the Settings form (sample email, send
-waiting alerts) use the HTML `form` attribute because forms cannot be nested.
+One admin page (`admin.php?page=sccm`, titled "Smart Cookie Consent Manager") with seven tabs,
+each one view file in `includes/admin/views/`: `dashboard`, `cookies`, `banner`, `settings`,
+`records`, `tools`, `help`. The sidebar item is called **Compliance**; its submenu (a flyout on
+hover) has one item per tab: the first is the page itself, the others are links to
+`…&tab=<slug>`, and the `submenu_file` filter highlights the open tab. So every old link keeps
+working. Old tab slugs of 0.1.0 (`general`, `appearance`, `texts`, `categories`, `blocking`,
+`scanner`, `log`) are mapped in `SCCM_Admin::legacy_tabs()`; old `#help` links open the Help
+tab. All help (how it works, every tab, banner version, shortcodes, developer code, questions
+and problems, glossary) lives on the Help tab only, so the other tabs stay short.
+
+The Dashboard charts are inline SVG drawn on the server (`SCCM_Admin_Charts`: stacked bars per
+day, donuts, percentage bars): no chart library, no script, nothing loaded from elsewhere, and a
+`<title>` per chart and per bar for screen readers and tooltips. Their numbers come from
+`SCCM_Consent_Log::daily()` (per day in the site's time zone), `category_counts()` and
+`stats()`.
+
+Forms that sit inside the Settings form (sample email, send waiting alerts) use the HTML `form`
+attribute because forms cannot be nested.
+
+## Banner version (consent version)
+
+`sccm_consent_version` goes up by one when visitors must be asked again: a cookie visitors can
+see is added or changes category (setting "Ask again when the cookie list changes"), or the
+admin clicks "Ask all visitors again". `SCCM_Cookies::bump_version( $reason )` notes the date
+and reason of each version in `sccm_version_history` (`version => { t, r }`, last 100), so a
+record can be matched to the list the visitor agreed to. The same number appears in the
+visitor's consent cookie (`v`), the About tab of the banner, Consent Records (column, filter,
+per-version box, "older" mark), the CSV (`banner_version`), Tools and the Dashboard. A record
+claiming a version newer than the current one is refused.
 
 ## Consent cookie
 `sccm_consent` = URI-encoded JSON, first-party, `Path=/`, `SameSite=Lax`, `Secure` on HTTPS.
@@ -238,8 +262,15 @@ predictable. Labels/descriptions are editable; categories can be hidden if unuse
 - Admin: `manage_options` + nonce checked in every admin-post handler and AJAX callback.
   Messages after an action are kept in user meta (`sccm_notice`, 5 minutes), never read
   from the URL.
+- Values from visitors' browsers (records, cookie reports, scan reports) must be plain strings
+  or numbers; lists or objects in their place are refused without PHP warnings. A record
+  cannot claim a banner version newer than the current one. Cookie reports from logged-in
+  users are ignored on the server too, not only in the browser.
+- Settings import: at most 2 MB and 2000 cookie rows; every value goes through the normal
+  sanitising (`SCCM_Settings::sanitize()`, `SCCM_Cookies::sanitize_row()`).
 - SQL: every query goes through `$wpdb->prepare()`, table names with `%i` (WordPress 6.2+);
-  record filters are one fixed statement; unset filters use values that match everything
+  record filters are one fixed statement (`SCCM_Consent_Log::WHERE`, shared by the list, the
+  count and the CSV export); unset filters use values that match everything
   (`LIKE '%'`, dates from 1000-01-01 to 9999-12-31) because MySQL in strict mode refuses to
   compare a DATETIME column with `''` (MariaDB allows it; a WP-CLI check guards this).
 - CSV export: `SCCM_Consent_Log::csv_cell()` prefixes values starting with = + - @ (CSV injection).

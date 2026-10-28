@@ -58,8 +58,9 @@ includes/
   class-sccm-shortcodes.php        [sccm_cookie_policy], [sccm_cookie_settings], policy page (sidebar)
   class-sccm-cache.php             Clears page caches when settings / the cookie list change
   data/services.php                Service signatures (data only)
-  admin/class-sccm-admin.php       Admin menu, tabs, form handlers
-  admin/views/*.php                One view per admin tab (dashboard, cookies, banner, settings, records, tools) + help.php
+  admin/class-sccm-admin.php       Admin menu (Compliance + submenu), tabs, form handlers
+  admin/class-sccm-admin-charts.php Inline SVG charts for the Dashboard (no library)
+  admin/views/*.php                One view per admin tab (dashboard, cookies, banner, settings, records, tools, help)
 assets/js/sccm-frontend.js         Banner, preferences modal, unblocking, GPC, cleanup, reporting
 assets/css/sccm-frontend.css       Banner/modal styles (CSS variables for theming)
 assets/js/sccm-admin.js            Small admin helpers

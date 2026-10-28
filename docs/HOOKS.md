@@ -45,7 +45,7 @@ add_filter( 'sccm_services', function ( $services ) {
 | Action | Arguments | When |
 |---|---|---|
 | `sccm_consent_recorded` | `array $row` | After a consent record is stored. |
-| `sccm_consent_version_changed` | `int $version` | After "ask everyone again" / cookie list change. |
+| `sccm_consent_version_changed` | `int $version` | After a new banner (consent) version: "ask everyone again" / cookie list change. Its date and reason are in `SCCM_Cookies::version_history()`. |
 | `sccm_settings_saved` | `string $tab` | After settings are saved in the admin. |
 | `sccm_cookie_list_changed` | — | A cookie visitors can see was added, edited or removed (not fired for cookies waiting for review). |
 | `sccm_cache_purged` | — | After the plugin cleared page caches (see `SCCM_Cache`). Clear any other cache (e.g. a CDN) here. |
@@ -83,7 +83,7 @@ takes its fonts and colours from the theme.
 
 ```js
 window.SCCM.hasConsent('analytics');   // true | false
-window.SCCM.getConsent();              // { id, v, t, c: {functional, analytics, marketing}, m, g } | null
+window.SCCM.getConsent();              // { id, v (banner version), t, c: {functional, analytics, marketing}, m, g } | null
 window.SCCM.getConsentId();            // the visitor's consent ID, or null before a choice
 window.SCCM.openPreferences();          // optional tab: openPreferences('details') or 'about'
 window.SCCM.showBanner();

@@ -2,6 +2,48 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.0] - 2026-10-28
+### Added
+- **Compliance menu with a submenu**: the sidebar item is now called "Compliance" and opens a
+  flyout with every tab (Dashboard, Cookies, Banner, Settings, Consent Records, Tools, Help) when
+  hovered, like other plugins. Every plugin page is titled "Smart Cookie Consent Manager".
+- **Help tab**: a page of its own, last in the row, instead of the "Help: how it works" panel.
+  It holds getting started, how it works, every tab and option, the banner version, shortcodes
+  and links, code for developers, questions and problems, and a glossary. "How it works" and the
+  developer reference moved there from the Dashboard and Tools.
+- **New Dashboard with charts**: status (Google Consent Mode, privacy signal, banner version),
+  Needs your attention, visitor choices per day for 30 days, acceptance rate and the share of
+  each choice, how many allowed each category, cookies by category, and cookie scan facts (pages,
+  services, other third-party files, waiting for review, next automatic scan). The charts are
+  drawn by the plugin itself: no chart library, nothing loaded from elsewhere.
+- **Banner version everywhere you need to match it**: the "Version" column is now "Banner
+  version" (with an explanation on hover). Consent Records shows the current banner version, a
+  box with every version that has records (when it started, why, how many records), an "older"
+  mark on records of an earlier version and a banner version filter. The visitor's About tab
+  shows their banner version next to the consent ID, Tools names the current and next version,
+  and the CSV column is `banner_version`. New versions are noted with their date and reason.
+
+### Changed
+- The daily email no longer leads with "0 need review / 0 added automatically" when the only
+  change is a new third-party file: it says "1 new third-party file". It uses the same name as
+  the admin screen ("Other third-party files") and says where the full address is (Compliance →
+  Cookies → Scan report (details)).
+- Speed hints (`<link rel="preconnect">` and `dns-prefetch`) are no longer reported as
+  third-party files: they load nothing and set no cookies (an email about `www.google.com` was a
+  false alarm).
+- Admin texts that named "Cookie Consent →" now say "Compliance →".
+
+### Security
+- A consent record can no longer claim a banner version newer than the current one.
+- Records, cookie reports and scan reports refuse lists or objects sent in place of single
+  values (no PHP warnings).
+- Cookie reports from logged-in users are ignored on the server as well as in the browser.
+- Settings import: at most 2 MB and 2000 cookie rows.
+
+### Improved
+- One shared, prepared WHERE clause for the record list, count and CSV export; the CSV export
+  reads in batches by id, so large exports stay fast.
+
 ## [1.2.3] - 2026-10-27
 ### Changed
 - **Google Maps is Marketing** (was Preferences). The map sets Google's `NID` cookie, which

@@ -771,6 +771,10 @@
 		box.appendChild(el('p', { 'class': 'sccm-status__row' }, [el('strong', { text: T.consent_status + ': ' }), T['choice_' + consent.m] || '']));
 		box.appendChild(el('p', { 'class': 'sccm-status__row' }, [el('strong', { text: T.consent_date + ': ' }), whenText]));
 		box.appendChild(el('p', { 'class': 'sccm-status__row sccm-consent-id' }, [el('strong', { text: T.consent_id + ': ' }), el('code', { text: consent.id }), copy]));
+		// The banner version the choice belongs to: the same number as in the admin's Consent Records.
+		if (consent.v) {
+			box.appendChild(el('p', { 'class': 'sccm-status__row sccm-consent-version' }, [el('strong', { text: T.consent_version + ': ' }), String(parseInt(consent.v, 10) || '')]));
+		}
 	}
 
 	function copyText(text, done) {

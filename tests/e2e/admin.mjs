@@ -291,7 +291,7 @@ check('X2 logged-out requests are refused', anon.status() !== 200 && anon.status
 	check('CR2 the record is sent with the visitor\'s credentials (needed on password-protected staging sites)', direct.cookie.includes('sccm_probe_auth=1'), direct.cookie);
 	check('CR3 the address is same-site (a page cached under another domain or http/https still works)', direct.url.startsWith('/'), direct.url);
 	await page.goto(admin('records'));
-	check('CR1 the record is listed in the Consent Records tab', /Allowed all/.test(await page.textContent('table.widefat tbody')));
+	check('CR1 the record is listed in the Consent Records tab', /Allowed all/.test(await page.textContent('.sccm-table-admin tbody')));
 	const blocked = await visitor(true);
 	check('CR4 REST API blocked: the record is saved through admin-ajax.php instead', blocked.rest === 1 && blocked.ajax === 1 && count() === 2, JSON.stringify(blocked));
 	await page.goto(admin('records'));
@@ -347,13 +347,13 @@ wp('eval', `foreach ( ${JSON.stringify(extra)} as $id ) { wp_delete_post( $id, t
 	await page.goto(admin('records'));
 	const [csvDownload] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("Export CSV")')]);
 	const csv = fs.readFileSync(await csvDownload.path(), 'utf8');
-	check('R1 CSV export: header row and the record with its consent ID, choice and categories', /^id,consent_id,date_time_utc,choice,categories,gpc,consent_version,url,ip,user_agent/.test(csv) && csv.includes('12121212-3434-4565-8787-909090909090') && csv.includes('accept_all') && csv.includes('necessary,analytics'), csv.split('\n')[0]);
+	check('R1 CSV export: header row and the record with its consent ID, choice and categories', /^id,consent_id,date_time_utc,choice,categories,gpc,banner_version,url,ip,user_agent/.test(csv) && csv.includes('12121212-3434-4565-8787-909090909090') && csv.includes('accept_all') && csv.includes('necessary,analytics'), csv.split('\n')[0]);
 	check('R1 CSV export: no cell starts with a formula', !csv.split('\n').slice(1).some((line) => /(^|,)"?[=+@-]/.test(line)), csv.split('\n')[1]);
 	wp('eval', `global $wpdb; $wpdb->update( SCCM_Consent_Log::table(), array( 'ip' => '203.0.113.***' ), array( 'consent_id' => '12121212-3434-4565-8787-909090909090' ) );`);
 	await page.goto(admin('records') + '&search=203.0.113.7');
-	const found = await page.textContent('table.widefat tbody');
+	const found = await page.textContent('.sccm-table-admin tbody');
 	await page.goto(admin('records') + '&search=192.0.2.7');
-	check('R2 search by IP address finds the record of a shortened IP (203.0.113.***); another network finds nothing', found.includes('12121212-3434') && found.includes('203.0.113.***') && /No consent records/.test(await page.textContent('table.widefat tbody')));
+	check('R2 search by IP address finds the record of a shortened IP (203.0.113.***); another network finds nothing', found.includes('12121212-3434') && found.includes('203.0.113.***') && /No consent records/.test(await page.textContent('.sccm-table-admin tbody')));
 	wp('eval', `SCCM_Consent_Log::delete_all();`);
 
 	await page.goto(admin('tools'));
@@ -448,6 +448,50 @@ check('G3 GA4 by ID (Strict): not loaded before consent, loaded and configured a
 const advanced = await ga('advanced');
 check('G3 GA4 by ID (Advanced): loaded at once (Consent Mode handles the choice)', advanced.before && advanced.config, JSON.stringify(advanced));
 wp('eval', `SCCM_Settings::update(array('ga4_id' => '', 'consent_mode' => 'basic'));`);
+
+// 1.3.0: the Compliance menu, the Help tab, the Dashboard charts and the banner version.
+await page.goto(BASE + '/wp-admin/index.php');
+const menu = await page.$$eval('#toplevel_page_sccm .wp-submenu a', (links) => links.map((a) => [a.textContent.replace(/\d+$/, '').trim(), a.getAttribute('href')]));
+check('M1 the sidebar item is called "Compliance"', /^Compliance/.test((await page.textContent('#toplevel_page_sccm > a .wp-menu-name')).trim()));
+check('M1 its submenu lists every tab, Help last, each linking to its tab', JSON.stringify(menu.map((m) => m[0])) === JSON.stringify(['Dashboard', 'Cookies', 'Banner', 'Settings', 'Consent Records', 'Tools', 'Help']) && menu.slice(1).every((m) => /page=sccm&(amp;)?tab=/.test(m[1])), JSON.stringify(menu));
+await page.hover('#toplevel_page_sccm > a');
+check('M1 the submenu opens as a flyout on hover from another admin page', await page.isVisible('#toplevel_page_sccm .wp-submenu a[href*="tab=records"]'));
+await page.goto(admin('records'));
+check('M2 the open tab is highlighted in the submenu', (await page.textContent('#toplevel_page_sccm .wp-submenu li.current a')).trim().startsWith('Consent Records'));
+check('M2 every plugin page is titled with the full plugin name', (await page.textContent('.sccm-header h1')).trim() === 'Smart Cookie Consent Manager');
+
+await page.goto(admin('help'));
+const helpText = await page.textContent('.sccm-help');
+check('H1 Help is the last tab and a page of its own (no help panel or button elsewhere)', (await page.$$eval('.nav-tab-wrapper a', (a) => a.map((x) => x.textContent.trim()))).pop() === 'Help' && !(await page.$('#sccm-help-toggle')));
+check('H1 the Help page has getting started, how it works, every tab, banner version, shortcodes, developers, questions and words', ['Getting started', 'How it works', 'Every tab explained', 'Banner version', 'Shortcodes and links', 'For developers', 'Questions and problems', 'Words you may meet'].every((t) => helpText.includes(t)) && helpText.includes('[sccm_cookie_policy]') && helpText.includes("window.SCCM.hasConsent('analytics')"));
+await page.click('.sccm-help__toc a[href="#sccm-help-faq"]');
+check('H1 "On this page" jumps to the section', page.url().endsWith('#sccm-help-faq'));
+await page.goto(admin('dashboard') + '#help');
+await page.waitForURL(/tab=help/);
+check('H2 an old "#help" link opens the Help tab', /tab=help/.test(page.url()));
+await page.goto(admin('tools'));
+check('H2 Tools and Dashboard no longer repeat the help (shortcodes, "How it works")', !(await page.textContent('.sccm-tab')).includes('Developer reference') && (await page.$('.sccm-tab a[href*="tab=help"]')) !== null);
+
+wp('eval', `SCCM_Consent_Log::delete_all(); $v = (int) get_option( 'sccm_consent_version' ); foreach ( array( array( 'accept_all', array( 'functional', 'analytics', 'marketing' ), $v ), array( 'reject_all', array(), $v ), array( 'custom', array( 'analytics' ), max( 1, $v - 1 ) ) ) as $r ) { SCCM_Consent_Log::insert( array( 'consent_id' => wp_generate_uuid4(), 'choice' => $r[0], 'categories' => $r[1], 'version' => $r[2] ) ); }`);
+await page.goto(admin('dashboard'));
+const dash = await page.textContent('.sccm-tab');
+check('D2 the Dashboard shows the choices as charts: per day, the share, per category, cookies by category', (await page.$$('.sccm-tab svg.sccm-chart--days rect[fill]')).length >= 3 && (await page.$$('.sccm-tab svg.sccm-chart--donut')).length === 2 && (await page.$$('.sccm-pbars li')).length === 3);
+check('D2 the Dashboard shows the acceptance rate, Consent Mode, GPC and the banner version; "How it works" moved to Help', /33%\s*allowed all \(acceptance rate\)/.test(dash) && dash.includes('Google Consent Mode') && /Banner version \d+/.test(dash) && !dash.includes('How it works'), dash.replace(/\s+/g, ' ').slice(0, 200));
+
+await page.goto(admin('records'));
+const recordsText = (await page.textContent('.sccm-tab')).replace(/\s+/g, ' ');
+const current = parseInt(wp('option', 'get', 'sccm_consent_version'), 10);
+check('V1 Consent Records: the column is "Banner version" and explains itself on hover', (await page.$$eval('.sccm-table-admin th abbr', (a) => a.map((x) => x.textContent.trim() + '|' + !!x.title))).includes('Banner version|true'));
+check('V1 Consent Records: the current banner version and the versions with records are listed', recordsText.includes(`Current banner version: ${current}`) && (await page.$$('.sccm-versions__table tbody tr')).length >= (current > 1 ? 2 : 1));
+check('V1 Consent Records: records of an older version are marked "older"', current > 1 ? (await page.$$('.sccm-table-admin .sccm-pill--old')).length === 1 : true);
+if (current > 1) {
+	await page.selectOption('select[name="version"]', String(current - 1));
+	await Promise.all([page.waitForNavigation(), page.click('.sccm-filters button')]);
+	check('V1 Consent Records: filter by banner version', (await page.$$('.sccm-table-admin tbody tr')).length === 1 && page.url().includes(`version=${current - 1}`));
+}
+wp('eval', 'SCCM_Consent_Log::delete_all();');
+await page.goto(admin('tools'));
+check('V2 Tools: "Ask everyone again" names the current and the next banner version', (await page.textContent('.sccm-tab')).includes(`Current banner version: ${current}`) && (await page.textContent('.sccm-tab')).includes(`starts banner version ${current + 1}`));
 
 check('no JavaScript errors in the admin', errors.length === 0, errors.join(' | '));
 wp('eval', `SCCM_Settings::update(array_merge(SCCM_Settings::defaults(), array("policy_page_id" => SCCM_Settings::get("policy_page_id"))));`);

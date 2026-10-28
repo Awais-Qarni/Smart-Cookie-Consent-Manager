@@ -15,28 +15,9 @@
 			}
 		});
 
-		// Help panel: open from the header button, the dashboard button, or the #help link.
-		var $help = $('#sccm-help');
-		var $toggle = $('#sccm-help-toggle');
-		function setHelp(open) {
-			$help.prop('hidden', !open);
-			$toggle.attr('aria-expanded', open ? 'true' : 'false');
-			if (open) {
-				$help[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
-			}
-		}
-		$toggle.on('click', function () {
-			setHelp($help.prop('hidden'));
-		});
-		$(document).on('click', '[data-sccm-open-help]', function () {
-			setHelp(true);
-		});
-		$(document).on('click', '[data-sccm-close-help]', function () {
-			setHelp(false);
-			$toggle.trigger('focus');
-		});
-		if (window.location.hash === '#help') {
-			setHelp(true);
+		// Old "#help" links (help used to be a panel) open the Help tab.
+		if (window.location.hash === '#help' && A.helpUrl) {
+			window.location.replace(A.helpUrl);
 		}
 
 		// "Remember the choice for": a preset sets the (hidden) number of days; "custom" shows the days field.

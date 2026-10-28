@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.2.3
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -27,7 +27,7 @@ Smart Cookie Consent Manager adds a complete, self-hosted cookie consent system 
 == Installation ==
 
 1. Upload the plugin and activate it.
-2. Go to Cookie Consent → Dashboard and follow "Needs your attention" (create the Cookie Policy page, scan).
+2. Go to Compliance → Dashboard and follow "Needs your attention" (create the Cookie Policy page, scan).
 3. Cookies tab → approve any cookies under "Needs review".
 4. Using a page cache or CDN that the plugin does not clear by itself? Clear it once.
 
@@ -40,6 +40,14 @@ Use the floating button, the [sccm_cookie_settings] shortcode, or a menu link to
 Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 == Changelog ==
+
+= 1.3.0 =
+* New: the admin menu is called "Compliance" and shows every tab as a submenu (flyout on hover).
+* New: Help tab with getting started, every option explained, shortcodes, developer code and answers to common problems (replaces the help panel).
+* New: Dashboard with charts: visitor choices per day, acceptance rate, allowed per category, cookies by category, scan facts.
+* New: "Banner version" shown and explained in Consent Records (current version, versions with their start date and reason, "older" mark, filter), in the visitor's About tab, in Tools and in the CSV export.
+* The daily email about a new third-party file says so at the top and names where to find it; preconnect / dns-prefetch hints are no longer reported.
+* Security hardening for consent records, cookie reports and settings import.
 
 = 1.2.3 =
 * Google Maps is now Marketing (was Preferences): the map sets Google's NID cookie, which Google also uses for advertising. Embedded maps wait until the visitor allows Marketing. Existing cookie lists are updated automatically (cookies you edited yourself stay as they are); visitors are not asked again.

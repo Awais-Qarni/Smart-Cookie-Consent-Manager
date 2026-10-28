@@ -20,8 +20,51 @@ $sccm_choices = array(
 	'custom'     => __( 'Allowed a selection', 'smart-cookie-consent-manager' ),
 	'gpc'        => __( 'GPC signal', 'smart-cookie-consent-manager' ),
 );
+$sccm_current  = (int) get_option( 'sccm_consent_version', 1 );
+$sccm_versions = SCCM_Consent_Log::version_counts();
+$sccm_version_help = __( 'The banner version the visitor agreed to. It goes up by one whenever visitors must be asked again (the cookie list changed, or you clicked "Ask all visitors again" in Tools). A record with an older version than the current one is from before that change.', 'smart-cookie-consent-manager' );
 ?>
-<p><?php esc_html_e( 'Every time a visitor chooses, a record is saved here: their consent ID, the date and time (UTC), what they chose, which categories they allowed and on which page. A visitor can read their consent ID in the About tab of the cookie banner, so you can find their record by pasting it in the search box.', 'smart-cookie-consent-manager' ); ?></p>
+<p><?php esc_html_e( 'Every time a visitor chooses, a record is saved here: their consent ID, the date and time (UTC), what they chose, which categories they allowed, the banner version they agreed to and on which page. A visitor can read their consent ID and banner version in the About tab of the cookie banner, so you can find their record by pasting the ID in the search box.', 'smart-cookie-consent-manager' ); ?></p>
+
+<div class="sccm-panel sccm-versions">
+	<h2>
+		<?php
+		/* translators: %d: banner version */
+		printf( esc_html__( 'Current banner version: %d', 'smart-cookie-consent-manager' ), (int) $sccm_current );
+		if ( SCCM_Cookies::version_note( $sccm_current ) ) {
+			echo ' <small>(' . esc_html( SCCM_Cookies::version_note( $sccm_current ) ) . ')</small>';
+		}
+		?>
+	</h2>
+	<p class="description"><?php echo esc_html( $sccm_version_help ); ?></p>
+	<?php if ( $sccm_versions ) : ?>
+		<table class="widefat striped sccm-versions__table">
+			<thead><tr>
+				<th><?php esc_html_e( 'Banner version', 'smart-cookie-consent-manager' ); ?></th>
+				<th><?php esc_html_e( 'Started', 'smart-cookie-consent-manager' ); ?></th>
+				<th><?php esc_html_e( 'Records', 'smart-cookie-consent-manager' ); ?></th>
+				<th></th>
+			</tr></thead>
+			<tbody>
+			<?php foreach ( $sccm_versions as $sccm_v => $sccm_n ) : ?>
+				<tr>
+					<td>
+						<strong><?php echo (int) $sccm_v; ?></strong>
+						<?php if ( $sccm_v === $sccm_current ) : ?>
+							<span class="sccm-pill sccm-pill--on"><?php esc_html_e( 'current', 'smart-cookie-consent-manager' ); ?></span>
+						<?php else : ?>
+							<span class="sccm-pill sccm-pill--old"><?php esc_html_e( 'older', 'smart-cookie-consent-manager' ); ?></span>
+						<?php endif; ?>
+					</td>
+					<td><?php echo esc_html( SCCM_Cookies::version_note( $sccm_v ) ? SCCM_Cookies::version_note( $sccm_v ) : '—' ); ?></td>
+					<td><?php echo (int) $sccm_n; ?></td>
+					<td><a href="<?php echo esc_url( SCCM_Admin::url( 'records', array( 'version' => $sccm_v ) ) ); ?>"><?php esc_html_e( 'Show these records', 'smart-cookie-consent-manager' ); ?></a></td>
+				</tr>
+			<?php endforeach; ?>
+			</tbody>
+		</table>
+	<?php endif; ?>
+</div>
 
 <?php
 $sccm_problem = get_option( SCCM_REST::REST_PROBLEM_OPTION );
@@ -88,6 +131,18 @@ if ( is_array( $sccm_failure ) && time() - (int) $sccm_failure['time'] < WEEK_IN
 				<option value="<?php echo esc_attr( $sccm_value ); ?>" <?php selected( $sccm_filters['choice'] ?? '', $sccm_value ); ?>><?php echo esc_html( $sccm_label ); ?></option>
 			<?php endforeach; ?>
 		</select></label>
+	<label><span class="screen-reader-text"><?php esc_html_e( 'Banner version', 'smart-cookie-consent-manager' ); ?></span>
+		<select name="version">
+			<option value=""><?php esc_html_e( 'All banner versions', 'smart-cookie-consent-manager' ); ?></option>
+			<?php foreach ( array_keys( $sccm_versions ) as $sccm_v ) : ?>
+				<option value="<?php echo (int) $sccm_v; ?>" <?php selected( (int) ( $sccm_filters['version'] ?? 0 ), $sccm_v ); ?>>
+					<?php
+					/* translators: %d: banner version */
+					printf( esc_html__( 'Banner version %d', 'smart-cookie-consent-manager' ), (int) $sccm_v );
+					?>
+				</option>
+			<?php endforeach; ?>
+		</select></label>
 	<label><?php esc_html_e( 'From', 'smart-cookie-consent-manager' ); ?> <input type="date" name="from" value="<?php echo esc_attr( $sccm_filters['from'] ?? '' ); ?>"></label>
 	<label><?php esc_html_e( 'To', 'smart-cookie-consent-manager' ); ?> <input type="date" name="to" value="<?php echo esc_attr( $sccm_filters['to'] ?? '' ); ?>"></label>
 	<button class="button"><?php esc_html_e( 'Filter', 'smart-cookie-consent-manager' ); ?></button>
@@ -113,7 +168,7 @@ if ( is_array( $sccm_failure ) && time() - (int) $sccm_failure['time'] < WEEK_IN
 		<th><?php esc_html_e( 'Choice', 'smart-cookie-consent-manager' ); ?></th>
 		<th><?php esc_html_e( 'Categories', 'smart-cookie-consent-manager' ); ?></th>
 		<th><?php esc_html_e( 'GPC', 'smart-cookie-consent-manager' ); ?></th>
-		<th><?php esc_html_e( 'Version', 'smart-cookie-consent-manager' ); ?></th>
+		<th><abbr title="<?php echo esc_attr( $sccm_version_help ); ?>"><?php esc_html_e( 'Banner version', 'smart-cookie-consent-manager' ); ?></abbr></th>
 		<th><?php esc_html_e( 'Page', 'smart-cookie-consent-manager' ); ?></th>
 		<th><?php esc_html_e( 'IP', 'smart-cookie-consent-manager' ); ?></th>
 	</tr></thead>
@@ -128,7 +183,12 @@ if ( is_array( $sccm_failure ) && time() - (int) $sccm_failure['time'] < WEEK_IN
 			<td><?php echo esc_html( $sccm_choices[ $sccm_row['choice'] ] ?? $sccm_row['choice'] ); ?></td>
 			<td><?php echo esc_html( implode( ', ', array_map( array( 'SCCM_Categories', 'label' ), explode( ',', $sccm_row['categories'] ) ) ) ); ?></td>
 			<td><?php echo $sccm_row['gpc'] ? esc_html__( 'Yes', 'smart-cookie-consent-manager' ) : esc_html__( 'No', 'smart-cookie-consent-manager' ); ?></td>
-			<td><?php echo (int) $sccm_row['consent_version']; ?></td>
+			<td>
+				<?php echo (int) $sccm_row['consent_version']; ?>
+				<?php if ( (int) $sccm_row['consent_version'] < $sccm_current ) : ?>
+					<span class="sccm-pill sccm-pill--old" title="<?php esc_attr_e( 'Agreed to an older banner version: this visitor is asked again on their next visit.', 'smart-cookie-consent-manager' ); ?>"><?php esc_html_e( 'older', 'smart-cookie-consent-manager' ); ?></span>
+				<?php endif; ?>
+			</td>
 			<td class="sccm-break"><?php echo esc_html( wp_parse_url( $sccm_row['url'], PHP_URL_PATH ) ?? '' ); ?></td>
 			<td><?php echo esc_html( $sccm_row['ip'] ); ?></td>
 		</tr>

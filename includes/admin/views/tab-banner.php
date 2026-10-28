@@ -44,6 +44,7 @@ $sccm_text_groups = array(
 		'consent_status'    => __( '"Your current choice" label', 'smart-cookie-consent-manager' ),
 		'consent_date'      => __( '"Date" label', 'smart-cookie-consent-manager' ),
 		'consent_id'        => __( '"Your consent ID" label', 'smart-cookie-consent-manager' ),
+		'consent_version'   => __( '"Banner version" label', 'smart-cookie-consent-manager' ),
 		'no_choice'         => __( 'No choice made yet', 'smart-cookie-consent-manager' ),
 		'copy'              => __( 'Copy button', 'smart-cookie-consent-manager' ),
 		'copied'            => __( 'Copied message', 'smart-cookie-consent-manager' ),

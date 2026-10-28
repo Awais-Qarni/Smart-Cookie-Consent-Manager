@@ -159,6 +159,7 @@ const browser = await launch();
 	await page.click('#sccm-tab-about');
 	const status = await page.textContent('#sccm-prefs .sccm-status');
 	check('H1 About tab shows the consent ID, choice and date', status.includes(c1.id) && /Allowed all cookies/.test(status) && /Date:/.test(status), status.trim().slice(0, 90));
+	check('H1 About tab shows the banner version the choice belongs to (the number in Consent Records)', status.includes('Banner version: ' + c1.v), status.replace(/\s+/g, ' ').slice(0, 160));
 	check('H1 consent ID can be copied', await page.isVisible('#sccm-prefs .sccm-copy'));
 	check('H1 consent ID exposed to developers (SCCM.getConsentId)', (await page.evaluate(() => window.SCCM.getConsentId())) === c1.id);
 	await page.click('#sccm-tab-consent');

@@ -7,13 +7,45 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.2.3 (1.2.x is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.3.0 (1.2.x is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
-- **Phase:** 5b done (see `ROADMAP.md`); production hotfix 1.2.1
-- **Last updated:** 2026-10-27 (session 9)
-- **Tests:** unit 33, WP-CLI 176, visitor e2e 115, admin e2e 83, all passing on **MySQL 8.4
+- **Phase:** 5b done (see `ROADMAP.md`); 1.3.0 admin redesign after production feedback
+- **Last updated:** 2026-10-28 (session 10)
+- **Tests:** unit 33, WP-CLI 188, visitor e2e 116, admin e2e 100, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-10-28 — Session 10 (1.3.0: admin redesign, banner version, audit)
+
+**Owner's requests (production feedback)**
+1. Daily email with "0 / 0" for `www.google.com`: it was a `<link rel="preconnect">` hint.
+   Hints (preconnect, dns-prefetch) are no longer third-party files (`analyse_html()`); the
+   email leads with "N new third-party file(s)" when only files changed, uses the admin name
+   "Other third-party files" and says where to look.
+2. Menu "Compliance" with a flyout submenu per tab (`add_submenu_page` links to `&tab=`,
+   `submenu_file` filter); page title "Smart Cookie Consent Manager".
+3. Help as the last tab (`views/tab-help.php`, `help.php` removed); "How it works" and the
+   developer reference moved there; old `#help` links redirect.
+4. Dashboard redesign with inline SVG charts (`SCCM_Admin_Charts`; data from
+   `SCCM_Consent_Log::daily()`, `category_counts()`).
+5. "Version" → "Banner version" everywhere: history option `sccm_version_history`
+   (`bump_version( $reason )`, `version_note()`), Records box/filter/"older" mark, About tab,
+   Tools, Dashboard, CSV `banner_version`.
+6. Security audit + code quality: all admin-post / AJAX handlers check cap + nonce (18/18 +
+   4); every query prepared; output escaped (SVG helpers escape every value). Fixed: records
+   claiming a future banner version, array values in records/reports/scan reports (PHP
+   warnings), reports from logged-in users now ignored server-side, import size/row limits.
+   Quality: one shared `SCCM_Consent_Log::WHERE`, keyset-paged CSV, `SCCM_Admin::current_tab()`,
+   unused CSS (`.sccm-bars`, `.sccm-steps`, help panel) removed.
+
+**Notes:** the first WP-CLI run had 4 failures caused by an overdue WP-Cron scan running at the
+same time on the dev site (scan lock held, its version bump in between); re-runs 188/188.
+`bump_version()` is read-modify-write: two simultaneous bumps can share a number (rare,
+harmless; not changed).
+
+**Next:** owner installs 1.3.0, checks the menu, Help, Dashboard and Consent Records.
 
 ---
 

@@ -38,6 +38,11 @@ class SCCM_Cookies {
 	const BROWSER_ONLY_OPTION = 'sccm_browser_only';
 
 	/**
+	 * Date and reason of every banner version (see bump_version()).
+	 */
+	const VERSION_HISTORY_OPTION = 'sccm_version_history';
+
+	/**
 	 * Different visitors that must report an unknown cookie before it is listed.
 	 */
 	const MIN_VISITORS = 2; // Default of the setting learn_visitors (see min_visitors()).
@@ -738,11 +743,12 @@ class SCCM_Cookies {
 		return (int) self::bulk(
 			function () use ( $rows ) {
 				$count = 0;
-				foreach ( $rows as $row ) {
-					if ( ! is_array( $row ) || empty( $row['name'] ) ) {
+				// At most 2000 rows: far more than any real cookie list.
+				foreach ( array_slice( $rows, 0, 2000 ) as $row ) {
+					if ( ! is_array( $row ) || empty( $row['name'] ) || ! is_string( $row['name'] ) ) {
 						continue;
 					}
-					$type = isset( $row['type'] ) ? $row['type'] : 'cookie';
+					$type = isset( $row['type'] ) && is_string( $row['type'] ) ? $row['type'] : 'cookie';
 					if ( self::find_exact( $row['name'], $type ) ) {
 						continue;
 					}
@@ -781,13 +787,22 @@ class SCCM_Cookies {
 	}
 
 	/**
-	 * Increase the consent version so every visitor is asked again.
+	 * Increase the banner (consent) version so every visitor is asked again. Each version is noted
+	 * with its date and reason (see version_history()), so a consent record can be matched to the
+	 * cookie list the visitor agreed to.
 	 *
+	 * @param string $reason Why: 'cookies' (the cookie list changed) or 'manual' ("Ask everyone again").
 	 * @return int New version.
 	 */
-	public static function bump_version() {
+	public static function bump_version( $reason = 'cookies' ) {
 		$version = (int) get_option( 'sccm_consent_version', 1 ) + 1;
 		update_option( 'sccm_consent_version', $version );
+		$history             = self::version_history();
+		$history[ $version ] = array(
+			't' => time(),
+			'r' => 'manual' === $reason ? 'manual' : 'cookies',
+		);
+		update_option( self::VERSION_HISTORY_OPTION, array_slice( $history, -100, null, true ), false );
 		/**
 		 * Fires after the consent version changes (e.g. to purge page caches).
 		 *
@@ -795,6 +810,34 @@ class SCCM_Cookies {
 		 */
 		do_action( 'sccm_consent_version_changed', $version );
 		return $version;
+	}
+
+	/**
+	 * When each banner version started and why: version => array( t: timestamp, r: reason ).
+	 * Versions from before 1.3.0 (and version 1) have no entry.
+	 *
+	 * @return array
+	 */
+	public static function version_history() {
+		$history = get_option( self::VERSION_HISTORY_OPTION, array() );
+		return is_array( $history ) ? $history : array();
+	}
+
+	/**
+	 * One line about a banner version for the admin screens, e.g. "since 27 Oct 2026, the
+	 * cookie list changed".
+	 *
+	 * @param int $version Version.
+	 * @return string Empty when nothing is known about it.
+	 */
+	public static function version_note( $version ) {
+		$entry = self::version_history()[ (int) $version ] ?? null;
+		if ( ! $entry ) {
+			return 1 === (int) $version ? __( 'the first version', 'smart-cookie-consent-manager' ) : '';
+		}
+		$why = 'manual' === $entry['r'] ? __( 'you asked everyone again', 'smart-cookie-consent-manager' ) : __( 'the cookie list changed', 'smart-cookie-consent-manager' );
+		/* translators: 1: date, 2: reason */
+		return sprintf( __( 'since %1$s, %2$s', 'smart-cookie-consent-manager' ), wp_date( get_option( 'date_format' ), (int) $entry['t'] ), $why );
 	}
 
 	/**
