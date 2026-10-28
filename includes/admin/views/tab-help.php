@@ -111,8 +111,9 @@ $sccm_version = (int) get_option( 'sccm_consent_version', 1 );
 				<?php
 				sccm_help_list(
 					array(
-						__( 'Status', 'smart-cookie-consent-manager' )                 => __( 'Whether the banner is live, Google Consent Mode, the current banner version and the last scan. Preview banner opens your website with the banner showing, even if you already chose yourself. Switch off turns the whole system off: no banner, nothing blocked.', 'smart-cookie-consent-manager' ),
-						__( 'Needs your attention', 'smart-cookie-consent-manager' )   => __( 'A short to-do list. Each line says what is missing and has one button to fix it.', 'smart-cookie-consent-manager' ),
+						__( 'Needs your attention', 'smart-cookie-consent-manager' )   => __( 'A short to-do list, shown only when something is to do. Each line says what is missing and has one button to fix it.', 'smart-cookie-consent-manager' ),
+						__( 'Cookie banner', 'smart-cookie-consent-manager' )          => __( 'Whether the banner is live, Google Consent Mode, the privacy signal and the current banner version. Preview banner opens your website with the banner showing, even if you already chose yourself. Switch off turns the whole system off: no banner, nothing blocked (the Dashboard then shows a Switch on button first).', 'smart-cookie-consent-manager' ),
+						__( 'Cookie scan', 'smart-cookie-consent-manager' )            => __( 'When your website was last scanned, what was found, what waits for your review and when the next automatic scan runs.', 'smart-cookie-consent-manager' ),
 						__( 'Visitor choices', 'smart-cookie-consent-manager' )        => __( 'How visitors answered in the last 30 days: a chart per day and the share of each answer. "Allowed all" is the acceptance rate.', 'smart-cookie-consent-manager' ),
 						__( 'Allowed per category', 'smart-cookie-consent-manager' )   => __( 'Out of all choices, how many allowed Preferences, Statistics and Marketing.', 'smart-cookie-consent-manager' ),
 						__( 'Cookies on your site', 'smart-cookie-consent-manager' )   => __( 'How many cookies your banner lists, per category.', 'smart-cookie-consent-manager' ),

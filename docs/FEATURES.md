@@ -131,6 +131,9 @@ a choice brings the banner back), and again later, centred, with a close button.
 - [ ] Preferences window lists cookies per category (from the registry).
 - [ ] Shortcode `[sccm_cookie_policy]` outputs a full table grouped by category; one-click
       "Create Cookie Policy page" in the admin; both update automatically.
+- [ ] Never a second Cookie Policy page: when no page is linked (reinstall after "delete all
+      data", settings reset), an existing published page with the shortcode is linked again on
+      activation, on the Dashboard and by "Create the page". Uninstall never deletes the page.
 - [ ] Each cookie shows the duration the site really gives it (measured by the scans; typed-in
       values win); local storage says "No expiry date"; the consent cookie follows "Ask again after".
 

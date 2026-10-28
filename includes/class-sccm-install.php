@@ -69,6 +69,10 @@ class SCCM_Install {
 		if ( false === get_option( 'sccm_consent_version' ) ) {
 			add_option( 'sccm_consent_version', 1 );
 		}
+		// A Cookie Policy page from an earlier install is linked again (never a second page).
+		if ( class_exists( 'SCCM_Shortcodes', false ) ) {
+			SCCM_Shortcodes::policy_page();
+		}
 
 		$previous = get_option( self::DB_VERSION_OPTION );
 		SCCM_Cookies::seed_defaults();

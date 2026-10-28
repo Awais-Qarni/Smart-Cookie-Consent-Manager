@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Cookie Consent Manager 1.3.0\n"
+"Project-Id-Version: Smart Cookie Consent Manager 1.3.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/claude things\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-28T16:50:10+00:00\n"
+"POT-Creation-Date: 2026-10-28T18:05:11+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: smart-cookie-consent-manager\n"
@@ -48,35 +48,35 @@ msgid "Dashboard"
 msgstr ""
 
 #: includes/admin/class-sccm-admin.php:47
-#: includes/admin/views/tab-help.php:125
+#: includes/admin/views/tab-help.php:126
 #: includes/class-sccm-settings.php:157
 msgid "Cookies"
 msgstr ""
 
 #: includes/admin/class-sccm-admin.php:48
-#: includes/admin/views/tab-help.php:143
+#: includes/admin/views/tab-help.php:144
 msgid "Banner"
 msgstr ""
 
 #: includes/admin/class-sccm-admin.php:49
 #: includes/admin/class-sccm-admin.php:185
-#: includes/admin/views/tab-help.php:162
+#: includes/admin/views/tab-help.php:163
 #: includes/admin/views/tab-records.php:221
 msgid "Settings"
 msgstr ""
 
 #: includes/admin/class-sccm-admin.php:50
-#: includes/admin/views/tab-help.php:183
+#: includes/admin/views/tab-help.php:184
 msgid "Consent Records"
 msgstr ""
 
 #: includes/admin/class-sccm-admin.php:51
-#: includes/admin/views/tab-help.php:199
+#: includes/admin/views/tab-help.php:200
 msgid "Tools"
 msgstr ""
 
 #: includes/admin/class-sccm-admin.php:52
-#: includes/admin/views/tab-dashboard.php:280
+#: includes/admin/views/tab-dashboard.php:267
 #: includes/admin/views/tab-tools.php:60
 msgid "Help"
 msgstr ""
@@ -336,20 +336,26 @@ msgstr ""
 msgid "Banner version is now %d. Every visitor will be asked again. Supported page caches are cleared automatically; clear any other cache or CDN yourself."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:965
+#. translators: %s: page title
+#: includes/admin/class-sccm-admin.php:967
+#, php-format
+msgid "Your existing Cookie Policy page \"%s\" was found and linked in the banner. No new page was created."
+msgstr ""
+
+#: includes/admin/class-sccm-admin.php:971
 #: includes/class-sccm-settings.php:154
 msgid "Cookie Policy"
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:966
+#: includes/admin/class-sccm-admin.php:972
 msgid "This page explains which cookies this website uses and why. You can change your choice at any time."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:976
+#: includes/admin/class-sccm-admin.php:982
 msgid "Cookie Policy page created and linked in the banner."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:988
+#: includes/admin/class-sccm-admin.php:995
 msgid "Settings reset to defaults."
 msgstr ""
 
@@ -530,7 +536,7 @@ msgid "Blocked video/map button"
 msgstr ""
 
 #: includes/admin/views/tab-banner.php:71
-#: includes/admin/views/tab-help.php:147
+#: includes/admin/views/tab-help.php:148
 msgid "Where should the banner appear?"
 msgstr ""
 
@@ -555,7 +561,7 @@ msgid "Window in the centre"
 msgstr ""
 
 #: includes/admin/views/tab-banner.php:90
-#: includes/admin/views/tab-help.php:148
+#: includes/admin/views/tab-help.php:149
 msgid "Banner style"
 msgstr ""
 
@@ -572,7 +578,7 @@ msgid "In the compact style, \"Customize\" opens the detailed window with the ca
 msgstr ""
 
 #: includes/admin/views/tab-banner.php:100
-#: includes/admin/views/tab-help.php:150
+#: includes/admin/views/tab-help.php:151
 msgid "Button order"
 msgstr ""
 
@@ -585,7 +591,7 @@ msgid "Preview the banner on your website (save first)"
 msgstr ""
 
 #: includes/admin/views/tab-banner.php:111
-#: includes/admin/views/tab-help.php:151
+#: includes/admin/views/tab-help.php:152
 msgid "Cookie settings button"
 msgstr ""
 
@@ -690,7 +696,7 @@ msgid "Uses the page chosen in Settings → Privacy."
 msgstr ""
 
 #: includes/admin/views/tab-banner.php:169
-#: includes/admin/views/tab-help.php:153
+#: includes/admin/views/tab-help.php:154
 msgid "Category names and descriptions"
 msgstr ""
 
@@ -766,7 +772,7 @@ msgstr ""
 
 #: includes/admin/views/tab-cookies.php:50
 #: includes/admin/views/tab-cookies.php:252
-#: includes/admin/views/tab-help.php:134
+#: includes/admin/views/tab-help.php:135
 msgid "Add a cookie by hand"
 msgstr ""
 
@@ -777,7 +783,7 @@ msgstr ""
 #: includes/admin/views/tab-cookies.php:58
 #: includes/admin/views/tab-cookies.php:132
 #: includes/admin/views/tab-cookies.php:313
-#: includes/admin/views/tab-help.php:301
+#: includes/admin/views/tab-help.php:302
 #: includes/admin/views/tab-settings.php:118
 #: includes/admin/views/tab-settings.php:142
 msgid "Category"
@@ -812,7 +818,7 @@ msgid "Type"
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:77
-#: includes/admin/views/tab-help.php:114
+#: includes/admin/views/tab-dashboard.php:242
 msgid "Status"
 msgstr ""
 
@@ -821,7 +827,7 @@ msgid "Shown to visitors"
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:80
-#: includes/admin/views/tab-help.php:302
+#: includes/admin/views/tab-help.php:303
 #: includes/class-sccm-scanner.php:1312
 msgid "Needs review"
 msgstr ""
@@ -869,7 +875,7 @@ msgid "Choose a category…"
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:139
-#: includes/admin/views/tab-help.php:130
+#: includes/admin/views/tab-help.php:131
 msgid "Approve"
 msgstr ""
 
@@ -878,7 +884,8 @@ msgid "Ignore"
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:152
-#: includes/admin/views/tab-dashboard.php:247
+#: includes/admin/views/tab-dashboard.php:212
+#: includes/admin/views/tab-help.php:116
 msgid "Cookie scan"
 msgstr ""
 
@@ -920,8 +927,8 @@ msgstr ""
 
 #: includes/admin/views/tab-cookies.php:193
 #: includes/admin/views/tab-dashboard.php:56
-#: includes/admin/views/tab-dashboard.php:270
-#: includes/admin/views/tab-help.php:132
+#: includes/admin/views/tab-dashboard.php:235
+#: includes/admin/views/tab-help.php:133
 msgid "Scan now"
 msgstr ""
 
@@ -985,7 +992,7 @@ msgid "Hidden from visitors and never reported again. Click Edit to bring one ba
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:302
-#: includes/admin/views/tab-help.php:136
+#: includes/admin/views/tab-help.php:137
 msgid "Scan report (details)"
 msgstr ""
 
@@ -1007,7 +1014,7 @@ msgid "Found in"
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:326
-#: includes/admin/views/tab-dashboard.php:258
+#: includes/admin/views/tab-dashboard.php:223
 #: includes/class-sccm-scanner.php:1334
 msgid "Other third-party files"
 msgstr ""
@@ -1029,7 +1036,7 @@ msgid "Example"
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:344
-#: includes/admin/views/tab-dashboard.php:256
+#: includes/admin/views/tab-dashboard.php:221
 msgid "Pages checked"
 msgstr ""
 
@@ -1116,164 +1123,168 @@ msgid "Denied"
 msgstr ""
 
 #: includes/admin/views/tab-dashboard.php:95
-#: includes/admin/views/tab-dashboard.php:123
+#: includes/admin/views/tab-dashboard.php:244
 msgid "Privacy signal (GPC)"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:108
-msgid "Your cookie banner is live"
+#: includes/admin/views/tab-dashboard.php:107
+msgid "Your cookie banner is switched off."
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:108
-msgid "Your cookie banner is switched off"
+#: includes/admin/views/tab-dashboard.php:107
+msgid "Visitors see no banner and nothing is blocked. Switch it on to collect consent."
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:113
-msgid "New visitors see the banner. Analytics, marketing and other non-essential scripts stay blocked until they choose."
-msgstr ""
-
-#: includes/admin/views/tab-dashboard.php:114
-msgid "Visitors see no banner and nothing is blocked. Switch it on to start collecting consent."
-msgstr ""
-
-#: includes/admin/views/tab-dashboard.php:119
-#: includes/admin/views/tab-help.php:171
-#: includes/admin/views/tab-help.php:304
-msgid "Google Consent Mode"
-msgstr ""
-
-#: includes/admin/views/tab-dashboard.php:124
-msgid "honoured"
-msgstr ""
-
-#: includes/admin/views/tab-dashboard.php:124
-msgid "off"
-msgstr ""
-
-#. translators: %d: banner version
-#: includes/admin/views/tab-dashboard.php:130
-#: includes/admin/views/tab-records.php:141
-#, php-format
-msgid "Banner version %d"
-msgstr ""
-
-#: includes/admin/views/tab-dashboard.php:140
-msgid "Preview banner"
-msgstr ""
-
-#: includes/admin/views/tab-dashboard.php:143
-msgid "Switch off"
-msgstr ""
-
-#: includes/admin/views/tab-dashboard.php:143
+#: includes/admin/views/tab-dashboard.php:110
 msgid "Switch on"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:149
-#: includes/admin/views/tab-help.php:115
+#: includes/admin/views/tab-dashboard.php:117
+#: includes/admin/views/tab-help.php:114
 msgid "Needs your attention"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:151
-msgid "Everything looks good. Nothing to do right now."
-msgstr ""
-
-#: includes/admin/views/tab-dashboard.php:174
+#: includes/admin/views/tab-dashboard.php:139
 msgid "Visitor choices, last 30 days"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:175
+#: includes/admin/views/tab-dashboard.php:140
 msgid "See every record"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:179
+#: includes/admin/views/tab-dashboard.php:144
 msgid "choices made"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:180
+#: includes/admin/views/tab-dashboard.php:145
 msgid "allowed all (acceptance rate)"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:181
+#: includes/admin/views/tab-dashboard.php:146
 msgid "allowed a selection"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:182
+#: includes/admin/views/tab-dashboard.php:147
 msgid "denied (incl. privacy signal)"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:186
+#: includes/admin/views/tab-dashboard.php:151
 msgid "Visitor choices per day, last 30 days"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:199
+#: includes/admin/views/tab-dashboard.php:164
 msgid "allowed all"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:199
+#: includes/admin/views/tab-dashboard.php:164
 msgid "Share of each choice, last 30 days"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:204
+#: includes/admin/views/tab-dashboard.php:169
 msgid "No choices recorded in the last 30 days. They appear here as soon as visitors use the banner. To test, open your website in a private window and click a button."
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:210
-#: includes/admin/views/tab-help.php:117
+#: includes/admin/views/tab-dashboard.php:175
+#: includes/admin/views/tab-help.php:118
 msgid "Allowed per category"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:221
+#: includes/admin/views/tab-dashboard.php:186
 msgid "Out of all choices in the last 30 days. Necessary cookies are always allowed."
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:223
+#: includes/admin/views/tab-dashboard.php:188
 msgid "No choices yet."
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:228
-#: includes/admin/views/tab-help.php:118
+#: includes/admin/views/tab-dashboard.php:193
+#: includes/admin/views/tab-help.php:119
 msgid "Cookies on your site"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:235
+#: includes/admin/views/tab-dashboard.php:200
 msgid "cookie"
 msgid_plural "cookies"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/admin/views/tab-dashboard.php:235
+#: includes/admin/views/tab-dashboard.php:200
 msgid "Cookies in your banner by category"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:243
+#: includes/admin/views/tab-dashboard.php:208
 msgid "Open the cookie list"
 msgstr ""
 
 #. translators: %s: time span like "4 hours"
-#: includes/admin/views/tab-dashboard.php:252
+#: includes/admin/views/tab-dashboard.php:217
 #, php-format
 msgid "%s ago"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:257
+#: includes/admin/views/tab-dashboard.php:222
 msgid "Services found"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:259
+#: includes/admin/views/tab-dashboard.php:224
 msgid "Waiting for your review"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:262
+#: includes/admin/views/tab-dashboard.php:227
 msgid "Next automatic scan"
 msgstr ""
 
-#: includes/admin/views/tab-dashboard.php:266
+#: includes/admin/views/tab-dashboard.php:231
 msgid "No scan yet."
 msgstr ""
 
+#: includes/admin/views/tab-dashboard.php:240
+#: includes/admin/views/tab-help.php:115
+msgid "Cookie banner"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:242
+msgid "Live"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:242
+msgid "Switched off"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:243
+#: includes/admin/views/tab-help.php:172
+#: includes/admin/views/tab-help.php:305
+msgid "Google Consent Mode"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:244
+msgid "honoured"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:244
+msgid "off"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:246
+#: includes/admin/views/tab-help.php:47
+#: includes/admin/views/tab-help.php:301
+#: includes/admin/views/tab-records.php:43
+#: includes/admin/views/tab-records.php:134
+#: includes/admin/views/tab-records.php:171
+#: includes/class-sccm-settings.php:163
+msgid "Banner version"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:251
+msgid "Preview banner"
+msgstr ""
+
+#: includes/admin/views/tab-dashboard.php:255
+msgid "Switch off"
+msgstr ""
+
 #. translators: %s: link to the Help tab
-#: includes/admin/views/tab-dashboard.php:279
+#: includes/admin/views/tab-dashboard.php:266
 #, php-format
 msgid "New here? The %s page explains how everything works, step by step."
 msgstr ""
@@ -1288,15 +1299,6 @@ msgstr ""
 
 #: includes/admin/views/tab-help.php:46
 msgid "Every tab explained"
-msgstr ""
-
-#: includes/admin/views/tab-help.php:47
-#: includes/admin/views/tab-help.php:300
-#: includes/admin/views/tab-records.php:43
-#: includes/admin/views/tab-records.php:134
-#: includes/admin/views/tab-records.php:171
-#: includes/class-sccm-settings.php:163
-msgid "Banner version"
 msgstr ""
 
 #: includes/admin/views/tab-help.php:48
@@ -1416,522 +1418,526 @@ msgid "Every visitor gets the same page; the banner and the visitor's choice are
 msgstr ""
 
 #: includes/admin/views/tab-help.php:114
-msgid "Whether the banner is live, Google Consent Mode, the current banner version and the last scan. Preview banner opens your website with the banner showing, even if you already chose yourself. Switch off turns the whole system off: no banner, nothing blocked."
+msgid "A short to-do list, shown only when something is to do. Each line says what is missing and has one button to fix it."
 msgstr ""
 
 #: includes/admin/views/tab-help.php:115
-msgid "A short to-do list. Each line says what is missing and has one button to fix it."
+msgid "Whether the banner is live, Google Consent Mode, the privacy signal and the current banner version. Preview banner opens your website with the banner showing, even if you already chose yourself. Switch off turns the whole system off: no banner, nothing blocked (the Dashboard then shows a Switch on button first)."
 msgstr ""
 
 #: includes/admin/views/tab-help.php:116
-msgid "Visitor choices"
-msgstr ""
-
-#: includes/admin/views/tab-help.php:116
-msgid "How visitors answered in the last 30 days: a chart per day and the share of each answer. \"Allowed all\" is the acceptance rate."
+msgid "When your website was last scanned, what was found, what waits for your review and when the next automatic scan runs."
 msgstr ""
 
 #: includes/admin/views/tab-help.php:117
-msgid "Out of all choices, how many allowed Preferences, Statistics and Marketing."
+msgid "Visitor choices"
+msgstr ""
+
+#: includes/admin/views/tab-help.php:117
+msgid "How visitors answered in the last 30 days: a chart per day and the share of each answer. \"Allowed all\" is the acceptance rate."
 msgstr ""
 
 #: includes/admin/views/tab-help.php:118
+msgid "Out of all choices, how many allowed Preferences, Statistics and Marketing."
+msgstr ""
+
+#: includes/admin/views/tab-help.php:119
 msgid "How many cookies your banner lists, per category."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:129
+#: includes/admin/views/tab-help.php:130
 msgid "Needs your review"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:129
+#: includes/admin/views/tab-help.php:130
 msgid "Cookies the scan found but could not recognise. Nothing is shown to visitors until you decide. \"Only found in your browser\" means none of your pages set it during the scan: it probably comes from your admin tools or a browser extension."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:130
+#: includes/admin/views/tab-help.php:131
 msgid "Choose a category, then click Approve. The cookie joins the list visitors see. If \"Ask again when the cookie list changes\" is on, this starts a new banner version."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:131
+#: includes/admin/views/tab-help.php:132
 msgid "Ignore / Ignore all"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:131
+#: includes/admin/views/tab-help.php:132
 msgid "Hides a cookie that is not part of your website. It is not reported again."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:132
+#: includes/admin/views/tab-help.php:133
 msgid "Two steps. First the server reads your pages like a first-time visitor (all pages of a small website; 40 to 80 of a big one, main pages first). Then the same pages open in hidden frames in your own browser with everything allowed, so cookies set by scripts and embedded services are found too. Cookies your browser already had count only if a page sets them. It takes one to two minutes; if you leave the page, it continues the next time you open a plugin screen."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:133
+#: includes/admin/views/tab-help.php:134
 msgid "Your cookie list"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:133
+#: includes/admin/views/tab-help.php:134
 msgid "Everything visitors see, grouped by category. \"Automatic\" means the plugin added it, \"Added by you\" means you did. Edit changes category, provider, purpose or duration; Delete removes it."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:134
+#: includes/admin/views/tab-help.php:135
 msgid "For cookies a scan cannot see. A * in the name matches anything, so _ga_* covers _ga_ABC123."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:135
+#: includes/admin/views/tab-help.php:136
 msgid "Add all cookies of a known service"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:135
+#: includes/admin/views/tab-help.php:136
 msgid "Adds the usual cookies of a service such as Google Analytics in one click."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:136
+#: includes/admin/views/tab-help.php:137
 msgid "Services found on your pages, \"Other third-party files\" (files from other websites the plugin does not know, so they are not blocked) and the pages checked. The daily email points here."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:147
+#: includes/admin/views/tab-help.php:148
 msgid "A bar at the bottom or top, a box in a corner, or a window in the centre of the page."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:148
+#: includes/admin/views/tab-help.php:149
 msgid "Compact (default): your text and Allow all, Deny and Customize. Detailed: the window with tabs opens straight away."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:149
+#: includes/admin/views/tab-help.php:150
 msgid "What visitors see"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:149
+#: includes/admin/views/tab-help.php:150
 msgid "The detailed window has three tabs. Consent: your text and a switch per category. Details: every category with its providers and cookies. About: what cookies are, and the visitor's own choice, date, consent ID and banner version."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:150
+#: includes/admin/views/tab-help.php:151
 msgid "Four orders to choose from. Allow all, Deny and Allow selection always look exactly the same, which is what makes any order fair."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:151
+#: includes/admin/views/tab-help.php:152
 msgid "A small button visible after the choice, so visitors can change their mind: a round icon in a corner, or a slim \"Cookies\" tab at the bottom or on an edge."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:152
+#: includes/admin/views/tab-help.php:153
 msgid "Colours and rounded corners"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:152
+#: includes/admin/views/tab-help.php:153
 msgid "Match the banner to your brand. Accept and Reject always share one style."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:153
+#: includes/admin/views/tab-help.php:154
 msgid "Rename a category, rewrite its description, or hide one your website does not need."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:154
+#: includes/admin/views/tab-help.php:155
 msgid "Words visitors see"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:154
+#: includes/admin/views/tab-help.php:155
 msgid "Every sentence and button label. Leave a field empty to keep the default, which is translated automatically."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:155
+#: includes/admin/views/tab-help.php:156
 msgid "Custom CSS"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:155
+#: includes/admin/views/tab-help.php:156
 msgid "Extra styles for the banner. Classes start with sccm-."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:166
+#: includes/admin/views/tab-help.php:167
 #: includes/admin/views/tab-settings.php:40
 msgid "Remember the choice for"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:166
+#: includes/admin/views/tab-help.php:167
 msgid "How long a visitor is left alone before the banner shows again (at most 395 days, browsers do not keep a cookie longer; 0 forgets the choice when the browser closes)."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:167
+#: includes/admin/views/tab-help.php:168
 #: includes/admin/views/tab-settings.php:55
 msgid "Ask again when the cookie list changes"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:167
+#: includes/admin/views/tab-help.php:168
 msgid "A new cookie in the list, or a cookie moved to another category, starts a new banner version, so visitors who agreed to the older list are asked again. A scan that finds nothing new never asks again."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:168
+#: includes/admin/views/tab-help.php:169
 msgid "Do not ask again after a Reject"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:168
+#: includes/admin/views/tab-help.php:169
 msgid "A waiting period (in days) after a visitor refuses, so you do not nag them."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:169
+#: includes/admin/views/tab-help.php:170
 #: includes/admin/views/tab-settings.php:57
 msgid "Reload the page when consent is withdrawn"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:169
+#: includes/admin/views/tab-help.php:170
 #: includes/admin/views/tab-settings.php:57
 msgid "A script that already ran cannot be stopped, so the page reloads to stop it."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:170
+#: includes/admin/views/tab-help.php:171
 msgid "Browser privacy signal (GPC)"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:170
+#: includes/admin/views/tab-help.php:171
 msgid "Some browsers send \"do not sell or share my data\". It is honoured: the chosen categories stay off, no banner is shown, and the choice is recorded."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:171
+#: includes/admin/views/tab-help.php:172
 msgid "Tells Google Analytics and Google Ads what the visitor allowed. Strict blocks Google tags until consent; Advanced lets them load without cookies. Leave it on Strict unless your marketing team asks."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:172
+#: includes/admin/views/tab-help.php:173
 msgid "Google Tag Manager / Analytics ID"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:172
+#: includes/admin/views/tab-help.php:173
 msgid "Optional. Enter an ID and the plugin loads the tag with correct consent handling. Leave it empty if your theme or another plugin already adds it."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:173
+#: includes/admin/views/tab-help.php:174
 msgid "Automatic blocking and your own rules"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:173
+#: includes/admin/views/tab-help.php:174
 msgid "Switches off scripts, videos, maps and fonts of known services until the visitor allows their category. Add an address under \"Your own blocking rules\" to block something the plugin does not know."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:174
+#: includes/admin/views/tab-help.php:175
 msgid "Scan my website / Learn from visitors"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:174
+#: includes/admin/views/tab-help.php:175
 msgid "How often your website is scanned, and whether visitors' browsers may report cookies (names only, never values, never from logged-in users, only after enough different visitors report the same cookie: default 2 within 14 days)."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:175
+#: includes/admin/views/tab-help.php:176
 msgid "Daily email"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:175
+#: includes/admin/views/tab-help.php:176
 msgid "Once a day, at the time you choose, one email when something changed in the last 24 hours: cookies added, cookies waiting for review, or new third-party files. No changes, no email."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:176
+#: includes/admin/views/tab-help.php:177
 msgid "Consent records"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:176
+#: includes/admin/views/tab-help.php:177
 msgid "Whether to keep a record of every choice, how the visitor's IP address is stored (shortened with ***, a one-way code, in full, or not at all), and how many months records are kept."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:187
+#: includes/admin/views/tab-help.php:188
 msgid "The table"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:187
+#: includes/admin/views/tab-help.php:188
 msgid "One line per choice: when (UTC), the consent ID, the choice, the categories allowed, whether a privacy signal was used, the banner version agreed to, the page and the IP address in the form you chose."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:188
+#: includes/admin/views/tab-help.php:189
 msgid "Search and filters"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:188
+#: includes/admin/views/tab-help.php:189
 msgid "Paste a consent ID or an IP address, or filter by choice, banner version or date."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:189
+#: includes/admin/views/tab-help.php:190
 msgid "Banner versions"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:189
+#: includes/admin/views/tab-help.php:190
 msgid "The box at the top lists every banner version with records: when it started, why, and how many records it has."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:190
+#: includes/admin/views/tab-help.php:191
 msgid "Export CSV"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:190
+#: includes/admin/views/tab-help.php:191
 msgid "Downloads the records with your current filters as a spreadsheet file, for audits."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:191
+#: includes/admin/views/tab-help.php:192
 #: includes/admin/views/tab-records.php:229
 msgid "Test record saving"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:191
+#: includes/admin/views/tab-help.php:192
 msgid "Checks that your server accepts records from visitors (a firewall can block them)."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:192
+#: includes/admin/views/tab-help.php:193
 msgid "Delete old / Delete all"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:192
+#: includes/admin/views/tab-help.php:193
 msgid "Removes records older than your retention period, or every record. Deleting all cannot be undone."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:203
+#: includes/admin/views/tab-help.php:204
 #: includes/admin/views/tab-tools.php:22
 msgid "Ask all visitors again"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:203
+#: includes/admin/views/tab-help.php:204
 msgid "Starts a new banner version: everyone sees the banner again, for example after you change how you use cookies."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:204
+#: includes/admin/views/tab-help.php:205
 msgid "Export / Import settings"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:204
+#: includes/admin/views/tab-help.php:205
 msgid "Copies all settings and your cookie list to a file, so you can use the same setup on another website."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:205
+#: includes/admin/views/tab-help.php:206
 #: includes/admin/views/tab-tools.php:46
 msgid "Delete all data when the plugin is deleted"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:205
+#: includes/admin/views/tab-help.php:206
 msgid "Off by default, so your consent records survive. Turn it on only for a clean removal."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:206
+#: includes/admin/views/tab-help.php:207
 #: includes/admin/views/tab-tools.php:51
 msgid "Reset settings to defaults"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:206
+#: includes/admin/views/tab-help.php:207
 msgid "Puts every setting back to how it was at the start. Your cookie list and records are kept."
 msgstr ""
 
 #. translators: %d: current banner version
-#: includes/admin/views/tab-help.php:218
+#: includes/admin/views/tab-help.php:219
 #, php-format
 msgid "Your current banner version is %d."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:220
+#: includes/admin/views/tab-help.php:221
 msgid "The banner version is a number that goes up by one every time visitors must be asked again: when a new cookie joins the list or a cookie changes category (with \"Ask again when the cookie list changes\" on), or when you click \"Ask all visitors again\" in Tools. A visitor whose choice has an older version sees the banner again on their next visit."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:222
+#: includes/admin/views/tab-help.php:223
 msgid "To match a visitor's choice to the cookie list they agreed to:"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:224
+#: includes/admin/views/tab-help.php:225
 msgid "The visitor opens the cookie settings → About tab: it shows their consent ID and banner version."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:225
+#: includes/admin/views/tab-help.php:226
 msgid "Paste the consent ID in Consent Records: the record shows the same banner version."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:226
+#: includes/admin/views/tab-help.php:227
 msgid "The banner version box at the top of Consent Records says when that version started and why. Records marked \"older\" were given before the latest change."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:228
+#: includes/admin/views/tab-help.php:229
 msgid "The CSV export has the same number in its banner_version column. Versions from before plugin version 1.3.0 have no start date."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:233
+#: includes/admin/views/tab-help.php:234
 msgid "Use these in pages, posts, widgets or menus. No coding needed."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:237
+#: includes/admin/views/tab-help.php:238
 msgid "The cookie list, grouped by category, as on the Cookie Policy page. It updates itself."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:238
+#: includes/admin/views/tab-help.php:239
 msgid "Also shows categories that have no cookies yet."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:239
+#: includes/admin/views/tab-help.php:240
 msgid "A link that opens the cookie settings window."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:240
+#: includes/admin/views/tab-help.php:241
 msgid "The same as a button, with your own text (style=\"link\" or style=\"button\")."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:241
+#: includes/admin/views/tab-help.php:242
 msgid "As the address of any link, for example a menu item (Appearance → Menus → Custom link): opens the cookie settings window."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:249
+#: includes/admin/views/tab-help.php:250
 msgid "Run your own code only after consent"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:253
+#: includes/admin/views/tab-help.php:254
 msgid "Runs only after Statistics consent. Categories: functional (Preferences), analytics (Statistics), marketing (Marketing)."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:254
+#: includes/admin/views/tab-help.php:255
 msgid "An external script, loaded after Marketing consent."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:255
+#: includes/admin/views/tab-help.php:256
 msgid "A frame (video, map…) loaded after consent; a placeholder with a \"load\" button is shown before."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:256
+#: includes/admin/views/tab-help.php:257
 msgid "On any tag: the automatic blocking leaves it alone."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:260
+#: includes/admin/views/tab-help.php:261
 msgid "JavaScript"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:264
+#: includes/admin/views/tab-help.php:265
 msgid "True if the visitor allowed this category, false if not."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:265
+#: includes/admin/views/tab-help.php:266
 msgid "The visitor's choice: consent ID (id), banner version (v), time (t), categories (c), method (m); null before a choice."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:266
+#: includes/admin/views/tab-help.php:267
 msgid "Opens the cookie settings window (optional tab: 'details' or 'about')."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:267
+#: includes/admin/views/tab-help.php:268
 msgid "Runs the moment a visitor makes or changes their choice, e.g. to start a tool without reloading the page."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:268
+#: includes/admin/views/tab-help.php:269
 msgid "For Google Tag Manager triggers, with sccm_categories, sccm_method and sccm_consent_id."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:272
+#: includes/admin/views/tab-help.php:273
 msgid "PHP filters and actions (for example sccm_services to add your own service, sccm_client_ip behind a proxy, sccm_cache_purged to clear a CDN) are described in docs/HOOKS.md in the plugin's repository."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:280
+#: includes/admin/views/tab-help.php:281
 msgid "I do not see the banner on my website."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:280
+#: includes/admin/views/tab-help.php:281
 msgid "You probably made a choice already: use Preview banner on the Dashboard, or open the website in a private window. Check that the banner is switched on. After an update or a settings change, clear your page cache and CDN once."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:281
+#: includes/admin/views/tab-help.php:282
 msgid "Consent Records stay empty."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:281
+#: includes/admin/views/tab-help.php:282
 msgid "Records must be switched on (Settings → Consent records). Click \"Test record saving\" in Consent Records: it shows whether a firewall or security plugin blocks the records. Old cached pages still carry the old script, so clear the page cache."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:282
+#: includes/admin/views/tab-help.php:283
 msgid "\"The scan could not finish\" with a reason."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:282
+#: includes/admin/views/tab-help.php:283
 msgid "\"Your login or this page has expired\": reload the page. \"A security plugin, firewall or the host blocked the request\": allow admin-ajax.php for logged-in administrators. \"The server had an error or ran out of time\": try again; if it repeats, check the PHP error log. Short hiccups are retried automatically."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:283
+#: includes/admin/views/tab-help.php:284
 msgid "A cookie under review says \"Only found in your browser\"."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:283
+#: includes/admin/views/tab-help.php:284
 msgid "None of your pages set it during the scan, so it most likely comes from an admin tool (for example a cache plugin's dashboard) or a browser extension. Ignore it if your visitors do not get it. With \"Learn from visitors\" on, such cookies are not listed at all unless real visitors report them."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:284
+#: includes/admin/views/tab-help.php:285
 msgid "The daily email reports a \"new third-party file\"."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:284
+#: includes/admin/views/tab-help.php:285
 msgid "A script, frame or stylesheet from another website that the plugin does not know. Look at its full address in Cookies → Scan report (details) → Other third-party files. If it tracks visitors, add it under Settings → Your own blocking rules; otherwise there is nothing to do."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:285
+#: includes/admin/views/tab-help.php:286
 msgid "A video or map shows a placeholder instead of the content."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:285
+#: includes/admin/views/tab-help.php:286
 msgid "That is intended: YouTube, Google Maps and similar services set cookies, so they wait until the visitor allows their category (Google Maps and YouTube: Marketing). The placeholder has a button to load the content once."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:286
+#: includes/admin/views/tab-help.php:287
 msgid "How do I test the privacy signal (GPC)?"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:286
+#: includes/admin/views/tab-help.php:287
 msgid "Firefox: Settings → Privacy → \"Tell websites not to sell or share my data\"; Brave sends it by default. Open your website: no banner, the chosen categories stay off, and Consent Records shows a GPC record."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:287
+#: includes/admin/views/tab-help.php:288
 msgid "The Dashboard warns about another consent plugin."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:287
+#: includes/admin/views/tab-help.php:288
 msgid "Two banners would block each other. Deactivate the other plugin once this banner is set up."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:288
+#: includes/admin/views/tab-help.php:289
 msgid "Does the plugin make my website compliant?"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:288
+#: includes/admin/views/tab-help.php:289
 msgid "It gives you the tools: consent before optional cookies, fair choices, proof of consent and a cookie list. Your setup and your privacy policy also matter, so let a privacy professional check them."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:299
+#: includes/admin/views/tab-help.php:300
 #: includes/admin/views/tab-records.php:167
 msgid "Consent ID"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:299
+#: includes/admin/views/tab-help.php:300
 msgid "A random code given to a visitor when they first choose. It identifies their choice, not them: it contains no name or email."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:300
+#: includes/admin/views/tab-help.php:301
 msgid "The version of your cookie banner and cookie list a visitor agreed to (see above)."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:301
+#: includes/admin/views/tab-help.php:302
 msgid "Necessary (always on), Preferences, Statistics and Marketing. Visitors can refuse every category except Necessary."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:302
+#: includes/admin/views/tab-help.php:303
 msgid "A cookie the plugin found but could not recognise. Visitors do not see it until you approve it."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:303
+#: includes/admin/views/tab-help.php:304
 msgid "Blocking"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:303
+#: includes/admin/views/tab-help.php:304
 msgid "Keeping a script, video or font from loading until the visitor allows its category."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:304
+#: includes/admin/views/tab-help.php:305
 msgid "Google's way for a website to tell its tags what the visitor allowed. Required for Google Ads in the EEA and the UK."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:305
+#: includes/admin/views/tab-help.php:306
 #: includes/admin/views/tab-records.php:170
 msgid "GPC"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:305
+#: includes/admin/views/tab-help.php:306
 msgid "Global Privacy Control: a browser setting that asks websites not to sell or share data. California law requires honouring it."
 msgstr ""
 
-#: includes/admin/views/tab-help.php:306
+#: includes/admin/views/tab-help.php:307
 msgid "Third-party file"
 msgstr ""
 
-#: includes/admin/views/tab-help.php:306
+#: includes/admin/views/tab-help.php:307
 msgid "A script, frame or stylesheet your pages load from another website."
 msgstr ""
 
@@ -2016,6 +2022,12 @@ msgstr ""
 
 #: includes/admin/views/tab-records.php:136
 msgid "All banner versions"
+msgstr ""
+
+#. translators: %d: banner version
+#: includes/admin/views/tab-records.php:141
+#, php-format
+msgid "Banner version %d"
 msgstr ""
 
 #: includes/admin/views/tab-records.php:146
@@ -2639,7 +2651,7 @@ msgstr ""
 msgid "since %1$s, %2$s"
 msgstr ""
 
-#: includes/class-sccm-install.php:105
+#: includes/class-sccm-install.php:109
 #: includes/data/services.php:78
 #: includes/data/services.php:110
 #: includes/data/services.php:138
@@ -2922,7 +2934,7 @@ msgid "This file is not a valid Smart Cookie Consent Manager export."
 msgstr ""
 
 #. translators: %s: date
-#: includes/class-sccm-shortcodes.php:172
+#: includes/class-sccm-shortcodes.php:203
 #, php-format
 msgid "Cookie list last updated: %s"
 msgstr ""

@@ -778,6 +778,32 @@ if ( false === $history_before ) {
 	update_option( SCCM_Cookies::VERSION_HISTORY_OPTION, $history_before, false );
 }
 
+// Cookie Policy page: after a reinstall (settings deleted) or a reset, the existing page is found
+// and linked again; the plugin never makes a second one. Drafts and other pages do not count.
+$linked_before = (int) SCCM_Settings::get( 'policy_page_id' );
+$policy_a      = wp_insert_post( array( 'post_title' => 'Cookie Policy (test)', 'post_content' => '[sccm_cookie_policy]', 'post_status' => 'publish', 'post_type' => 'page' ) );
+$draft_b       = wp_insert_post( array( 'post_title' => 'Cookie Policy draft (test)', 'post_content' => '[sccm_cookie_policy]', 'post_status' => 'draft', 'post_type' => 'page' ) );
+$count_pages   = function () {
+	global $wpdb;
+	return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE post_type = %s AND post_status = %s AND post_content LIKE %s', $wpdb->posts, 'page', 'publish', '%[sccm_cookie_policy%' ) ); // phpcs:ignore
+};
+$pages_before = $count_pages();
+SCCM_Settings::update( array( 'policy_page_id' => 0 ) );
+$found        = SCCM_Shortcodes::policy_page();
+$oldest       = SCCM_Shortcodes::find_policy_page();
+sccm_check( 'policy page: with no page linked, the existing Cookie Policy page is found and linked again', $found > 0 && $found === $oldest && $found === (int) SCCM_Settings::get( 'policy_page_id' ) && $found !== $draft_b, "found {$found}" );
+sccm_check( 'policy page: no new page is created', $pages_before === $count_pages() );
+wp_trash_post( $found === $policy_a ? $policy_a : $found );
+$after_trash = SCCM_Shortcodes::policy_page();
+sccm_check( 'policy page: a page in the trash is not used; another existing one is linked, or none', $after_trash !== $found && $after_trash !== $draft_b );
+if ( $found !== $policy_a ) {
+	wp_untrash_post( $found );
+	wp_publish_post( $found );
+}
+wp_delete_post( $policy_a, true );
+wp_delete_post( $draft_b, true );
+SCCM_Settings::update( array( 'policy_page_id' => $linked_before ) );
+
 // The consent cookie's listed duration follows the "ask again after" setting.
 $durations = array();
 foreach ( array( 365, 180, 45, 0 ) as $days ) {

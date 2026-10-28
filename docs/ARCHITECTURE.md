@@ -239,6 +239,16 @@ visitor's consent cookie (`v`), the About tab of the banner, Consent Records (co
 per-version box, "older" mark), the CSV (`banner_version`), Tools and the Dashboard. A record
 claiming a version newer than the current one is refused.
 
+## Cookie Policy page (never twice)
+
+`policy_page_id` is a setting, so it is lost when the owner deletes the plugin with "delete all
+data" or resets the settings, while the page itself stays (uninstall never deletes content the
+owner may have edited, linked in menus or had indexed). `SCCM_Shortcodes::policy_page()` returns
+the linked page or, if there is none, finds the oldest published page containing
+`[sccm_cookie_policy]` and links it again. It runs on activation (`SCCM_Install::install()`), on
+the Dashboard, after Tools → Reset and in "Create the page" (which then says it linked the
+existing page instead of creating one). The front end never runs this query.
+
 ## Consent cookie
 `sccm_consent` = URI-encoded JSON, first-party, `Path=/`, `SameSite=Lax`, `Secure` on HTTPS.
 ```json

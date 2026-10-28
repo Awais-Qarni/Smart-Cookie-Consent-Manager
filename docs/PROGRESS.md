@@ -7,13 +7,32 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.3.0 (1.2.x is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.3.1 (1.2.x is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); 1.3.0 admin redesign after production feedback
 - **Last updated:** 2026-10-28 (session 10)
-- **Tests:** unit 33, WP-CLI 188, visitor e2e 116, admin e2e 100, all passing on **MySQL 8.4
+- **Tests:** unit 33, WP-CLI 191, visitor e2e 116, admin e2e 104, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-10-28 — Session 10b (1.3.1: Dashboard layout, Cookie Policy page duplicates)
+
+**Done**
+- Admin full width (`.sccm-admin` max-width 1100px removed). Dashboard: hero box removed; the
+  banner status is the "Cookie banner" card (`.sccm-card--banner`); a switched-off banner shows
+  a warning panel first (`.sccm-dash-off`) with "Switch on"; "Needs your attention" only with
+  items. Unused hero / "all good" CSS removed.
+- Duplicate Cookie Policy pages (owner reinstalled with "delete all data" several times):
+  `SCCM_Shortcodes::policy_page()` / `find_policy_page()` link the oldest published page with
+  `[sccm_cookie_policy]` again (activation, Dashboard, Reset, "Create the page"). Chosen over
+  deleting the page on uninstall: the page is the owner's content (edits, menus, SEO links).
+- Reset now saves the settings autoloaded (was `false`: an extra query per page view).
+- Tests: WP-CLI 191 (+3), admin e2e 104 (+4).
+
+**Next:** owner installs 1.3.1. Extra Cookie Policy pages already on the site can be deleted
+(the plugin keeps the one linked in Settings; it uses the oldest when none is linked).
 
 ---
 

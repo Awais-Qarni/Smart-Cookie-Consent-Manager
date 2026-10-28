@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,10 @@ Use the floating button, the [sccm_cookie_settings] shortcode, or a menu link to
 Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 == Changelog ==
+
+= 1.3.1 =
+* Dashboard uses the full screen width and starts with the dashboard; the banner status is a card. "Needs your attention" only appears when something is to do.
+* Fixed: reinstalling the plugin (or resetting its settings) asked to create the Cookie Policy page again and could create a duplicate. The existing page is now found and linked again automatically.
 
 = 1.3.0 =
 * New: the admin menu is called "Compliance" and shows every tab as a submenu (flyout on hover).

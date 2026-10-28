@@ -8,8 +8,8 @@ npm test             # php -l on every PHP file, node --check on JS, PHP unit te
 
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
 SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 116 browser checks (visitor side, incl. the banner version in the About tab)
-SCCM_WP=/path/to/wp npm run test:wp                              # 188 checks: banner version history and filter, records hardening (no versions newer than current, no lists for values), dashboard numbers, speed hints not reported, the third-party-file email, Google Maps is Marketing (library, blocking, upgrade to DB v6), provider name of the site's own cookies, cookie list, "learn from visitors" settings, fake-report protection, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent records (filters, validation, rate limit, retention, emoji URLs, self-repair), IP modes (shortened ***, code, full, none), search by IP, upgrades to DB v4 and v5, real cookie durations (format, Set-Cookie parsing, which rows a scan may update), consent cookie duration, CSV safety, banner HTML, deactivate/uninstall (WP-CLI)
-SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 100 checks of the admin screens, incl. the Compliance menu and flyout, the Help tab, Dashboard charts, banner version (column, filter, versions, Tools), cookies only in the admin's browser (not listed; visitors decide; marked when learning is off), a scan on a host whose cache clears lose transients (WP Engine, Redis, Memcached), readable scan errors, real durations after a browser scan, incl. learning/IP settings, search by IP, consent records, CSV export, settings export/import, "ask again", Subscriber access (403 everywhere), a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
+SCCM_WP=/path/to/wp npm run test:wp                              # 191 checks: the existing Cookie Policy page is linked again (no duplicates), banner version history and filter, records hardening (no versions newer than current, no lists for values), dashboard numbers, speed hints not reported, the third-party-file email, Google Maps is Marketing (library, blocking, upgrade to DB v6), provider name of the site's own cookies, cookie list, "learn from visitors" settings, fake-report protection, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent records (filters, validation, rate limit, retention, emoji URLs, self-repair), IP modes (shortened ***, code, full, none), search by IP, upgrades to DB v4 and v5, real cookie durations (format, Set-Cookie parsing, which rows a scan may update), consent cookie duration, CSV safety, banner HTML, deactivate/uninstall (WP-CLI)
+SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 104 checks of the admin screens, incl. the Dashboard layout (full width, banner card, attention only when needed), the Compliance menu and flyout, the Help tab, Dashboard charts, banner version (column, filter, versions, Tools), cookies only in the admin's browser (not listed; visitors decide; marked when learning is off), a scan on a host whose cache clears lose transients (WP Engine, Redis, Memcached), readable scan errors, real durations after a browser scan, incl. learning/IP settings, search by IP, consent records, CSV export, settings export/import, "ask again", Subscriber access (403 everywhere), a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
 ```
 
 `test:wp` and `e2e:admin` reset the cookie list and settings of the site they run on: dev sites only.
@@ -153,9 +153,15 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 - [ ] M2 Help is the last tab: getting started, how it works, every tab, banner version,
       shortcodes, developer code, questions and words; "On this page" jumps to each part. The
       Dashboard and Tools no longer show "How it works" or the developer reference.
-- [ ] M3 Dashboard: status (Consent Mode, GPC, banner version), Needs your attention, choices
-      per day (hover a bar for the day's numbers), acceptance rate, allowed per category,
-      cookies by category, cookie scan facts. Readable on a phone-sized window.
+- [ ] M3 Dashboard: full width (no gap on the right); it starts with the visitor choices
+      (choices per day, hover a bar for the day's numbers; acceptance rate; share), then
+      allowed per category, cookies by category, cookie scan and the Cookie banner card (status,
+      Consent Mode, GPC, banner version, Preview, Switch off). "Needs your attention" appears
+      only when something is to do; a switched-off banner is shown first with "Switch on".
+      Readable on a phone-sized window.
+- [ ] M5 With "Delete all data on uninstall" on: delete the plugin, install it again. The
+      existing Cookie Policy page is linked again (Settings shows it, the Dashboard does not ask
+      to create one, "Create the page" never makes a second one). Same after Tools → Reset.
 - [ ] M4 Banner version: open the website in a private window, Allow all, open the cookie
       settings → About: note the consent ID and banner version. In Consent Records the record
       shows the same version; the box at the top says when the version started and why. Click

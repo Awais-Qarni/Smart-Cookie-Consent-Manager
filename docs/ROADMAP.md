@@ -80,6 +80,8 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - [x] 1.3.0 (2026-10-28): Compliance menu + submenu, Help tab, Dashboard with charts, banner
       version in Records / About tab / Tools / CSV, clearer third-party-file email, speed hints
       ignored, security hardening and code-quality pass
+- [x] 1.3.1 (2026-10-28): full-width admin, Dashboard without the hero box (banner card),
+      attention only when needed, existing Cookie Policy page linked again (no duplicates)
 
 ## Later (not in scope for 1.0)
 - Geo-targeting (different banner per region)

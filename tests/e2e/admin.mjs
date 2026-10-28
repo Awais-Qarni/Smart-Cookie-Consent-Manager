@@ -244,10 +244,11 @@ await ctx.clearCookies({ name: 'test_once_cookie' }).catch(() => {});
 // Dashboard switch off / on
 await page.goto(admin('dashboard'));
 page.once('dialog', (d) => d.accept());
-await Promise.all([page.waitForNavigation(), page.click('.sccm-hero__actions button:has-text("Switch off")')]);
+await Promise.all([page.waitForNavigation(), page.click('.sccm-card--banner button:has-text("Switch off")')]);
 check('D2 dashboard can switch the banner off', option().enabled === 0);
-await Promise.all([page.waitForNavigation(), page.click('.sccm-hero__actions button:has-text("Switch on")')]);
-check('D2 and on again', option().enabled === 1);
+check('D2 a switched-off banner is the first thing on the Dashboard', /Your cookie banner is switched off/.test(await page.textContent('.sccm-tab > :first-child')));
+await Promise.all([page.waitForNavigation(), page.click('.sccm-dash-off button:has-text("Switch on")')]);
+check('D2 and on again', option().enabled === 1 && !(await page.$('.sccm-dash-off')));
 
 // CSRF + logged-out
 const bad = await page.request.post(`${BASE}/wp-admin/admin-post.php`, { form: { action: 'sccm_ignore_all', _wpnonce: 'nope' }, maxRedirects: 0 });
@@ -476,7 +477,13 @@ wp('eval', `SCCM_Consent_Log::delete_all(); $v = (int) get_option( 'sccm_consent
 await page.goto(admin('dashboard'));
 const dash = await page.textContent('.sccm-tab');
 check('D2 the Dashboard shows the choices as charts: per day, the share, per category, cookies by category', (await page.$$('.sccm-tab svg.sccm-chart--days rect[fill]')).length >= 3 && (await page.$$('.sccm-tab svg.sccm-chart--donut')).length === 2 && (await page.$$('.sccm-pbars li')).length === 3);
-check('D2 the Dashboard shows the acceptance rate, Consent Mode, GPC and the banner version; "How it works" moved to Help', /33%\s*allowed all \(acceptance rate\)/.test(dash) && dash.includes('Google Consent Mode') && /Banner version \d+/.test(dash) && !dash.includes('How it works'), dash.replace(/\s+/g, ' ').slice(0, 200));
+check('D2 the Dashboard shows the acceptance rate, Consent Mode, GPC and the banner version; "How it works" moved to Help', /33%\s*allowed all \(acceptance rate\)/.test(dash) && dash.includes('Google Consent Mode') && /Banner version\s+\d+/.test(dash) && !dash.includes('How it works'), dash.replace(/\s+/g, ' ').slice(0, 200));
+
+check('D3 the Dashboard starts with the dashboard (no big "banner is live" box); the banner status is a card', !(await page.$('.sccm-hero')) && (await page.textContent('.sccm-card--banner')).includes('Live'));
+wp('eval', `global $wpdb; $wpdb->query( $wpdb->prepare( "UPDATE %i SET status = 'ignored' WHERE status = 'pending'", SCCM_Cookies::table() ) ); SCCM_Cookies::flush();`);
+await page.goto(admin('dashboard'));
+check('D3 "Needs your attention" is hidden when there is nothing to do', !(await page.textContent('.sccm-tab')).includes('Needs your attention'));
+check('D3 the plugin screens use the full width (no gap on the right)', (await page.$eval('.sccm-admin', (n) => getComputedStyle(n).maxWidth)) === 'none');
 
 await page.goto(admin('records'));
 const recordsText = (await page.textContent('.sccm-tab')).replace(/\s+/g, ' ');

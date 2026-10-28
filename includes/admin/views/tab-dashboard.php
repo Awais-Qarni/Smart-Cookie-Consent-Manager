@@ -14,7 +14,7 @@ $sccm_stats   = SCCM_Consent_Log::stats( 30 );
 $sccm_total   = (int) array_sum( $sccm_stats );
 $sccm_scan    = get_option( SCCM_Scanner::RESULT_OPTION );
 $sccm_on      = ! empty( $settings['enabled'] );
-$sccm_policy  = SCCM_Frontend::policy_url();
+$sccm_policy  = SCCM_Shortcodes::policy_page(); // Links an existing Cookie Policy page again if needed.
 $sccm_cats    = SCCM_Categories::all();
 
 /*
@@ -101,55 +101,20 @@ $sccm_cat_colors = array(
 	'marketing'  => '#ea580c',
 );
 ?>
-<div class="sccm-hero sccm-hero--<?php echo $sccm_on ? 'ok' : 'off'; ?>">
-	<span class="dashicons <?php echo $sccm_on ? 'dashicons-yes-alt' : 'dashicons-warning'; ?> sccm-hero__icon" aria-hidden="true"></span>
-	<div class="sccm-hero__text">
-		<h2>
-			<?php echo $sccm_on ? esc_html__( 'Your cookie banner is live', 'smart-cookie-consent-manager' ) : esc_html__( 'Your cookie banner is switched off', 'smart-cookie-consent-manager' ); ?>
-		</h2>
-		<p>
-			<?php
-			echo $sccm_on
-				? esc_html__( 'New visitors see the banner. Analytics, marketing and other non-essential scripts stay blocked until they choose.', 'smart-cookie-consent-manager' )
-				: esc_html__( 'Visitors see no banner and nothing is blocked. Switch it on to start collecting consent.', 'smart-cookie-consent-manager' );
-			?>
-		</p>
-		<ul class="sccm-status">
-			<li>
-				<?php esc_html_e( 'Google Consent Mode', 'smart-cookie-consent-manager' ); ?>:
-				<strong><?php echo esc_html( $sccm_modes[ $settings['consent_mode'] ] ?? $settings['consent_mode'] ); ?></strong>
-			</li>
-			<li>
-				<?php esc_html_e( 'Privacy signal (GPC)', 'smart-cookie-consent-manager' ); ?>:
-				<strong><?php echo ! empty( $settings['gpc_enabled'] ) ? esc_html__( 'honoured', 'smart-cookie-consent-manager' ) : esc_html__( 'off', 'smart-cookie-consent-manager' ); ?></strong>
-			</li>
-			<li>
-				<a href="<?php echo esc_url( SCCM_Admin::url( 'records' ) ); ?>">
-					<?php
-					/* translators: %d: banner version */
-					printf( esc_html__( 'Banner version %d', 'smart-cookie-consent-manager' ), (int) $sccm_version );
-					?>
-				</a>
-				<?php if ( SCCM_Cookies::version_note( $sccm_version ) ) : ?>
-					<small>(<?php echo esc_html( SCCM_Cookies::version_note( $sccm_version ) ); ?>)</small>
-				<?php endif; ?>
-			</li>
-		</ul>
-	</div>
-	<div class="sccm-hero__actions">
-		<a class="button button-primary" href="<?php echo esc_url( home_url( '/#sccm-banner' ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Preview banner', 'smart-cookie-consent-manager' ); ?></a>
+<?php if ( ! $sccm_on ) : ?>
+	<div class="sccm-panel sccm-panel--attention sccm-dash-off">
+		<span class="dashicons dashicons-warning" aria-hidden="true"></span>
+		<p><strong><?php esc_html_e( 'Your cookie banner is switched off.', 'smart-cookie-consent-manager' ); ?></strong> <?php esc_html_e( 'Visitors see no banner and nothing is blocked. Switch it on to collect consent.', 'smart-cookie-consent-manager' ); ?></p>
 		<?php SCCM_Admin::form_open( 'dashboard' ); ?>
-			<input type="hidden" name="sccm[enabled]" value="<?php echo $sccm_on ? '0' : '1'; ?>">
-			<button type="submit" class="button" <?php echo $sccm_on ? 'data-sccm-confirm' : ''; ?>><?php echo $sccm_on ? esc_html__( 'Switch off', 'smart-cookie-consent-manager' ) : esc_html__( 'Switch on', 'smart-cookie-consent-manager' ); ?></button>
+			<input type="hidden" name="sccm[enabled]" value="1">
+			<button type="submit" class="button button-primary"><?php esc_html_e( 'Switch on', 'smart-cookie-consent-manager' ); ?></button>
 		</form>
 	</div>
-</div>
+<?php endif; ?>
 
-<div class="sccm-panel">
-	<h2><?php esc_html_e( 'Needs your attention', 'smart-cookie-consent-manager' ); ?></h2>
-	<?php if ( ! $sccm_todo ) : ?>
-		<p class="sccm-allgood"><span class="dashicons dashicons-yes" aria-hidden="true"></span> <?php esc_html_e( 'Everything looks good. Nothing to do right now.', 'smart-cookie-consent-manager' ); ?></p>
-	<?php else : ?>
+<?php if ( $sccm_todo ) : ?>
+	<div class="sccm-panel">
+		<h2><?php esc_html_e( 'Needs your attention', 'smart-cookie-consent-manager' ); ?></h2>
 		<ul class="sccm-todo">
 			<?php foreach ( $sccm_todo as $sccm_item ) : ?>
 				<li class="sccm-todo--<?php echo esc_attr( $sccm_item['type'] ); ?>">
@@ -166,8 +131,8 @@ $sccm_cat_colors = array(
 				</li>
 			<?php endforeach; ?>
 		</ul>
-	<?php endif; ?>
-</div>
+	</div>
+<?php endif; ?>
 
 <div class="sccm-panel sccm-dash-choices">
 	<div class="sccm-dash-head">
@@ -269,6 +234,28 @@ $sccm_cat_colors = array(
 			<?php SCCM_Admin::action_fields( 'scan_now' ); ?>
 			<button class="button"><?php esc_html_e( 'Scan now', 'smart-cookie-consent-manager' ); ?></button>
 		</form>
+	</div>
+
+	<div class="sccm-card sccm-card--banner">
+		<h3><?php esc_html_e( 'Cookie banner', 'smart-cookie-consent-manager' ); ?></h3>
+		<ul class="sccm-facts">
+			<li><?php esc_html_e( 'Status', 'smart-cookie-consent-manager' ); ?> <strong><?php echo $sccm_on ? esc_html__( 'Live', 'smart-cookie-consent-manager' ) : esc_html__( 'Switched off', 'smart-cookie-consent-manager' ); ?></strong></li>
+			<li><?php esc_html_e( 'Google Consent Mode', 'smart-cookie-consent-manager' ); ?> <strong><?php echo esc_html( $sccm_modes[ $settings['consent_mode'] ] ?? $settings['consent_mode'] ); ?></strong></li>
+			<li><?php esc_html_e( 'Privacy signal (GPC)', 'smart-cookie-consent-manager' ); ?> <strong><?php echo ! empty( $settings['gpc_enabled'] ) ? esc_html__( 'honoured', 'smart-cookie-consent-manager' ) : esc_html__( 'off', 'smart-cookie-consent-manager' ); ?></strong></li>
+			<li>
+				<?php esc_html_e( 'Banner version', 'smart-cookie-consent-manager' ); ?>
+				<strong><a href="<?php echo esc_url( SCCM_Admin::url( 'records' ) ); ?>" title="<?php echo esc_attr( SCCM_Cookies::version_note( $sccm_version ) ); ?>"><?php echo (int) $sccm_version; ?></a></strong>
+			</li>
+		</ul>
+		<div class="sccm-card__actions">
+			<a class="button" href="<?php echo esc_url( home_url( '/#sccm-banner' ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Preview banner', 'smart-cookie-consent-manager' ); ?></a>
+			<?php if ( $sccm_on ) : ?>
+				<?php SCCM_Admin::form_open( 'dashboard' ); ?>
+					<input type="hidden" name="sccm[enabled]" value="0">
+					<button type="submit" class="button button-link-delete" data-sccm-confirm><?php esc_html_e( 'Switch off', 'smart-cookie-consent-manager' ); ?></button>
+				</form>
+			<?php endif; ?>
+		</div>
 	</div>
 </div>
 

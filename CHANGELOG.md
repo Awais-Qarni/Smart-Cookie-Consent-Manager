@@ -2,6 +2,25 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.1] - 2026-10-28
+### Changed
+- **Dashboard**: uses the full width of the screen (the plugin screens were limited to 1100
+  pixels, which left a gap on the right), and starts with the dashboard itself. The big "Your
+  cookie banner is live" box is gone: the banner status (live, Consent Mode, privacy signal,
+  banner version, Preview banner, Switch off) is a card next to the others. A switched-off
+  banner is still shown first, with "Switch on".
+- **"Needs your attention"** appears only when something is to do.
+
+### Fixed
+- **No more duplicate Cookie Policy pages.** After deleting the plugin with "delete all data"
+  and installing it again (or after Tools → Reset), the plugin asked to create the Cookie Policy
+  page again and created a second one. Now the existing page (a published page with
+  `[sccm_cookie_policy]`) is found and linked again automatically, on activation and on the
+  Dashboard, and "Create the page" links an existing page instead of creating a new one. The
+  page is never deleted on uninstall, because you may have edited it or linked it in menus.
+- Tools → Reset kept the settings out of the options WordPress loads with every page, which
+  cost one extra database query per page view until the next save.
+
 ## [1.3.0] - 2026-10-28
 ### Added
 - **Compliance menu with a submenu**: the sidebar item is now called "Compliance" and opens a

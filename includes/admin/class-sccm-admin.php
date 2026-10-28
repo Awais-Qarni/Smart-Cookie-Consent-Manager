@@ -960,6 +960,12 @@ class SCCM_Admin {
 	public static function handle_create_policy_page() {
 		self::require_cap();
 		check_admin_referer( 'sccm_create_policy_page' );
+		// A Cookie Policy page from before (earlier install, reset): link it, do not make a second one.
+		$existing = SCCM_Shortcodes::policy_page();
+		if ( $existing ) {
+			/* translators: %s: page title */
+			self::back( 'dashboard', sprintf( __( 'Your existing Cookie Policy page "%s" was found and linked in the banner. No new page was created.', 'smart-cookie-consent-manager' ), get_the_title( $existing ) ) );
+		}
 		$page_id = wp_insert_post(
 			array(
 				'post_title'   => __( 'Cookie Policy', 'smart-cookie-consent-manager' ),
@@ -982,8 +988,9 @@ class SCCM_Admin {
 	public static function handle_reset_settings() {
 		self::require_cap();
 		check_admin_referer( 'sccm_reset_settings' );
-		update_option( SCCM_Settings::OPTION, SCCM_Settings::defaults(), false );
+		update_option( SCCM_Settings::OPTION, SCCM_Settings::defaults(), true ); // Autoloaded, like on install.
 		SCCM_Settings::flush();
+		SCCM_Shortcodes::policy_page(); // Keep the existing Cookie Policy page linked.
 		SCCM_Install::schedule_events();
 		self::back( 'tools', __( 'Settings reset to defaults.', 'smart-cookie-consent-manager' ) );
 	}
