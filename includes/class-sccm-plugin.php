@@ -20,6 +20,16 @@ final class SCCM_Plugin {
 	private static $instance = null;
 
 	/**
+	 * Option: file names of old asset copies => time they were replaced (see asset()).
+	 */
+	const RETIRED_OPTION = 'sccm_asset_retired';
+
+	/**
+	 * Seconds an old asset copy is kept after it was replaced, for pages still cached with it.
+	 */
+	const ASSET_KEEP = 2592000; // 30 days.
+
+	/**
 	 * Get the instance (boots the plugin on first call).
 	 *
 	 * @return SCCM_Plugin
@@ -103,14 +113,54 @@ final class SCCM_Plugin {
 			if ( ! wp_mkdir_p( $dir ) || ! @copy( $source, $file ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 				return array( SCCM_URL . $relative, $ver );
 			}
-			// Remove older copies of this asset.
-			foreach ( (array) glob( $dir . '/' . $info['filename'] . '.*.' . $info['extension'] ) as $old ) {
-				if ( $old && $old !== $file ) {
-					wp_delete_file( $old );
-				}
-			}
+			self::retire_old_copies( $dir, $info['filename'], $info['extension'], $name );
 		}
 		return array( set_url_scheme( trailingslashit( $uploads['baseurl'] ) . 'sccm-assets/' . $name ), null );
+	}
+
+	/**
+	 * A new copy of an asset was made: keep the older copies for a while, then delete them.
+	 *
+	 * Pages cached before an update still ask for the old file names. Deleting those files at
+	 * once would leave such pages without the banner (404) until the cache is cleared, so old
+	 * copies stay for ASSET_KEEP seconds and the page caches are cleared (sccm_assets_changed).
+	 *
+	 * @param string $dir      Folder of the copies.
+	 * @param string $filename Asset name without extension, e.g. 'sccm-frontend'.
+	 * @param string $ext      Extension, e.g. 'js'.
+	 * @param string $current  File name of the new copy.
+	 */
+	private static function retire_old_copies( $dir, $filename, $ext, $current ) {
+		$retired  = (array) get_option( self::RETIRED_OPTION, array() );
+		$now      = time();
+		$replaced = false;
+		unset( $retired[ $current ] );
+		foreach ( (array) glob( $dir . '/' . $filename . '.*.' . $ext ) as $old ) {
+			$base = $old ? basename( $old ) : '';
+			if ( '' === $base || $current === $base ) {
+				continue;
+			}
+			if ( ! isset( $retired[ $base ] ) ) {
+				$retired[ $base ] = $now;
+				$replaced         = true;
+			} elseif ( (int) $retired[ $base ] < $now - self::ASSET_KEEP ) {
+				wp_delete_file( $old );
+				unset( $retired[ $base ] );
+			}
+		}
+		foreach ( array_keys( $retired ) as $base ) {
+			if ( ! file_exists( $dir . '/' . $base ) ) {
+				unset( $retired[ $base ] );
+			}
+		}
+		update_option( self::RETIRED_OPTION, $retired, false );
+		if ( $replaced ) {
+			/**
+			 * Fires when a plugin CSS/JS file got a new versioned copy (e.g. after an update);
+			 * cached pages still point to the old copy, so SCCM_Cache clears the page caches.
+			 */
+			do_action( 'sccm_assets_changed' );
+		}
 	}
 
 	/**

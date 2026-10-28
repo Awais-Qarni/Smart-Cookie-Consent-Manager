@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.2
+Stable tag: 1.3.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,9 @@ Use the floating button, the [sccm_cookie_settings] shortcode, or a menu link to
 Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 == Changelog ==
+
+= 1.3.3 =
+* Fixed: after an update, sites with a page cache (NitroPack, Cloudflare, WP Engine…) could show no banner until the cache was cleared by hand. Old banner files are now kept for 30 days and the page caches are cleared automatically.
 
 = 1.3.2 =
 * Cookies tab: the columns of the cookie list line up in every category; on phones each cookie is shown as a block with labels.

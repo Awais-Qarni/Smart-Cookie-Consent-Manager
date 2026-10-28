@@ -8,7 +8,7 @@ npm test             # php -l on every PHP file, node --check on JS, PHP unit te
 
 # Need a development WordPress with the plugin active (see tests/e2e/README.md):
 SCCM_E2E_URL=http://127.0.0.1:8080 npm run e2e                  # 116 browser checks (visitor side, incl. the banner version in the About tab)
-SCCM_WP=/path/to/wp npm run test:wp                              # 191 checks: the existing Cookie Policy page is linked again (no duplicates), banner version history and filter, records hardening (no versions newer than current, no lists for values), dashboard numbers, speed hints not reported, the third-party-file email, Google Maps is Marketing (library, blocking, upgrade to DB v6), provider name of the site's own cookies, cookie list, "learn from visitors" settings, fake-report protection, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent records (filters, validation, rate limit, retention, emoji URLs, self-repair), IP modes (shortened ***, code, full, none), search by IP, upgrades to DB v4 and v5, real cookie durations (format, Set-Cookie parsing, which rows a scan may update), consent cookie duration, CSV safety, banner HTML, deactivate/uninstall (WP-CLI)
+SCCM_WP=/path/to/wp npm run test:wp                              # 199 checks: banner files survive an update on cached pages (old copies kept, cache cleared), the existing Cookie Policy page is linked again (no duplicates), banner version history and filter, records hardening (no versions newer than current, no lists for values), dashboard numbers, speed hints not reported, the third-party-file email, Google Maps is Marketing (library, blocking, upgrade to DB v6), provider name of the site's own cookies, cookie list, "learn from visitors" settings, fake-report protection, scan plan, browser-scan rules, settings, daily change email, policy page, cache clearing, consent records (filters, validation, rate limit, retention, emoji URLs, self-repair), IP modes (shortened ***, code, full, none), search by IP, upgrades to DB v4 and v5, real cookie durations (format, Set-Cookie parsing, which rows a scan may update), consent cookie duration, CSV safety, banner HTML, deactivate/uninstall (WP-CLI)
 SCCM_E2E_URL=… SCCM_WP=/path/to/wp npm run e2e:admin             # 104 checks of the admin screens, incl. the Dashboard layout (full width, banner card, attention only when needed), the Compliance menu and flyout, the Help tab, Dashboard charts, banner version (column, filter, versions, Tools), cookies only in the admin's browser (not listed; visitors decide; marked when learning is off), a scan on a host whose cache clears lose transients (WP Engine, Redis, Memcached), readable scan errors, real durations after a browser scan, incl. learning/IP settings, search by IP, consent records, CSV export, settings export/import, "ask again", Subscriber access (403 everywhere), a real browser scan, leaving it mid-way, the daily email, GA4 by ID, spoofed notices
 ```
 
@@ -65,9 +65,9 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
 - [ ] D4 Tab/Shift+Tab stay inside the modal; Esc closes without saving.
 
 ### E. Change / withdraw (feature 4)
-- [ ] E0 After updating the plugin on a site with NitroPack/CDN: purge once, then a private
-      window shows the same banner as a logged-in browser (script URL is
-      `…/uploads/sccm-assets/sccm-frontend.<hash>.js`).
+- [ ] E0 After updating the plugin on a site with NitroPack/CDN, without purging by hand: a
+      private window still shows the banner (no 404 for `…/uploads/sccm-assets/sccm-frontend.<hash>.js`
+      in the browser's Network tab), and within a few minutes the page uses the new file name.
 - [ ] E1 Floating button, `[sccm_cookie_settings]` and a menu link to `#sccm-preferences`
       all open the cookie settings dialog.
 - [ ] E3 Banner tab → cookie settings button: try all five positions. Corners show a round icon;

@@ -48,11 +48,12 @@ add_filter( 'sccm_services', function ( $services ) {
 | `sccm_consent_version_changed` | `int $version` | After a new banner (consent) version: "ask everyone again" / cookie list change. Its date and reason are in `SCCM_Cookies::version_history()`. |
 | `sccm_settings_saved` | `string $tab` | After settings are saved in the admin. |
 | `sccm_cookie_list_changed` | — | A cookie visitors can see was added, edited or removed (not fired for cookies waiting for review). |
+| `sccm_assets_changed` | — | A plugin CSS/JS file got a new versioned copy (usually after an update). The plugin clears page caches on it. |
 | `sccm_cache_purged` | — | After the plugin cleared page caches (see `SCCM_Cache`). Clear any other cache (e.g. a CDN) here. |
 
 The plugin clears the page caches of WP Engine, NitroPack, WP Rocket, LiteSpeed Cache, W3 Total
 Cache, WP Super Cache, WP Fastest Cache, SiteGround Speed Optimizer, Breeze and Hummingbird after
-`sccm_settings_saved`, `sccm_consent_version_changed` and `sccm_cookie_list_changed` (once per
+`sccm_settings_saved`, `sccm_consent_version_changed`, `sccm_cookie_list_changed` and `sccm_assets_changed` (once per
 request; clears not started by an administrator at most every 5 minutes).
 
 ## Endpoints the banner uses

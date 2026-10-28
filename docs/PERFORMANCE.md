@@ -26,6 +26,7 @@ Everything is the same for every visitor, so full-page caches and CDNs serve it 
    `uploads/sccm-assets/sccm-frontend.<hash>.js`), so hosts, CDNs and cache plugins that ignore
    `?ver=` (NitroPack, some WP Engine setups) never serve an old stylesheet or script after an
    update. The copy is made once per version; a normal page view only checks that it exists.
+   Old copies stay 30 days for pages cached before the update (1.3.3).
 
 1. **Stylesheet no longer blocks rendering.** It loads with `media="print" onload=…` (plus a
    `<noscript>` fallback). The script waits for it before drawing anything, so there is no
