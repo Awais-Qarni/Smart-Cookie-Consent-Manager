@@ -159,6 +159,8 @@ and Network. "Non-essential tags" = anything in Analytics/Functional/Marketing.
       Consent Mode, GPC, banner version, Preview, Switch off). "Needs your attention" appears
       only when something is to do; a switched-off banner is shown first with "Switch on".
       Readable on a phone-sized window.
+- [ ] M6 Cookies tab: the columns (Name, Provider, What it does, Lasts, Added) line up across all
+      categories; long names wrap; on a phone each cookie is a block with labels.
 - [ ] M5 With "Delete all data on uninstall" on: delete the plugin, install it again. The
       existing Cookie Policy page is linked again (Settings shows it, the Dashboard does not ask
       to create one, "Create the page" never makes a second one). Same after Tools → Reset.

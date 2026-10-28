@@ -7,13 +7,23 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.3.1 (1.2.x is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.3.2 (1.2.x is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); 1.3.0 admin redesign after production feedback
 - **Last updated:** 2026-10-28 (session 10)
 - **Tests:** unit 33, WP-CLI 191, visitor e2e 116, admin e2e 104, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-10-28 — Session 10c (1.3.2: cookie list alignment)
+
+**Done:** the per-category cookie tables (`.sccm-cookie-list`) share a `<colgroup>` with fixed
+widths (`table-layout: fixed` from 783px), long names wrap (`overflow-wrap: anywhere` on the
+name only); below 783px each row is a block with `data-label` captions. Admin e2e 104/104.
+
+**Next:** owner installs 1.3.2.
 
 ---
 

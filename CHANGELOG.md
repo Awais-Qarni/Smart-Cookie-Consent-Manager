@@ -2,6 +2,13 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.2] - 2026-10-28
+### Fixed
+- **Cookies tab: the cookie list is aligned.** Each category is its own table, and the columns
+  were sized by their content, so they did not line up from one category to the next. All
+  categories now share the same column widths; long cookie names wrap inside their column. On
+  phones each cookie is shown as a block with a label for every value instead of a squeezed table.
+
 ## [1.3.1] - 2026-10-28
 ### Changed
 - **Dashboard**: uses the full width of the screen (the plugin screens were limited to 1100

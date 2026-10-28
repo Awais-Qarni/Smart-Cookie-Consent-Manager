@@ -82,6 +82,7 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
       ignored, security hardening and code-quality pass
 - [x] 1.3.1 (2026-10-28): full-width admin, Dashboard without the hero box (banner card),
       attention only when needed, existing Cookie Policy page linked again (no duplicates)
+- [x] 1.3.2 (2026-10-28): cookie list columns aligned across categories; phone layout
 
 ## Later (not in scope for 1.0)
 - Geo-targeting (different banner per region)

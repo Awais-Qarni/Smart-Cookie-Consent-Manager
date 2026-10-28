@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Cookie Consent Manager 1.3.1\n"
+"Project-Id-Version: Smart Cookie Consent Manager 1.3.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/claude things\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-28T18:05:11+00:00\n"
+"POT-Creation-Date: 2026-10-28T18:19:29+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: smart-cookie-consent-manager\n"
@@ -714,7 +714,7 @@ msgstr ""
 
 #: includes/admin/views/tab-banner.php:179
 #: includes/admin/views/tab-cookies.php:55
-#: includes/admin/views/tab-cookies.php:216
+#: includes/admin/views/tab-cookies.php:218
 #: includes/class-sccm-settings.php:145
 msgid "Name"
 msgstr ""
@@ -771,7 +771,7 @@ msgid "Edit cookie"
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:50
-#: includes/admin/views/tab-cookies.php:252
+#: includes/admin/views/tab-cookies.php:254
 #: includes/admin/views/tab-help.php:135
 msgid "Add a cookie by hand"
 msgstr ""
@@ -782,7 +782,7 @@ msgstr ""
 
 #: includes/admin/views/tab-cookies.php:58
 #: includes/admin/views/tab-cookies.php:132
-#: includes/admin/views/tab-cookies.php:313
+#: includes/admin/views/tab-cookies.php:315
 #: includes/admin/views/tab-help.php:302
 #: includes/admin/views/tab-settings.php:118
 #: includes/admin/views/tab-settings.php:142
@@ -790,7 +790,8 @@ msgid "Category"
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:64
-#: includes/admin/views/tab-cookies.php:217
+#: includes/admin/views/tab-cookies.php:219
+#: includes/admin/views/tab-cookies.php:230
 #: includes/class-sccm-settings.php:146
 msgid "Provider"
 msgstr ""
@@ -800,7 +801,8 @@ msgid "Who sets it, e.g. Google LLC"
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:66
-#: includes/admin/views/tab-cookies.php:218
+#: includes/admin/views/tab-cookies.php:220
+#: includes/admin/views/tab-cookies.php:231
 msgid "What it does"
 msgstr ""
 
@@ -947,107 +949,109 @@ msgstr ""
 msgid "No cookies in this category."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:219
+#: includes/admin/views/tab-cookies.php:221
+#: includes/admin/views/tab-cookies.php:232
 msgid "Lasts"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:220
+#: includes/admin/views/tab-cookies.php:222
+#: includes/admin/views/tab-cookies.php:233
 msgid "Added"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:233
-#: includes/admin/views/tab-cookies.php:286
+#: includes/admin/views/tab-cookies.php:235
+#: includes/admin/views/tab-cookies.php:288
 msgid "Edit"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:237
-#: includes/admin/views/tab-cookies.php:290
+#: includes/admin/views/tab-cookies.php:239
+#: includes/admin/views/tab-cookies.php:292
 msgid "Delete"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:249
+#: includes/admin/views/tab-cookies.php:251
 msgid "Add a cookie yourself"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:250
+#: includes/admin/views/tab-cookies.php:252
 msgid "Only needed for cookies the scan cannot see, for example ones set after a login or inside a form."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:256
+#: includes/admin/views/tab-cookies.php:258
 msgid "or add all cookies of a known service:"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:267
+#: includes/admin/views/tab-cookies.php:269
 msgid "Add"
 msgstr ""
 
 #. translators: %d: number of cookies
-#: includes/admin/views/tab-cookies.php:276
+#: includes/admin/views/tab-cookies.php:278
 #, php-format
 msgid "Ignored cookies (%d)"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:279
+#: includes/admin/views/tab-cookies.php:281
 msgid "Hidden from visitors and never reported again. Click Edit to bring one back."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:302
+#: includes/admin/views/tab-cookies.php:304
 #: includes/admin/views/tab-help.php:137
 msgid "Scan report (details)"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:308
+#: includes/admin/views/tab-cookies.php:310
 msgid "Services found on your pages"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:310
+#: includes/admin/views/tab-cookies.php:312
 msgid "No known third-party services found."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:313
+#: includes/admin/views/tab-cookies.php:315
 #: includes/admin/views/tab-settings.php:117
 msgid "Service"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:313
+#: includes/admin/views/tab-cookies.php:315
 msgid "Found in"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:326
+#: includes/admin/views/tab-cookies.php:328
 #: includes/admin/views/tab-dashboard.php:223
 #: includes/class-sccm-scanner.php:1334
 msgid "Other third-party files"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:327
+#: includes/admin/views/tab-cookies.php:329
 msgid "External scripts, frames or stylesheets we do not know yet, so they are not blocked. If one of them tracks visitors, add its address under Settings → Blocking and Google → Your own blocking rules."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:329
+#: includes/admin/views/tab-cookies.php:331
 msgid "None found."
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:332
+#: includes/admin/views/tab-cookies.php:334
 msgid "Host"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:332
+#: includes/admin/views/tab-cookies.php:334
 msgid "Example"
 msgstr ""
 
-#: includes/admin/views/tab-cookies.php:344
+#: includes/admin/views/tab-cookies.php:346
 #: includes/admin/views/tab-dashboard.php:221
 msgid "Pages checked"
 msgstr ""
 
 #. translators: %s: cookie names
-#: includes/admin/views/tab-cookies.php:354
+#: includes/admin/views/tab-cookies.php:356
 #, php-format
 msgid "Cookies the server sent: %s"
 msgstr ""
 
 #. translators: %s: cookie and storage names
-#: includes/admin/views/tab-cookies.php:362
+#: includes/admin/views/tab-cookies.php:364
 #, php-format
 msgid "Cookies and storage seen in your browser: %s"
 msgstr ""

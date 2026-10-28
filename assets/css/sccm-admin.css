@@ -589,6 +589,73 @@
 	margin: 0 0 8px;
 }
 
+/* The cookie list: one table per category with the same columns, so they line up. */
+@media (min-width: 783px) {
+	.sccm-cookie-list {
+		table-layout: fixed;
+	}
+
+	.sccm-cookie-list .sccm-col-name {
+		width: 17%;
+	}
+
+	.sccm-cookie-list .sccm-col-provider {
+		width: 15%;
+	}
+
+	.sccm-cookie-list .sccm-col-lasts {
+		width: 15%;
+	}
+
+	.sccm-cookie-list .sccm-col-added {
+		width: 9%;
+	}
+
+	.sccm-cookie-list .sccm-col-actions {
+		width: 140px;
+	}
+}
+
+.sccm-cookie-list code {
+	overflow-wrap: anywhere;
+}
+
+/* Phones: each cookie as a block, every value with its label (a 6-column table cannot fit). */
+@media (max-width: 782px) {
+	.sccm-cookie-list colgroup,
+	.sccm-cookie-list thead {
+		display: none;
+	}
+
+	.sccm-cookie-list,
+	.sccm-cookie-list tbody,
+	.sccm-cookie-list tr,
+	.sccm-cookie-list td {
+		display: block;
+		width: auto;
+	}
+
+	.sccm-cookie-list tr {
+		border-top: 1px solid #f0f0f1;
+		padding: 10px 12px;
+	}
+
+	.sccm-cookie-list td {
+		padding: 2px 0;
+	}
+
+	.sccm-cookie-list td[data-label]::before {
+		color: #646970;
+		content: attr(data-label) ": ";
+		font-weight: 600;
+	}
+
+	.sccm-cookie-list .sccm-row-actions {
+		justify-content: flex-start;
+		padding-top: 8px;
+	}
+}
+
 .sccm-table-admin td {
 	vertical-align: top;
 }
