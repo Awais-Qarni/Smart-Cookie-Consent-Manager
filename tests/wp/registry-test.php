@@ -556,6 +556,98 @@ wp_clear_scheduled_hook( SCCM_Cache::EVENT );
 wp_set_current_user( 0 );
 remove_action( 'shutdown', array( 'SCCM_Cache', 'flush_queued' ), 1 ); // The clears queued above already ran.
 
+/* ---------------------------------------------------------------- How records are sent (REST or admin-ajax.php) */
+
+$sccm_saved_ase = get_option( 'admin_site_enhancements' );
+delete_option( 'admin_site_enhancements' );
+delete_option( SCCM_REST::REST_CHECK_OPTION );
+SCCM_Settings::update( array( 'log_transport' => 'auto' ) );
+sccm_check( 'transport: REST API when nothing blocks it', 'rest' === SCCM_REST::transport() && 'none' === get_option( SCCM_REST::REST_CHECK_OPTION )['by'] );
+sccm_check( 'transport: the visitor config says which one to use', 'rest' === SCCM_Frontend::config()['rest']['transport'] );
+// A plugin that refuses REST requests from logged-out visitors (like ASE, Disable REST API, Perfmatters).
+$sccm_block = function ( $errors ) {
+	if ( is_wp_error( $errors ) || is_user_logged_in() || wp_validate_auth_cookie( '', 'logged_in' ) ) {
+		return $errors;
+	}
+	$route = isset( $GLOBALS['wp']->query_vars['rest_route'] ) ? $GLOBALS['wp']->query_vars['rest_route'] : '';
+	$GLOBALS['sccm_seen_route'] = $route;
+	return new WP_Error( 'rest_api_authentication_required', 'The REST API has been restricted to authenticated users.', array( 'status' => 401 ) );
+};
+add_filter( 'rest_authentication_errors', $sccm_block, 200 );
+sccm_check( 'transport: a result is reused for an hour (no new check on every page)', 'rest' === SCCM_REST::transport() );
+SCCM_REST::forget_rest_check();
+sccm_check( 'transport: admin-ajax.php when a plugin blocks the REST API for visitors', 'ajax' === SCCM_REST::transport() && 'filter' === get_option( SCCM_REST::REST_CHECK_OPTION )['by'] );
+sccm_check( 'transport: the check asks as a request to the plugin\'s own route', '/sccm/v1/consent' === $GLOBALS['sccm_seen_route'] && ! isset( $GLOBALS['wp']->query_vars['rest_route'] ) );
+// An administrator builds the page: the check still answers for visitors, and the admin stays logged in.
+$admins = get_users( array( 'role' => 'administrator', 'number' => 1, 'fields' => 'ID' ) );
+wp_set_current_user( (int) $admins[0] );
+$sccm_cookie_before = $_COOKIE;
+$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( (int) $admins[0], time() + 3600, 'logged_in' );
+SCCM_REST::forget_rest_check();
+sccm_check( 'transport: an administrator building the page gets the visitors\' answer (cache-safe)', 'ajax' === SCCM_REST::transport() );
+sccm_check( 'transport: the check leaves the administrator logged in and the cookies as they were', (int) $admins[0] === get_current_user_id() && isset( $_COOKIE[ LOGGED_IN_COOKIE ] ) );
+$_COOKIE = $sccm_cookie_before;
+wp_set_current_user( 0 );
+// A plugin that allows some routes (ASE allows e.g. contact-form-7/): asked for the plugin's own route.
+remove_filter( 'rest_authentication_errors', $sccm_block, 200 );
+$sccm_allow_own = function ( $errors ) {
+	$route = isset( $GLOBALS['wp']->query_vars['rest_route'] ) ? $GLOBALS['wp']->query_vars['rest_route'] : '';
+	return is_user_logged_in() || 0 === strpos( ltrim( $route, '/' ), 'sccm/v1' ) ? $errors : new WP_Error( 'blocked', 'no', array( 'status' => 401 ) );
+};
+add_filter( 'rest_authentication_errors', $sccm_allow_own, 200 );
+SCCM_REST::forget_rest_check();
+sccm_check( 'transport: REST API when the blocking plugin allows the plugin\'s route', 'rest' === SCCM_REST::transport() );
+remove_filter( 'rest_authentication_errors', $sccm_allow_own, 200 );
+// Admin and Site Enhancements is also recognised by its option, while it is active.
+update_option( 'admin_site_enhancements', array( 'disable_rest_api' => true ) );
+SCCM_REST::forget_rest_check();
+sccm_check( 'transport: the setting of a deactivated Admin and Site Enhancements is ignored', defined( 'ASENHA_VERSION' ) || 'rest' === SCCM_REST::transport() );
+if ( ! defined( 'ASENHA_VERSION' ) ) {
+	define( 'ASENHA_VERSION', 'test' ); // As if the plugin were active.
+}
+SCCM_REST::forget_rest_check();
+sccm_check( 'transport: "Disable REST API" in Admin and Site Enhancements is recognised', 'ajax' === SCCM_REST::transport() );
+delete_option( 'admin_site_enhancements' );
+add_filter( 'sccm_rest_blocked', '__return_false' );
+SCCM_REST::forget_rest_check();
+sccm_check( 'transport: the sccm_rest_blocked filter can override the check', 'rest' === SCCM_REST::transport() );
+remove_filter( 'sccm_rest_blocked', '__return_false' );
+// A changed answer clears the page caches (cached pages carry the old one).
+update_option( SCCM_REST::REST_CHECK_OPTION, array( 'blocked' => false, 'by' => 'none', 'time' => 0 ), false );
+add_filter( 'sccm_rest_blocked', '__return_true' );
+SCCM_REST::transport();
+sccm_check( 'transport: a changed answer asks for the page caches to be cleared', false !== has_action( 'shutdown', array( 'SCCM_Cache', 'flush_queued' ) ) );
+remove_filter( 'sccm_rest_blocked', '__return_true' );
+SCCM_Cache::flush_queued();
+// Browsers found the REST API refused (a firewall PHP cannot see) and admin-ajax.php worked.
+delete_option( SCCM_REST::REST_CHECK_OPTION );
+SCCM_REST::transport();
+$sccm_note = new ReflectionMethod( 'SCCM_REST', 'note_rest_problem' );
+$sccm_note->setAccessible( true );
+$sccm_note->invoke( null, 500 );
+sccm_check( 'transport: a server error (500) does not switch to admin-ajax.php', 'rest' === SCCM_REST::transport() );
+delete_option( SCCM_REST::REST_PROBLEM_OPTION );
+$sccm_note->invoke( null, 403 );
+sccm_check( 'transport: a 401/403/404 seen by browsers switches to admin-ajax.php', 'ajax' === SCCM_REST::transport() && 'browser' === get_option( SCCM_REST::REST_CHECK_OPTION )['by'] );
+SCCM_REST::forget_rest_check();
+sccm_check( 'transport: a browser result is kept when plugins change (PHP cannot see a firewall)', 'ajax' === SCCM_REST::transport() );
+SCCM_Cache::flush_queued();
+// The owner's choice wins.
+SCCM_Settings::update( array( 'log_transport' => 'rest' ) );
+sccm_check( 'transport: "REST API" chosen in the settings', 'rest' === SCCM_REST::transport() );
+SCCM_Settings::update( array( 'log_transport' => 'ajax' ) );
+sccm_check( 'transport: "admin-ajax.php only" chosen in the settings', 'ajax' === SCCM_REST::transport() );
+SCCM_Settings::update( array( 'log_transport' => 'nonsense' ) );
+sccm_check( 'transport: an unknown setting value falls back to Automatic', 'auto' === SCCM_Settings::get( 'log_transport' ) );
+SCCM_Settings::update( array( 'log_transport' => 'auto' ) );
+delete_option( SCCM_REST::REST_CHECK_OPTION );
+delete_option( SCCM_REST::REST_PROBLEM_OPTION );
+if ( false !== $sccm_saved_ase ) {
+	update_option( 'admin_site_enhancements', $sccm_saved_ase );
+}
+SCCM_Cache::flush_queued();
+remove_action( 'shutdown', array( 'SCCM_Cache', 'flush_queued' ), 1 );
+
 /* ---------------------------------------------------------------- Other consent plugins */
 
 require_once SCCM_PATH . 'includes/admin/class-sccm-admin.php';

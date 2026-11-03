@@ -7,13 +7,37 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.3.3 (1.3.2 is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.3.4 (1.3.3 is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); 1.3.0 admin redesign after production feedback
-- **Last updated:** 2026-10-28 (session 10d)
-- **Tests:** unit 33, WP-CLI 199, visitor e2e 116, admin e2e 104, all passing on **MySQL 8.4
+- **Last updated:** 2026-11-03 (session 11)
+- **Tests:** unit 33, WP-CLI 217, visitor e2e 116, admin e2e 118, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-11-03 — Session 11 (1.3.4: no 401 before admin-ajax.php)
+
+**Request:** prima.systems has ASE "Disable REST API" on, so every choice first got a 401 from
+`/wp-json/sccm/v1/consent` (console error) before the admin-ajax fallback saved it.
+
+**Done:** `SCCM_REST::transport()` → `rest.transport` in the visitor config; `post()` in
+sccm-frontend.js goes straight to admin-ajax.php for `ajax` (`rest_status=skip`) or after a
+401/403/404 earlier in the visit (`sessionStorage.sccm_ajax`). Detection: the
+`rest_authentication_errors` filter run as a logged-out request to `/sccm/v1/consent` (user and
+login cookies swapped and restored, core cookie check left out) plus the ASE option while ASE is
+active; stored in `sccm_rest_check` (1 hour; 30 days when browsers reported 401/403/404 and
+admin-ajax.php worked); checked again on plugin (de)activation and settings changes; a changed
+answer clears page caches. Setting `log_transport` (Automatic / REST API / admin-ajax.php only)
+with a "Right now" note; Consent Records explains it. Checked against the real ASE 9.3.1 code
+(its callback reads `rest_route` and accepts the login cookie, hence the simulation) and on the
+local site with ASE installed: the same 401 as production, then only `admin-ajax.php` 200, no
+console error, record saved; deactivating ASE switches back to REST. A working REST request
+answers 201, not 200. Unit 33, WP-CLI 217, visitor e2e 116, admin e2e 118 (MySQL 8.4).
+
+**Next:** owner installs 1.3.4 and purges NitroPack + WP Engine (1.3.3 already clears them when
+the asset files change, so a manual purge is only a safety step).
 
 ---
 
