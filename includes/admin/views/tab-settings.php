@@ -285,6 +285,21 @@ SCCM_Admin::form_open( 'settings' );
 			),
 			__( 'Shortened (default) is enough as proof for most websites. One-way code: the address cannot be read back, but you can still find a visitor\'s records by searching for their IP address. Full IP address: it is personal data under the GDPR; only choose it if you have a reason to keep it, and mention it in your privacy policy. The search box on Consent Records finds records by IP address in every mode except "Do not save it".', 'smart-cookie-consent-manager' )
 		);
+		SCCM_Admin::select(
+			'log_transport',
+			__( 'How records are sent', 'smart-cookie-consent-manager' ),
+			$settings['log_transport'],
+			array(
+				'auto' => __( 'Automatic (recommended)', 'smart-cookie-consent-manager' ),
+				'rest' => __( 'REST API (/wp-json/), admin-ajax.php if it fails', 'smart-cookie-consent-manager' ),
+				'ajax' => __( 'admin-ajax.php only', 'smart-cookie-consent-manager' ),
+			),
+			sprintf(
+				/* translators: %s: what the automatic check found */
+				__( 'Automatic uses the REST API, unless a plugin or firewall blocks it for visitors (for example "Disable REST API" in Admin and Site Enhancements); then records and cookie reports go straight to admin-ajax.php, without a failed request first. Right now: %s', 'smart-cookie-consent-manager' ),
+				SCCM_REST::transport_note()
+			)
+		);
 		SCCM_Admin::input( 'retention_months', __( 'Keep records for (months)', 'smart-cookie-consent-manager' ), $settings['retention_months'], 'number', __( 'Older records are deleted automatically every day. 0 = keep forever.', 'smart-cookie-consent-manager' ), array( 'min' => 0, 'max' => 120 ) );
 		?>
 	</table>

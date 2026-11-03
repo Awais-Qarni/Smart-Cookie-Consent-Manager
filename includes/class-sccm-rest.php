@@ -4,7 +4,8 @@
  *   POST /wp-json/sccm/v1/consent  → consent record
  *   POST /wp-json/sccm/v1/report   → cookie names seen in a visitor's browser (scanner)
  * and the same through admin-ajax.php (actions sccm_consent / sccm_report), which the browser
- * uses when a site blocks the REST API for visitors (security plugins, firewalls).
+ * uses when a site blocks the REST API for visitors (security plugins, firewalls). When the
+ * block is known up front (see transport()), the browser goes straight to admin-ajax.php.
  *
  * Protected by strict validation, payload limits and per-IP rate limiting.
  *
@@ -29,6 +30,180 @@ class SCCM_REST {
 			add_action( 'wp_ajax_nopriv_sccm_' . $action, array( __CLASS__, 'ajax_' . $action ) );
 			add_action( 'wp_ajax_sccm_' . $action, array( __CLASS__, 'ajax_' . $action ) );
 		}
+		// A plugin or its settings changed: check again whether visitors can use the REST API.
+		foreach ( array( 'activated_plugin', 'deactivated_plugin', 'sccm_settings_saved', 'update_option_admin_site_enhancements' ) as $hook ) {
+			add_action( $hook, array( __CLASS__, 'forget_rest_check' ) );
+		}
+	}
+
+	/**
+	 * Option: whether the REST API is blocked for logged-out visitors
+	 * (blocked: bool, by: 'filter' | 'browser' | 'none', time).
+	 */
+	const REST_CHECK_OPTION = 'sccm_rest_check';
+
+	/**
+	 * Seconds a check result is reused (one hour).
+	 */
+	const REST_CHECK_TTL = 3600;
+
+	/**
+	 * Seconds a result reported by browsers is kept (30 days): a REST request failed with
+	 * 401/403/404 and admin-ajax.php worked. A firewall block cannot be checked in PHP.
+	 */
+	const REST_CHECK_BROWSER_TTL = 2592000;
+
+	/**
+	 * How the browser sends consent records and cookie reports: 'rest' (REST API, admin-ajax.php
+	 * if it fails) or 'ajax' (admin-ajax.php only). The same for every visitor, so cache-safe.
+	 *
+	 * @return string 'rest' or 'ajax'.
+	 */
+	public static function transport() {
+		$mode = SCCM_Settings::get( 'log_transport' );
+		if ( 'rest' === $mode || 'ajax' === $mode ) {
+			return $mode;
+		}
+		$check = self::rest_check();
+		return $check['blocked'] ? 'ajax' : 'rest';
+	}
+
+	/**
+	 * Short text for the Settings tab: what is used now and why.
+	 *
+	 * @return string
+	 */
+	public static function transport_note() {
+		$mode = SCCM_Settings::get( 'log_transport' );
+		if ( 'ajax' === $mode ) {
+			return __( 'admin-ajax.php (chosen here).', 'smart-cookie-consent-manager' );
+		}
+		if ( 'rest' === $mode ) {
+			return __( 'the REST API (chosen here).', 'smart-cookie-consent-manager' );
+		}
+		$check = self::rest_check();
+		if ( ! $check['blocked'] ) {
+			return __( 'the REST API (visitors can use it).', 'smart-cookie-consent-manager' );
+		}
+		return 'browser' === $check['by']
+			? __( 'admin-ajax.php (visitors\' browsers found the REST API blocked).', 'smart-cookie-consent-manager' )
+			: __( 'admin-ajax.php (a plugin blocks the REST API for visitors).', 'smart-cookie-consent-manager' );
+	}
+
+	/**
+	 * The stored check result, checked again when it is too old.
+	 *
+	 * @return array{blocked: bool, by: string, time: int}
+	 */
+	public static function rest_check() {
+		$check = get_option( self::REST_CHECK_OPTION );
+		if ( is_array( $check ) && isset( $check['blocked'], $check['by'], $check['time'] ) ) {
+			$ttl = 'browser' === $check['by'] ? self::REST_CHECK_BROWSER_TTL : self::REST_CHECK_TTL;
+			if ( time() - (int) $check['time'] < $ttl ) {
+				return $check;
+			}
+		}
+		$blocked = self::rest_blocked_for_visitors();
+		return self::save_rest_check( $blocked, $blocked ? 'filter' : 'none' );
+	}
+
+	/**
+	 * Store a check result. When the answer changes, cached pages still carry the old one, so
+	 * the page caches are cleared.
+	 *
+	 * @param bool   $blocked Whether visitors cannot use the REST API.
+	 * @param string $by      'filter', 'browser' or 'none'.
+	 * @return array The stored result.
+	 */
+	private static function save_rest_check( $blocked, $by ) {
+		$old   = get_option( self::REST_CHECK_OPTION );
+		$check = array(
+			'blocked' => (bool) $blocked,
+			'by'      => $by,
+			'time'    => time(),
+		);
+		update_option( self::REST_CHECK_OPTION, $check, false );
+		if ( is_array( $old ) && isset( $old['blocked'] ) && (bool) $old['blocked'] !== $check['blocked'] ) {
+			SCCM_Cache::request();
+		}
+		return $check;
+	}
+
+	/**
+	 * A plugin or setting changed: check again on the next page view. A result reported by
+	 * browsers is kept (PHP cannot see a firewall block, so a new check would say "not blocked").
+	 */
+	public static function forget_rest_check() {
+		$check = get_option( self::REST_CHECK_OPTION );
+		if ( is_array( $check ) && isset( $check['by'] ) && 'browser' !== $check['by'] ) {
+			$check['time'] = 0;
+			update_option( self::REST_CHECK_OPTION, $check, false );
+		}
+	}
+
+	/**
+	 * Whether a plugin blocks the REST API for logged-out visitors.
+	 *
+	 * Runs the rest_authentication_errors filter (where plugins such as Admin and Site
+	 * Enhancements, Disable REST API or Perfmatters refuse REST requests) the way a logged-out
+	 * visitor's request to /sccm/v1/consent would: no current user, no login cookies, that route
+	 * in the query vars (plugins allow some routes), and without WordPress's own cookie check,
+	 * which is only for logged-in users. The user is swapped on the global, not with
+	 * wp_set_current_user(), so no login actions run; everything is restored after, so the page
+	 * being built (perhaps for a logged-in administrator) is not affected. Admin and Site
+	 * Enhancements is also recognised by its option while it is active (the option stays when
+	 * the plugin is deactivated).
+	 *
+	 * @return bool
+	 */
+	private static function rest_blocked_for_visitors() {
+		global $current_user, $wp;
+		$ase = defined( 'ASENHA_VERSION' ) ? get_option( 'admin_site_enhancements' ) : null;
+		if ( is_array( $ase ) && ! empty( $ase['disable_rest_api'] ) ) {
+			$blocked = true;
+		} else {
+			$saved_user   = $current_user;
+			$saved_cookie = $_COOKIE;
+			$has_wp       = $wp instanceof WP;
+			$saved_route  = $has_wp && isset( $wp->query_vars['rest_route'] ) ? $wp->query_vars['rest_route'] : null;
+			$current_user = new WP_User( 0 ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- restored below.
+			foreach ( array( 'LOGGED_IN_COOKIE', 'AUTH_COOKIE', 'SECURE_AUTH_COOKIE' ) as $name ) {
+				if ( defined( $name ) ) {
+					unset( $_COOKIE[ constant( $name ) ] );
+				}
+			}
+			if ( $has_wp ) {
+				$wp->query_vars['rest_route'] = '/' . self::NS . '/consent';
+			}
+			$core = has_filter( 'rest_authentication_errors', 'rest_cookie_check_errors' );
+			if ( false !== $core ) {
+				remove_filter( 'rest_authentication_errors', 'rest_cookie_check_errors', $core );
+			}
+			try {
+				// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WordPress's own filter.
+				$blocked = is_wp_error( apply_filters( 'rest_authentication_errors', null ) );
+			} catch ( Throwable $e ) {
+				$blocked = false;
+			}
+			if ( false !== $core ) {
+				add_filter( 'rest_authentication_errors', 'rest_cookie_check_errors', $core );
+			}
+			if ( $has_wp ) {
+				if ( null === $saved_route ) {
+					unset( $wp->query_vars['rest_route'] );
+				} else {
+					$wp->query_vars['rest_route'] = $saved_route;
+				}
+			}
+			$_COOKIE      = $saved_cookie;
+			$current_user = $saved_user; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+		}
+		/**
+		 * Whether the REST API is blocked for logged-out visitors (records then go to admin-ajax.php).
+		 *
+		 * @param bool $blocked What the check found.
+		 */
+		return (bool) apply_filters( 'sccm_rest_blocked', $blocked );
 	}
 
 	/**
@@ -237,7 +412,9 @@ class SCCM_REST {
 	 */
 	private static function ajax_payload() {
 		// phpcs:disable WordPress.Security.NonceVerification.Missing -- public endpoint (cached pages), see the class comment.
-		$status = isset( $_POST['rest_status'] ) ? absint( $_POST['rest_status'] ) : 0;
+		// "skip": the browser was told to use admin-ajax.php (transport()), not a REST failure.
+		$skipped = isset( $_POST['rest_status'] ) && 'skip' === $_POST['rest_status'];
+		$status  = isset( $_POST['rest_status'] ) ? absint( $_POST['rest_status'] ) : 0;
 		$raw    = isset( $_POST['payload'] ) ? (string) wp_unslash( $_POST['payload'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON, every value is validated by the store function.
 		$data   = strlen( $raw ) <= 20000 ? json_decode( $raw, true ) : null;
 		// Firewalls sometimes change JSON in form data: the browser also sends plain fields (f_*).
@@ -250,7 +427,9 @@ class SCCM_REST {
 			$data['url']        = isset( $_POST['f_url'] ) ? esc_url_raw( wp_unslash( $_POST['f_url'] ) ) : '';
 		}
 		// phpcs:enable
-		self::note_rest_problem( $status );
+		if ( ! $skipped ) {
+			self::note_rest_problem( $status );
+		}
 		return $data;
 	}
 
@@ -261,6 +440,13 @@ class SCCM_REST {
 	 * @param int $status HTTP status the REST request got (0 = network error / blocked).
 	 */
 	private static function note_rest_problem( $status ) {
+		if ( in_array( (int) $status, array( 401, 403, 404 ), true ) && 'auto' === SCCM_Settings::get( 'log_transport' ) ) {
+			$check = get_option( self::REST_CHECK_OPTION );
+			if ( ! is_array( $check ) || empty( $check['blocked'] ) ) {
+				// The REST API refuses visitors and admin-ajax.php works: send there from now on.
+				self::save_rest_check( true, 'browser' );
+			}
+		}
 		$last = get_option( self::REST_PROBLEM_OPTION );
 		if ( is_array( $last ) && time() - (int) $last['time'] < HOUR_IN_SECONDS ) {
 			return;

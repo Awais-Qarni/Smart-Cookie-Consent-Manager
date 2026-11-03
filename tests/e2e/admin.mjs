@@ -321,9 +321,94 @@ check('X2 logged-out requests are refused', anon.status() !== 200 && anon.status
 	await Promise.all([page.waitForNavigation(), page.click('button:has-text("Test record saving")')]);
 	const tested = await page.textContent('.notice');
 	check('CR7 "Test record saving" checks the database and the visitor route, and leaves no test record', /Database: OK/.test(tested) && /Visitor route \(admin-ajax\.php\): OK/.test(tested) && count() === 3, tested.trim().slice(0, 160));
-	wp('eval', `SCCM_Consent_Log::delete_all(); delete_option( SCCM_REST::REST_PROBLEM_OPTION );`);
+	wp('eval', `SCCM_Consent_Log::delete_all(); delete_option( SCCM_REST::REST_PROBLEM_OPTION ); delete_option( SCCM_REST::REST_CHECK_OPTION );`);
 	await page.goto(admin('records'));
 	check('CR5 an empty list explains how to test record saving', /open your website in a private window/.test(await page.textContent('.sccm-tab')));
+}
+
+// How records are sent: straight to admin-ajax.php when the REST API is blocked for visitors.
+{
+	// Blocks the REST API for logged-out visitors the way security plugins do (e.g. Admin and Site Enhancements).
+	const BLOCK = CONTENT + '/mu-plugins/zz-sccm-restblock.php';
+	fs.writeFileSync(BLOCK, `<?php
+add_filter( 'rest_authentication_errors', function ( $errors ) {
+	if ( is_wp_error( $errors ) || ! get_option( 'sccm_test_restblock' ) || is_user_logged_in() || wp_validate_auth_cookie( '', 'logged_in' ) ) {
+		return $errors;
+	}
+	return new WP_Error( 'rest_api_authentication_required', 'The REST API has been restricted to authenticated users.', array( 'status' => 401 ) );
+}, 200 );
+`);
+	const reset = (extra = '') => wp('eval', `SCCM_Consent_Log::delete_all(); delete_option( SCCM_REST::REST_PROBLEM_OPTION ); delete_option( SCCM_REST::REST_CHECK_OPTION ); global $wpdb; $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_%sccm\\_rl\\_%' OR option_name LIKE '\\_transient\\_timeout\\_sccm\\_rl\\_%'" ); wp_cache_flush(); ${extra}`);
+	const count = () => parseInt(wp('eval', `echo SCCM_Consent_Log::query( array() )['total'];`), 10);
+	// A logged-out visitor makes a choice (and optionally a second one in the same visit).
+	const visitor = async ({ routeBlock = false, second = false } = {}) => {
+		const c = await browser.newContext();
+		const seen = { rest: [], ajax: [], errors: [], transport: '', session: '' };
+		if (routeBlock) {
+			// A firewall in front of WordPress: PHP cannot see this block.
+			await c.route('**/wp-json/sccm/**', (r) => r.fulfill({ status: 403, contentType: 'text/html', body: 'Forbidden' }));
+		}
+		const p = await c.newPage();
+		p.on('console', (m) => { if (m.type() === 'error') seen.errors.push(m.text()); });
+		p.on('response', (r) => {
+			const req = r.request();
+			if (req.url().includes('/sccm/v1/')) {
+				seen.rest.push(r.status());
+			}
+			if (req.url().includes('admin-ajax.php') && /action=sccm_consent/.test(req.postData() || '')) {
+				seen.ajax.push(r.status() + ':' + (/rest_status=skip/.test(req.postData()) ? 'skip' : 'fallback'));
+			}
+		});
+		await p.goto(BASE + '/');
+		seen.transport = await p.evaluate(() => window.SCCM_CONFIG.rest.transport);
+		await p.click('#sccm-banner .sccm-btn--accept');
+		await p.waitForTimeout(1500);
+		if (second) {
+			await p.evaluate(() => window.SCCM.rejectAll());
+			await p.waitForTimeout(1500);
+		}
+		seen.session = await p.evaluate(() => sessionStorage.getItem('sccm_ajax') || '');
+		await c.close();
+		return seen;
+	};
+
+	reset(`update_option( 'sccm_test_restblock', 1 );`);
+	const blocked = await visitor();
+	check('TR1 REST API blocked for visitors: the page is told to use admin-ajax.php', blocked.transport === 'ajax', blocked.transport);
+	check('TR1 the choice goes only to admin-ajax.php (200), no /wp-json/sccm request, no console error', blocked.rest.length === 0 && blocked.ajax.join() === '200:skip' && blocked.errors.length === 0, JSON.stringify(blocked));
+	check('TR1 the record is saved', count() === 1, String(count()));
+	await page.goto(admin('records'));
+	check('TR1 the record is listed, and the tab says records go straight to admin-ajax.php', /Allowed all/.test(await page.textContent('.sccm-table-admin tbody')) && /go straight to admin-ajax\.php/.test(await page.textContent('.sccm-tab')));
+	check('TR2 a request sent straight to admin-ajax.php is not noted as a REST problem', wp('eval', `echo wp_json_encode( get_option( SCCM_REST::REST_PROBLEM_OPTION ) );`) === 'false');
+	await page.goto(admin('settings'));
+	check('TR3 Settings shows the choice and what Automatic uses now', /How records are sent/.test(await page.textContent('.sccm-tab')) && /Right now: admin-ajax\.php \(a plugin blocks the REST API for visitors\)/.test(await page.textContent('.sccm-tab')));
+	// An administrator looking at the site gets the same page as visitors (cache-safe), and stays logged in.
+	await page.goto(BASE + '/');
+	const asAdmin = await page.evaluate(() => ({ t: window.SCCM_CONFIG.rest.transport, bar: !!document.getElementById('wpadminbar') }));
+	check('TR4 a logged-in administrator\'s page says admin-ajax.php too, and the admin bar is still there', asAdmin.t === 'ajax' && asAdmin.bar, JSON.stringify(asAdmin));
+
+	reset(`delete_option( 'sccm_test_restblock' );`);
+	const open = await visitor();
+	check('TR5 REST API allowed: the choice goes through /wp-json/sccm/v1/consent (201 Created), not admin-ajax.php', open.transport === 'rest' && open.rest.join() === '201' && open.ajax.length === 0 && count() === 1, JSON.stringify(open));
+
+	reset(`update_option( 'sccm_test_restblock', 1 ); SCCM_Settings::update( array( 'log_transport' => 'rest' ) );`);
+	const net = await visitor({ second: true });
+	check('TR6 "REST API" chosen but blocked: the first choice falls back to admin-ajax.php after the 401', net.transport === 'rest' && net.rest.join() === '401' && net.ajax[0] === '200:fallback', JSON.stringify(net));
+	check('TR6 later sends in the same visit go straight to admin-ajax.php (remembered in sessionStorage)', net.ajax.join() === '200:fallback,200:skip' && net.session === '1' && count() === 2, JSON.stringify(net));
+	check('TR6 a chosen transport is not changed by what browsers report', wp('eval', `echo SCCM_REST::transport();`) === 'rest');
+
+	reset(`delete_option( 'sccm_test_restblock' ); SCCM_Settings::update( array( 'log_transport' => 'ajax' ) );`);
+	const forced = await visitor();
+	check('TR7 "admin-ajax.php only" chosen: no REST request even when it would work', forced.transport === 'ajax' && forced.rest.length === 0 && forced.ajax.join() === '200:skip', JSON.stringify(forced));
+
+	reset(`SCCM_Settings::update( array( 'log_transport' => 'auto' ) );`);
+	const fw = await visitor({ routeBlock: true });
+	check('TR8 a firewall block PHP cannot see: the first visitor falls back to admin-ajax.php', fw.transport === 'rest' && fw.rest.join() === '403' && fw.ajax.join() === '200:fallback', JSON.stringify(fw));
+	const learned = await visitor({ routeBlock: true });
+	check('TR8 then the site switches to admin-ajax.php for everyone (no failed request for the next visitors)', learned.transport === 'ajax' && learned.rest.length === 0 && learned.ajax.join() === '200:skip' && count() === 2, JSON.stringify(learned));
+
+	fs.unlinkSync(BLOCK);
+	reset(`delete_option( 'sccm_test_restblock' ); SCCM_Settings::update( array( 'log_transport' => 'auto' ) );`);
 }
 
 // Leaving the page during "Scan now": the browser warns, and the scan continues on the next plugin page.

@@ -223,6 +223,8 @@
 	 * and the endpoints work for logged-in and logged-out visitors alike. When the REST API does
 	 * not answer (blocked by a security plugin or firewall, or an error), the same data goes
 	 * through admin-ajax.php instead. Rejected data (400) and rate limits (429) are not resent.
+	 * When the site is known to block the REST API (C.rest.transport = 'ajax', or a REST request
+	 * got 401/403/404 earlier in this visit), the data goes straight to admin-ajax.php.
 	 *
 	 * @param {string} url    REST address.
 	 * @param {Object} body   Data.
@@ -239,7 +241,7 @@
 			var form = new w.URLSearchParams();
 			form.append('action', action);
 			form.append('payload', JSON.stringify(body));
-			form.append('rest_status', String(typeof status === 'number' ? status : 0));
+			form.append('rest_status', typeof status === 'number' || status === 'skip' ? String(status) : '0');
 			// The same values as plain fields, in case a firewall changes JSON in form data.
 			Object.keys(body).forEach(function (key) {
 				var value = body[key];
@@ -248,6 +250,14 @@
 				}
 			});
 			w.fetch(C.rest.ajax, { method: 'POST', body: form, credentials: 'same-origin', keepalive: true }).catch(function () {});
+		}
+		if (action && C.rest.ajax && (C.rest.transport === 'ajax' || restRefused())) {
+			try {
+				fallback('skip');
+			} catch (e) {
+				/* Logging must never break the page. */
+			}
+			return;
 		}
 		try {
 			w.fetch(url, {
@@ -258,6 +268,9 @@
 				keepalive: true
 			}).then(function (response) {
 				if (!response.ok && response.status !== 400 && response.status !== 429) {
+					if (response.status === 401 || response.status === 403 || response.status === 404) {
+						restRefused(true);
+					}
 					fallback(response.status);
 				}
 			}, function () {
@@ -265,6 +278,23 @@
 			});
 		} catch (e) {
 			/* Logging must never break the page. */
+		}
+	}
+
+	/**
+	 * Whether the REST API refused a request earlier in this visit (remembered in sessionStorage).
+	 *
+	 * @param {boolean} [set] True to remember a refusal.
+	 * @return {boolean}
+	 */
+	function restRefused(set) {
+		try {
+			if (set) {
+				w.sessionStorage.setItem('sccm_ajax', '1');
+			}
+			return w.sessionStorage.getItem('sccm_ajax') === '1';
+		} catch (e) {
+			return false;
 		}
 	}
 

@@ -80,6 +80,14 @@ if ( is_array( $sccm_problem ) && time() - (int) $sccm_problem['time'] < WEEK_IN
 		);
 		?>
 	</p></div>
+<?php elseif ( 'ajax' === SCCM_REST::transport() ) : ?>
+	<div class="notice notice-info inline"><p>
+		<?php
+		echo esc_html( 'ajax' === SCCM_Settings::get( 'log_transport' )
+			? __( 'Records are sent through admin-ajax.php (Settings → Consent records → How records are sent).', 'smart-cookie-consent-manager' )
+			: __( 'Your site blocks the WordPress REST API for visitors, so records go straight to admin-ajax.php, without a failed request first. That is fine.', 'smart-cookie-consent-manager' ) );
+		?>
+	</p></div>
 <?php endif; ?>
 <?php if ( $sccm_db_error ) : ?>
 	<div class="notice notice-error inline"><p>

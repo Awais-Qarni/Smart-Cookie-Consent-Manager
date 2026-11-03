@@ -115,6 +115,7 @@ class SCCM_Settings {
 			'log_enabled'          => 1,
 			'ip_mode'              => 'anonymize', // anonymize | hash | full | none.
 			'retention_months'     => 24,
+			'log_transport'        => 'auto',      // auto | rest | ajax (how the browser sends records and reports).
 
 			// Advanced.
 			'delete_on_uninstall'  => 0,
@@ -275,6 +276,7 @@ class SCCM_Settings {
 			'gpc_scope'         => array( 'all', 'marketing' ),
 			'scan_schedule'     => array( 'daily', 'weekly', 'off' ),
 			'ip_mode'           => array( 'anonymize', 'hash', 'full', 'none' ),
+			'log_transport'     => array( 'auto', 'rest', 'ajax' ),
 		);
 		foreach ( $enums as $key => $allowed ) {
 			if ( isset( $input[ $key ] ) ) {

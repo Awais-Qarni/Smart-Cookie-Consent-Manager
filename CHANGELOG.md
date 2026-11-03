@@ -2,6 +2,22 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.4] - 2026-11-03
+### Changed
+- **No failed request when the REST API is blocked for visitors.** On sites where a plugin
+  blocks the REST API for logged-out visitors (for example "Disable REST API" in Admin and Site
+  Enhancements), every choice first went to `/wp-json/sccm/v1/consent`, got a 401 (a red error
+  in the browser console, which Lighthouse can flag), and was then saved through admin-ajax.php.
+  The plugin now checks once an hour, the way a logged-out visitor's request would be checked,
+  whether the REST API is blocked, and tells the page to send records and cookie reports
+  straight to admin-ajax.php. Sites where the REST API works keep using it, with admin-ajax.php
+  as the fallback. If a REST request still gets 401/403/404 (for example from a firewall in
+  front of WordPress), the rest of that visit goes straight to admin-ajax.php, and the site
+  switches to admin-ajax.php for all visitors.
+- New setting: **Settings → Consent records → How records are sent**: Automatic (recommended),
+  REST API, or admin-ajax.php only. It shows what Automatic uses right now.
+- Consent records, their format and checks are unchanged.
+
 ## [1.3.3] - 2026-10-28
 ### Fixed
 - **The banner could disappear after an update on sites with a page cache** (NitroPack,

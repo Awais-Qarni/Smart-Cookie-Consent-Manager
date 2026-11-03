@@ -10,6 +10,7 @@
 | `sccm_blocking_rules` | `array $rules` | Final list of `array( pattern, category, service )` used by the blocker. |
 | `sccm_categories` | `array $categories` | Resolved categories (labels, descriptions, enabled). |
 | `sccm_consent_mode_map` | `array $map` | Category → Google Consent Mode types. |
+| `sccm_rest_blocked` | `bool $blocked` | Whether the REST API is blocked for logged-out visitors (Automatic transport). Return `true` to send records and reports straight to admin-ajax.php. |
 | `sccm_texts` | `array $texts` | Visitor-facing texts (e.g. for multilingual plugins). |
 | `sccm_frontend_config` | `array $config` | Everything passed to the browser as `window.SCCM_CONFIG`. |
 | `sccm_client_ip` | `string $ip` | Client IP (e.g. read a trusted proxy header). |
@@ -64,7 +65,9 @@ request; clears not started by an administrator at most every 5 minutes).
 | `POST /wp-json/sccm/v1/report` | `admin-ajax.php`, action `sccm_report`, field `payload` (JSON) | Unknown cookie names (visitor scanner) |
 
 Both are public (pages are cached, so no nonces), validated and rate-limited per IP. The
-browser sends with same-origin credentials to a same-site address.
+browser sends with same-origin credentials to a same-site address. When the config says
+`rest.transport: "ajax"` (REST API blocked for visitors, or chosen in Settings → Consent records
+→ How records are sent), the browser sends straight to admin-ajax.php with `rest_status=skip`.
 
 ## CSS
 

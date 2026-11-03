@@ -299,6 +299,18 @@ predictable. Labels/descriptions are editable; categories can be hidden if unuse
   the same payload to admin-ajax.php (`sccm_consent` / `sccm_report`), which runs the same
   `store_consent()` / `store_report()` and notes the REST status in `sccm_rest_problem`
   (at most once an hour) for the Consent Records tab.
+- **Transport chosen up front** (`SCCM_REST::transport()`, setting `log_transport`, default
+  `auto`): the config carries `rest.transport` = `rest` or `ajax`. With `ajax` the browser skips
+  the REST request (`rest_status=skip`, not noted as a problem). Automatic runs the
+  `rest_authentication_errors` filter as a logged-out request to `/sccm/v1/consent` would (no
+  current user and no login cookies, swapped on the globals and restored; `rest_route` set;
+  core's cookie check left out), and recognises Admin and Site Enhancements by its
+  `disable_rest_api` option while it is active. The result is the same for every visitor
+  (cache-safe), stored in `sccm_rest_check` and reused for an hour; plugin (de)activation, SCCM
+  settings and ASE settings trigger a new check. A REST 401/403/404 that reaches the admin-ajax
+  fallback is a block PHP cannot see (a firewall): it is stored as `by: browser` for 30 days.
+  When the answer changes, the page caches are cleared. In the browser, a 401/403/404 also sets
+  `sessionStorage.sccm_ajax`, so the rest of that visit goes straight to admin-ajax.php.
 - Output escaped everywhere; SQL via `$wpdb->prepare()`.
 
 ## Known limitations (documented for site owners)

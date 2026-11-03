@@ -323,9 +323,11 @@ class SCCM_Frontend {
 			'log'         => (bool) $settings['log_enabled'],
 			'scan'        => (bool) $settings['scanner_client'],
 			'rest'        => array(
-				'consent' => self::same_site_url( rest_url( 'sccm/v1/consent' ) ),
-				'report'  => self::same_site_url( rest_url( 'sccm/v1/report' ) ),
-				'ajax'    => self::same_site_url( admin_url( 'admin-ajax.php' ) ),
+				'consent'   => self::same_site_url( rest_url( 'sccm/v1/consent' ) ),
+				'report'    => self::same_site_url( rest_url( 'sccm/v1/report' ) ),
+				'ajax'      => self::same_site_url( admin_url( 'admin-ajax.php' ) ),
+				// 'ajax' when the REST API is blocked for visitors: no failed request first.
+				'transport' => SCCM_REST::transport(),
 			),
 		);
 
