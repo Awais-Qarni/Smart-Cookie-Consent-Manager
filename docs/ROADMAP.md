@@ -89,6 +89,7 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
       is blocked for visitors (no 401 first); setting "How records are sent"
 - [x] 1.3.5 (2026-11-10): admin-area cookies no longer listed (browsers of WordPress users never
       report; "Scan now" as a visitor); one email per recipient, website address, how found
+- [x] 1.3.6 (2026-11-10): everything the plugin keeps in the browser is in the sccm_consent cookie
 
 ## Later (not in scope for 1.0)
 - Geo-targeting (different banner per region)

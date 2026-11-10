@@ -434,7 +434,16 @@ add_filter( 'rest_authentication_errors', function ( $errors ) {
 			await p.evaluate(() => window.SCCM.rejectAll());
 			await p.waitForTimeout(1500);
 		}
-		seen.session = await p.evaluate(() => sessionStorage.getItem('sccm_ajax') || '');
+		// The refusal is noted in the plugin's one cookie (sccm_consent → x.a), nowhere else.
+		const store = await p.evaluate(() => {
+			const m = document.cookie.match(/(?:^|; )sccm_consent=([^;]+)/);
+			let o = null;
+			try { o = m ? JSON.parse(decodeURIComponent(m[1])) : null; } catch (e) { o = null; }
+			const own = (s) => Object.keys(s).filter((k) => /^sccm/i.test(k));
+			return { a: !!(o && o.x && o.x.a), other: own(sessionStorage).concat(own(localStorage)), cookies: document.cookie.split('; ').map((c) => c.split('=')[0]).filter((n) => /^sccm/i.test(n)) };
+		});
+		seen.session = store.a ? '1' : '';
+		seen.ownStorage = store.other.concat(store.cookies.filter((n) => n !== 'sccm_consent'));
 		await c.close();
 		return seen;
 	};
@@ -461,7 +470,8 @@ add_filter( 'rest_authentication_errors', function ( $errors ) {
 	reset(`update_option( 'sccm_test_restblock', 1 ); SCCM_Settings::update( array( 'log_transport' => 'rest' ) );`);
 	const net = await visitor({ second: true });
 	check('TR6 "REST API" chosen but blocked: the first choice falls back to admin-ajax.php after the 401', net.transport === 'rest' && net.rest.join() === '401' && net.ajax[0] === '200:fallback', JSON.stringify(net));
-	check('TR6 later sends in the same visit go straight to admin-ajax.php (remembered in sessionStorage)', net.ajax.join() === '200:fallback,200:skip' && net.session === '1' && count() === 2, JSON.stringify(net));
+	check('TR6 later sends in the same visit go straight to admin-ajax.php (noted in the sccm_consent cookie)', net.ajax.join() === '200:fallback,200:skip' && net.session === '1' && count() === 2, JSON.stringify(net));
+	check('TR6 the plugin keeps nothing in the browser besides its one cookie (no sessionStorage / localStorage keys)', net.ownStorage.length === 0, JSON.stringify(net.ownStorage));
 	check('TR6 a chosen transport is not changed by what browsers report', wp('eval', `echo SCCM_REST::transport();`) === 'rest');
 
 	reset(`delete_option( 'sccm_test_restblock' ); SCCM_Settings::update( array( 'log_transport' => 'ajax' ) );`);

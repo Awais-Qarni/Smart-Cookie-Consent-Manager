@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.5
+Stable tag: 1.3.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,9 @@ Use the floating button, the [sccm_cookie_settings] shortcode, or a menu link to
 Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 == Changelog ==
+
+= 1.3.6 =
+* Everything the plugin keeps in the visitor's browser is now in its one cookie, sccm_consent (no separate browser storage).
 
 = 1.3.5 =
 * Fixed: cookies from the WordPress admin area (for example a support chat on another plugin's settings page) could be added to the cookie list. Browsers that have been used to log in to the site no longer report cookies, also after logging out, and "Scan now" opens pages as a logged-out visitor.

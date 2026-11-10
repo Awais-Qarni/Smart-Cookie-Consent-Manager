@@ -2,6 +2,14 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.6] - 2026-11-10
+### Changed
+- **One cookie for everything.** The plugin kept two small notes in the browser's session
+  storage (`sccm_reported`, `sccm_ajax`). They are now inside the plugin's one cookie,
+  `sccm_consent`, under `x`, and kept for one day. Before a choice the cookie holds only these
+  notes, which never count as a choice (the banner still shows). `SCCM.getConsent()` returns
+  only the choice. Existing choices are unchanged.
+
 ## [1.3.5] - 2026-11-10
 ### Fixed
 - **Cookies from the WordPress admin area were added to the cookie list.** Some plugins load

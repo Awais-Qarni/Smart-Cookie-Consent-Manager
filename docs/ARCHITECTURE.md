@@ -275,6 +275,14 @@ the Dashboard, after Tools → Reset and in "Create the page" (which then says i
 existing page instead of creating one). The front end never runs this query.
 
 ## Consent cookie
+
+**One cookie for everything** (1.3.6): the plugin keeps nothing else in the browser (no
+localStorage / sessionStorage keys). Besides the choice, `sccm_consent` holds small notes under
+`x`, each kept one day: `a` (time the REST API refused a request) and `r` ([short hash of the
+last reported cookie names, time]). Before a choice the cookie holds only `x` (no expiry date);
+`parseConsent()` in sccm-boot.js needs `id` and `c`, so notes alone are never a choice. With a
+choice, the cookie expires `C.days` after the choice time `t` (not after the last write).
+`SCCM.getConsent()` leaves `x` out.
 `sccm_consent` = URI-encoded JSON, first-party, `Path=/`, `SameSite=Lax`, `Secure` on HTTPS.
 ```json
 { "id": "uuid-v4", "v": 3, "t": 1790000000, "c": { "functional": 0, "analytics": 1, "marketing": 0 }, "m": "custom", "g": 0 }
@@ -328,8 +336,8 @@ predictable. Labels/descriptions are editable; categories can be hidden if unuse
   (cache-safe), stored in `sccm_rest_check` and reused for an hour; plugin (de)activation, SCCM
   settings and ASE settings trigger a new check. A REST 401/403/404 that reaches the admin-ajax
   fallback is a block PHP cannot see (a firewall): it is stored as `by: browser` for 30 days.
-  When the answer changes, the page caches are cleared. In the browser, a 401/403/404 also sets
-  `sessionStorage.sccm_ajax`, so the rest of that visit goes straight to admin-ajax.php.
+  When the answer changes, the page caches are cleared. In the browser, a 401/403/404 is also noted in the plugin's
+  cookie (`sccm_consent` → `x.a`, one day), so later sends go straight to admin-ajax.php.
 - Output escaped everywhere; SQL via `$wpdb->prepare()`.
 
 ## Known limitations (documented for site owners)
