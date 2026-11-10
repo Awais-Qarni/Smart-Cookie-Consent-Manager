@@ -101,15 +101,34 @@ has. A cookie counts as the website's when a scanned page writes it (scan mode w
 `document.cookie` and `cookieStore.set`), or when it was not there before (also covers cookies
 set by responses to the page's requests). The rest is sent as `unconfirmed` and settled at the
 end by `SCCM_Scanner::settle_unconfirmed()`:
-- "Learn from visitors" on: not listed. Real visitors' browsers report unknown cookie names
-  (never from logged-in users), so a cookie the website really sets — even one a script sets
-  only when it is missing, which the admin's browser already had — is listed after the usual
-  number of visitors; admin-only cookies never come back.
+- "Learn from visitors" on: not listed. Real visitors' browsers report unknown cookie names,
+  so a cookie the website really sets — even one a script sets only when it is missing, which
+  the admin's browser already had — is listed after the usual number of visitors; admin-only
+  cookies never come back (see "Browsers of WordPress users" below).
 - "Learn from visitors" off: `SCCM_Cookies::record_unconfirmed()` puts them under Needs review
   (even when the library knows them), marked "Only found in your browser" (option
   `sccm_browser_only`).
 Server-set cookies are not affected: the server part requests pages without cookies, like a
 first-time visitor. Regression tests: admin e2e BU1–BU3.
+
+**Pages are built as for a logged-out visitor.** Scan mode needs the administrator (token +
+`manage_options`), but scripts that themes and plugins load only for logged-in users (admin
+bar tools, support chats, page builders) would write cookies visitors never get, and a known
+one would be listed at once. So `SCCM_Frontend::scan_as_visitor()` (on `setup_theme`, before
+the theme loads) decides scan mode first and then sets the current user to 0 for the rest of
+the page. The admin page reads the frame directly (same origin), so nothing in the frame needs
+the login. Regression test: admin e2e BU4.
+
+**Browsers of WordPress users never report.** Plugins load support chats and analytics on
+their own admin pages (production 1.3.4: Intercom on NitroPack's settings page), and those
+cookies are saved for the whole domain and stay in the browser after logging out. Several staff
+browsers visiting the site logged out were "several visitors", so a known cookie such as
+`intercom-id-*` was added automatically. Sign of such a browser: `wp-settings-*`, which
+WordPress sets in the admin area and keeps for a year, also after logging out. The browser does
+not report when it has one (`reportUnknown()`), and `SCCM_REST::store_report()` ignores a
+report when `SCCM_REST::is_wordpress_user_browser()` (logged in, a valid login cookie — a REST
+request without a nonce has no current user —, or a `wp-settings-*` cookie) or when the report
+lists a `wp-settings-*` cookie. Regression tests: admin e2e SB1–SB4, WP-CLI "visitor reports".
 
 ## Scan plan (which pages, how many)
 
@@ -256,6 +275,14 @@ the Dashboard, after Tools → Reset and in "Create the page" (which then says i
 existing page instead of creating one). The front end never runs this query.
 
 ## Consent cookie
+
+**One cookie for everything** (1.3.6): the plugin keeps nothing else in the browser (no
+localStorage / sessionStorage keys). Besides the choice, `sccm_consent` holds small notes under
+`x`, each kept one day: `a` (time the REST API refused a request) and `r` ([short hash of the
+last reported cookie names, time]). Before a choice the cookie holds only `x` (no expiry date);
+`parseConsent()` in sccm-boot.js needs `id` and `c`, so notes alone are never a choice. With a
+choice, the cookie expires `C.days` after the choice time `t` (not after the last write).
+`SCCM.getConsent()` leaves `x` out.
 `sccm_consent` = URI-encoded JSON, first-party, `Path=/`, `SameSite=Lax`, `Secure` on HTTPS.
 ```json
 { "id": "uuid-v4", "v": 3, "t": 1790000000, "c": { "functional": 0, "analytics": 1, "marketing": 0 }, "m": "custom", "g": 0 }
@@ -309,8 +336,8 @@ predictable. Labels/descriptions are editable; categories can be hidden if unuse
   (cache-safe), stored in `sccm_rest_check` and reused for an hour; plugin (de)activation, SCCM
   settings and ASE settings trigger a new check. A REST 401/403/404 that reaches the admin-ajax
   fallback is a block PHP cannot see (a firewall): it is stored as `by: browser` for 30 days.
-  When the answer changes, the page caches are cleared. In the browser, a 401/403/404 also sets
-  `sessionStorage.sccm_ajax`, so the rest of that visit goes straight to admin-ajax.php.
+  When the answer changes, the page caches are cleared. In the browser, a 401/403/404 is also noted in the plugin's
+  cookie (`sccm_consent` → `x.a`, one day), so later sends go straight to admin-ajax.php.
 - Output escaped everywhere; SQL via `$wpdb->prepare()`.
 
 ## Known limitations (documented for site owners)

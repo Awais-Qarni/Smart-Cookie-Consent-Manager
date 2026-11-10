@@ -18,6 +18,15 @@
 	var OPTIONAL = ['functional', 'analytics', 'marketing'];
 	var T = C.texts || {};
 	var state = w.SCCM_STATE || { consent: null, grants: { necessary: true }, gpc: false, gpcBlocked: [], needsChoice: true };
+	if (state.consent && state.consent.x) {
+		// The plugin's own notes in the cookie are not part of the choice (SCCM.getConsent()).
+		state.consent = Object.keys(state.consent).reduce(function (o, key) {
+			if (key !== 'x') {
+				o[key] = state.consent[key];
+			}
+			return o;
+		}, {});
+	}
 	var banner = null;
 	var modal = null;
 	var floating = null;
@@ -224,7 +233,7 @@
 	 * not answer (blocked by a security plugin or firewall, or an error), the same data goes
 	 * through admin-ajax.php instead. Rejected data (400) and rate limits (429) are not resent.
 	 * When the site is known to block the REST API (C.rest.transport = 'ajax', or a REST request
-	 * got 401/403/404 earlier in this visit), the data goes straight to admin-ajax.php.
+	 * got 401/403/404 in the last day), the data goes straight to admin-ajax.php.
 	 *
 	 * @param {string} url    REST address.
 	 * @param {Object} body   Data.
@@ -282,20 +291,16 @@
 	}
 
 	/**
-	 * Whether the REST API refused a request earlier in this visit (remembered in sessionStorage).
+	 * Whether the REST API refused a request in the last day (a note in the plugin's cookie).
 	 *
 	 * @param {boolean} [set] True to remember a refusal.
 	 * @return {boolean}
 	 */
 	function restRefused(set) {
-		try {
-			if (set) {
-				w.sessionStorage.setItem('sccm_ajax', '1');
-			}
-			return w.sessionStorage.getItem('sccm_ajax') === '1';
-		} catch (e) {
-			return false;
+		if (set) {
+			writeNote('a', Math.floor(Date.now() / 1000));
 		}
+		return Math.floor(Date.now() / 1000) - (readNote('a') || 0) < NOTE_DAYS * 86400;
 	}
 
 	function emit(name, detail) {
@@ -311,12 +316,80 @@
 
 	/* ------------------------------------------------------------------ Storage & clean-up */
 
-	function writeConsent(consent) {
-		var value = encodeURIComponent(JSON.stringify(consent));
-		// C.days = 0 means "session only": the cookie has no expiry date.
-		var expires = C.days > 0 ? '; expires=' + new Date(Date.now() + C.days * 86400000).toUTCString() : '';
+	/*
+	 * Everything the plugin keeps in the browser is in its one cookie (C.cookie): the choice
+	 * (id, v, t, c, m, g) and, under "x", small notes that are also needed before a choice
+	 * (a: when the REST API refused a request, r: the last cookie report). A cookie with notes
+	 * only has no id/categories, so it never counts as a choice (see sccm-boot.js).
+	 */
+
+	/** Notes are kept for one day. */
+	var NOTE_DAYS = 1;
+
+	function readCookieObject() {
+		var raw = null;
+		d.cookie.split(';').some(function (part) {
+			var i = part.indexOf('=');
+			if (part.slice(0, i).trim() === C.cookie) {
+				raw = part.slice(i + 1).trim();
+				return true;
+			}
+			return false;
+		});
+		if (!raw) {
+			return {};
+		}
+		try {
+			var o = JSON.parse(decodeURIComponent(raw));
+			return o && typeof o === 'object' ? o : {};
+		} catch (e) {
+			return {};
+		}
+	}
+
+	function writeCookieObject(o) {
+		var value = encodeURIComponent(JSON.stringify(o));
+		// The choice lasts C.days from when it was made; notes alone (or C.days = 0, "session
+		// only") use a cookie without expiry date, which ends when the browser closes.
+		var until = o.t && C.days > 0 ? (o.t + C.days * 86400) * 1000 : 0;
+		var expires = until > Date.now() ? '; expires=' + new Date(until).toUTCString() : '';
 		var secure = w.location.protocol === 'https:' ? '; Secure' : '';
 		d.cookie = C.cookie + '=' + value + expires + '; path=/; SameSite=Lax' + secure;
+	}
+
+	function writeConsent(consent) {
+		var notes = readCookieObject().x;
+		var o = {};
+		Object.keys(consent).forEach(function (key) {
+			o[key] = consent[key];
+		});
+		if (notes && typeof notes === 'object') {
+			o.x = notes;
+		}
+		writeCookieObject(o);
+	}
+
+	function readNote(key) {
+		var x = readCookieObject().x;
+		return x && typeof x === 'object' ? x[key] : undefined;
+	}
+
+	function writeNote(key, value) {
+		try {
+			var o = readCookieObject();
+			o.x = o.x && typeof o.x === 'object' ? o.x : {};
+			o.x[key] = value;
+			writeCookieObject(o);
+		} catch (e) { /* A note must never break the page. */ }
+	}
+
+	/** Short hash of a text (keeps the cookie small). */
+	function shortHash(text) {
+		var h = 5381;
+		for (var i = 0; i < text.length; i++) {
+			h = ((h << 5) + h + text.charCodeAt(i)) | 0;
+		}
+		return (h >>> 0).toString(36);
 	}
 
 	function deleteCookie(name) {
@@ -1125,9 +1198,16 @@
 		if (cls && (cls.contains('logged-in') || cls.contains('admin-bar'))) {
 			return;
 		}
+		// A browser that has been used to log in to this site (WordPress keeps a wp-settings-*
+		// cookie for a year, also after logging out) carries cookies of the admin area, e.g. a
+		// support chat on a plugin's settings page. Its cookies say nothing about the website.
+		var names = cookieNames();
+		if (names.some(function (name) { return name.indexOf('wp-settings-') === 0; })) {
+			return;
+		}
 		var known = C.known || [];
 		var items = [];
-		cookieNames().forEach(function (name) {
+		names.forEach(function (name) {
 			if (name === C.cookie || items.length >= 30) {
 				return;
 			}
@@ -1141,15 +1221,16 @@
 		if (!items.length) {
 			return;
 		}
-		var signature = items.map(function (i) {
+		// The same names were reported in the last day: do not send them again.
+		var signature = shortHash(items.map(function (i) {
 			return i.n;
-		}).sort().join('|');
-		try {
-			if (w.sessionStorage.getItem('sccm_reported') === signature) {
-				return;
-			}
-			w.sessionStorage.setItem('sccm_reported', signature);
-		} catch (e) { /* ignore */ }
+		}).sort().join('|'));
+		var last = readNote('r');
+		var now = Math.floor(Date.now() / 1000);
+		if (last && last[0] === signature && now - last[1] < NOTE_DAYS * 86400) {
+			return;
+		}
+		writeNote('r', [signature, now]);
 		post(C.rest.report, { items: items, url: w.location.href.split('#')[0] }, 'sccm_report');
 	}
 

@@ -544,7 +544,7 @@ class SCCM_Cookies {
 				},
 				'visitor' !== $origin
 			);
-			self::queue_alert( $known['name'], $type, 'active', $known['category'] );
+			self::queue_alert( $known['name'], $type, 'active', $known['category'], 'visitor' === $origin ? 'visitors' : 'scan' );
 			return 'active';
 		}
 
@@ -566,7 +566,7 @@ class SCCM_Cookies {
 				'last_seen'  => $now,
 			)
 		);
-		self::queue_alert( $name, $type, 'pending', '' );
+		self::queue_alert( $name, $type, 'pending', '', 'visitor' === $origin ? 'visitors' : 'scan' );
 		return 'pending';
 	}
 
@@ -611,7 +611,7 @@ class SCCM_Cookies {
 		}
 		$marked = array_intersect( (array) get_option( self::BROWSER_ONLY_OPTION, array() ), $pending );
 		update_option( self::BROWSER_ONLY_OPTION, array_values( array_unique( array_merge( $marked, array( $row['name'] ) ) ) ), false );
-		self::queue_alert( $row['name'], 'cookie', 'pending', '' );
+		self::queue_alert( $row['name'], 'cookie', 'pending', '', 'admin_browser' );
 		return true;
 	}
 
@@ -685,14 +685,16 @@ class SCCM_Cookies {
 	 * @param string $type     Storage type.
 	 * @param string $status   active|pending.
 	 * @param string $category Category key.
+	 * @param string $origin   How it was found: scan | visitors | admin_browser (shown in the email).
 	 */
-	public static function queue_alert( $name, $type, $status, $category ) {
+	public static function queue_alert( $name, $type, $status, $category, $origin = 'scan' ) {
 		$queue   = (array) get_option( 'sccm_pending_alert', array() );
 		$queue[] = array(
 			'name'     => $name,
 			'type'     => $type,
 			'status'   => $status,
 			'category' => $category,
+			'origin'   => $origin,
 			'time'     => time(),
 		);
 		update_option( 'sccm_pending_alert', array_slice( $queue, -100 ), false );

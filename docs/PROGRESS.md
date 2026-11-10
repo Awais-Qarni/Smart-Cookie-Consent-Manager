@@ -7,13 +7,53 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.3.4 (1.3.3 is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.3.6 (1.3.5 is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); 1.3.0 admin redesign after production feedback
-- **Last updated:** 2026-11-03 (session 11)
-- **Tests:** unit 33, WP-CLI 217, visitor e2e 116, admin e2e 118, all passing on **MySQL 8.4
+- **Last updated:** 2026-11-10 (session 12b)
+- **Tests:** unit 33, WP-CLI 225, visitor e2e 120, admin e2e 132, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-11-10 — Session 12b (1.3.6: one cookie for everything)
+
+**Done:** owner asked that all plugin data in the browser live in one cookie. The
+sessionStorage notes `sccm_reported` / `sccm_ajax` moved into `sccm_consent` → `x.r` / `x.a`
+(one day; `readNote()` / `writeNote()`, `writeCookieObject()` expires at `t + days`, notes-only
+cookie has no expiry). Live site: 1.3.5 installed; the 7 wrong rows deleted (Intercom ×3,
+Hotjar ×2, `_gid`, `wp-settings-*`), Mixpanel ignored. Tests: visitor R3 (note in the cookie,
+banner still shows, no second report, getConsent without x), admin TR6 (no own storage keys).
+Unit 33, WP-CLI 225, visitor e2e 120, admin e2e 132.
+
+**Next:** merge the PR (the CLI merge was blocked by the permission check; the owner merges).
+
+---
+
+## 2026-11-10 — Session 12 (1.3.5: admin-area cookies, email per recipient)
+
+**Found on production:** the daily email added `intercom-*` (3), `_hjSession*` (2), `_gid` and
+`wp-settings-*` automatically. The live site sets none of the first six: with every category
+allowed it sets only `_ga`, `_ga_<id>`, `nitroCachedPage`, `sccm_consent`; none of the 154
+sitemap pages and not the GTM container loads Intercom or Hotjar (GA4 sets no `_gid`). The
+owner's browser had `intercom-*-d5v9p9vg` from NitroPack's settings page (`window.Intercom`
+there). No "Scan now" since 4 Nov, so they came from visitor reports: staff browsers logged out
+still carry admin-area cookies and counted as visitors. The 1.2.2 fix covered "Scan now" and
+logged-in users only.
+
+**Done:** `reportUnknown()` skips browsers with `wp-settings-*`; `SCCM_REST::store_report()`
+ignores `is_wordpress_user_browser()` (logged in, valid login cookie for REST without a nonce,
+`wp-settings-*` cookie) and reports listing `wp-settings-*`; `SCCM_Frontend::scan_as_visitor()`
+builds scan pages with user 0. Email: one `wp_mail()` per recipient, footer with the own address
+and the site address, header "NAME · address", per-cookie origin (`queue_alert(…, $origin)`:
+scan | visitors | admin_browser). New tests reproduce production: with the old code SB1 (a
+logged-out staff browser) adds `intercom-id-*`, BU4 (admin-only chat during "Scan now") adds it,
+SB3 (REST login) adds it, E1 shows the other recipients; all pass now. Unit 33, WP-CLI 225,
+visitor e2e 120, admin e2e 132 (MySQL 8.4).
+
+**Next:** owner installs 1.3.5, then deletes the 6 wrongly added rows (3 × Intercom, 2 × Hotjar,
+`_gid`) under Compliance → Cookies; `wp-settings-*` is a real WordPress cookie and may stay.
 
 ---
 

@@ -12,6 +12,11 @@ add_action( 'wp_head', function () {
 	if ( get_option( 'sccm_test_once' ) ) {
 		echo "<script>if(document.cookie.indexOf('test_once_cookie=')<0){document.cookie='test_once_cookie=1; max-age=31536000; path=/';}</script>\n";
 	}
+	// A support chat that a plugin loads only for logged-in users (admin e2e BU4): a known
+	// library cookie that visitors never get.
+	if ( get_option( 'sccm_test_admin_chat' ) && is_user_logged_in() ) {
+		echo "<script>document.cookie='intercom-id-admintest=1; max-age=31536000; path=/';</script>\n";
+	}
 }, 20 );
 add_action( 'wp_footer', function () {
 	echo '<div id="video-wrap"><iframe id="yt" width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube video" frameborder="0" allowfullscreen></iframe></div>';

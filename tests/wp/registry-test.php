@@ -410,24 +410,31 @@ SCCM_Scanner::daily();
 sccm_check( 'daily check without changes: no email', 0 === count( $GLOBALS['sccm_mails'] ) );
 
 SCCM_Cookies::queue_alert( 'new_tracker', 'cookie', 'pending', '' );
-SCCM_Cookies::queue_alert( '_clck', 'cookie', 'active', 'analytics' );
+SCCM_Cookies::queue_alert( '_clck', 'cookie', 'active', 'analytics', 'visitors' );
 sccm_check( 'a change is not emailed right away (it waits for the daily check)', 0 === count( $GLOBALS['sccm_mails'] ) );
 SCCM_Scanner::daily();
 $mail = end( $GLOBALS['sccm_mails'] );
-sccm_check( 'daily check with changes: one email', 1 === count( $GLOBALS['sccm_mails'] ) && false !== strpos( $mail['subject'], '1 new cookie needs review' ) );
+sccm_check( 'daily check with changes: one email to each recipient', 2 === count( $GLOBALS['sccm_mails'] ) && false !== strpos( $mail['subject'], '1 new cookie needs review' ) );
+$sccm_to = wp_list_pluck( $GLOBALS['sccm_mails'], 'to' );
+sccm_check( 'each email goes to one address only (recipients do not see each other)', array( get_option( 'admin_email' ), 'team@example.com' ) === $sccm_to );
+$sccm_first = $GLOBALS['sccm_mails'][0]['message'];
+sccm_check( 'each email names only its own recipient', false !== strpos( $sccm_first, 'to ' . get_option( 'admin_email' ) . '.' ) && false === strpos( $sccm_first, 'team@example.com' ) && false !== strpos( $mail['message'], 'to team@example.com.' ) && false === strpos( $mail['message'], get_option( 'admin_email' ) ) );
+$sccm_address = preg_replace( '#^https?://#', '', untrailingslashit( home_url() ) );
+sccm_check( 'the email says which website it is about (header and footer)', substr_count( $mail['message'], $sccm_address ) >= 2 && false !== strpos( $mail['message'], 'Sent by Smart Cookie Consent Manager on ' . $sccm_address ) );
+sccm_check( 'the email says how each cookie was found', false !== strpos( $mail['message'], 'Found in visitors' ) && false !== strpos( $mail['message'], 'Found by the cookie scan' ) );
+sccm_check( 'the plain-text version too', false !== strpos( SCCM_Scanner::build_email( array( array( 'name' => '_clck', 'type' => 'cookie', 'status' => 'active', 'category' => 'analytics', 'origin' => 'visitors', 'time' => time() ) ) )['text'], '_clck → Statistics — Found in visitors' ) );
 sccm_check( 'the email lists the changes of the last 24 hours and the banner total', false !== strpos( $mail['message'], 'Cookie changes in the last 24 hours' ) && false !== strpos( $mail['message'], 'new_tracker' ) && false !== strpos( $mail['message'], '_clck' ) && false !== strpos( $mail['message'], 'Your cookie banner now lists' ) );
 sccm_check( 'no links into the WordPress admin and no "Review and approve" button (recipients may have no account)', false === strpos( $mail['message'], 'wp-admin' ) && false === strpos( $mail['message'], 'Review and approve' ) && false === strpos( $mail['message'], '<a ' ) );
-sccm_check( 'the email goes to the site admin and the listed address', array( get_option( 'admin_email' ), 'team@example.com' ) === $mail['to'] );
 sccm_check( 'after the email the changes are cleared', ! get_option( 'sccm_pending_alert' ) );
 SCCM_Scanner::daily();
-sccm_check( 'next day without new changes: no email', 1 === count( $GLOBALS['sccm_mails'] ) );
+sccm_check( 'next day without new changes: no email', 2 === count( $GLOBALS['sccm_mails'] ) );
 $status = get_option( SCCM_Scanner::MAIL_OPTION );
 sccm_check( 'the result of the last email is recorded', ! empty( $status['ok'] ) && '' === $status['error'] && in_array( 'team@example.com', $status['to'], true ) );
 
 SCCM_Settings::update( array( 'alerts_enabled' => 0 ) );
 SCCM_Cookies::queue_alert( 'another_cookie', 'cookie', 'pending', '' );
 SCCM_Scanner::daily();
-sccm_check( 'emails switched off: no email', 1 === count( $GLOBALS['sccm_mails'] ) );
+sccm_check( 'emails switched off: no email', 2 === count( $GLOBALS['sccm_mails'] ) );
 SCCM_Settings::update( array( 'alerts_enabled' => 1 ) );
 
 remove_filter( 'pre_wp_mail', $capture, 10 );
@@ -898,6 +905,24 @@ wp_set_current_user( (int) $admins[0] );
 $logged = SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'from_an_admin_browser', 't' => 'cookie' ) ) ) );
 wp_set_current_user( 0 );
 sccm_check( 'visitor reports: a logged-in user\'s report is ignored on the server too', ! isset( $logged['added'] ) && ! isset( ( (array) get_option( 'sccm_candidates', array() ) )['cookie:from_an_admin_browser'] ) );
+// Fresh per-IP report limit (earlier checks and runs send reports from this IP too).
+$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '%sccm\_rl\_%'" );
+wp_cache_flush();
+// …also when there is no current user but the login cookie is there (a REST request without a nonce).
+$sccm_cookie_before          = $_COOKIE;
+$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( (int) $admins[0], time() + 3600, 'logged_in' );
+$logged                      = SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'from_a_rest_admin', 't' => 'cookie' ) ) ) );
+$_COOKIE                     = $sccm_cookie_before;
+sccm_check( 'visitor reports: the login cookie is checked too (REST requests have no current user)', 0 === get_current_user_id() && is_array( $logged ) && ! isset( $logged['added'] ) && ! isset( ( (array) get_option( 'sccm_candidates', array() ) )['cookie:from_a_rest_admin'] ) );
+// A logged-out browser that has been used to log in (WordPress keeps wp-settings-* for a year).
+$_COOKIE['wp-settings-1'] = 'libraryContent=browse';
+$logged                   = SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'from_a_staff_browser', 't' => 'cookie' ) ) ) );
+$_COOKIE                  = $sccm_cookie_before;
+sccm_check( 'visitor reports: a browser with a wp-settings-* cookie is ignored (it was used to log in)', SCCM_REST::is_wordpress_user_browser() === false && is_array( $logged ) && ! isset( $logged['added'] ) && ! isset( ( (array) get_option( 'sccm_candidates', array() ) )['cookie:from_a_staff_browser'] ) );
+$logged = SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'wp-settings-3', 't' => 'cookie' ), array( 'n' => 'from_a_staff_list', 't' => 'cookie' ) ) ) );
+sccm_check( 'visitor reports: a report that lists a wp-settings-* cookie is ignored', is_array( $logged ) && ! isset( $logged['added'] ) && ! isset( ( (array) get_option( 'sccm_candidates', array() ) )['cookie:from_a_staff_list'] ) );
+$logged = SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'from_a_real_visitor', 't' => 'cookie' ) ) ) );
+sccm_check( 'visitor reports: a real visitor\'s report still counts', is_array( $logged ) && isset( $logged['added'] ) );
 SCCM_Settings::update( array( 'scanner_client' => $was_learning ) );
 
 // Scan: speed hints (preconnect, dns-prefetch) are not third-party files; stylesheets are.
