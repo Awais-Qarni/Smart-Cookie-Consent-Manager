@@ -1106,7 +1106,12 @@ class SCCM_Scanner {
 		if ( ! $queue || ! SCCM_Settings::get( 'alerts_enabled' ) ) {
 			return false;
 		}
-		$sent = self::mail( self::build_email( $queue, false, self::list_summary() ) );
+		$list = self::list_summary();
+		$sent = self::mail(
+			static function ( $recipient ) use ( $queue, $list ) {
+				return self::build_email( $queue, false, $list, $recipient );
+			}
+		);
 		if ( $sent ) {
 			self::queue_sent();
 		}
@@ -1143,35 +1148,51 @@ class SCCM_Scanner {
 				'time'     => $now,
 			),
 		);
-		$email = self::build_email( $queue, true, self::list_summary() );
-		return self::mail( $email );
+		$list = self::list_summary();
+		return self::mail(
+			static function ( $recipient ) use ( $queue, $list ) {
+				return self::build_email( $queue, true, $list, $recipient );
+			}
+		);
 	}
 
 	/**
-	 * Send an email built by build_email() to every recipient (HTML + plain-text version), and
-	 * remember the result (shown on the Settings tab, so a host that drops mail is noticed).
+	 * Send the email to every recipient, one email each (HTML + plain-text version), so no
+	 * recipient sees the other addresses. Remember the result (shown on the Settings tab, so a
+	 * host that drops mail is noticed).
 	 *
-	 * @param array $email subject, html, text.
-	 * @return bool
+	 * @param callable $build Returns build_email() for one recipient address.
+	 * @return bool Whether every email was sent.
 	 */
-	private static function mail( array $email ) {
-		$to    = SCCM_Settings::alert_recipients();
-		$error = '';
-		$alt   = static function ( $phpmailer ) use ( $email ) {
-			$phpmailer->AltBody = $email['text']; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-		};
-		$fail  = static function ( $wp_error ) use ( &$error ) {
+	private static function mail( callable $build ) {
+		$to      = SCCM_Settings::alert_recipients();
+		$error   = '';
+		$failed  = array();
+		$subject = '';
+		$fail    = static function ( $wp_error ) use ( &$error ) {
 			$error = is_wp_error( $wp_error ) ? $wp_error->get_error_message() : '';
 		};
-		add_action( 'phpmailer_init', $alt );
 		add_action( 'wp_mail_failed', $fail );
-		$sent = $to ? (bool) wp_mail( $to, $email['subject'], $email['html'], array( 'Content-Type: text/html; charset=UTF-8' ) ) : false;
-		remove_action( 'phpmailer_init', $alt );
+		foreach ( $to as $recipient ) {
+			$email   = $build( $recipient );
+			$subject = $email['subject'];
+			$alt     = static function ( $phpmailer ) use ( $email ) {
+				$phpmailer->AltBody = $email['text']; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			};
+			add_action( 'phpmailer_init', $alt );
+			if ( ! wp_mail( $recipient, $email['subject'], $email['html'], array( 'Content-Type: text/html; charset=UTF-8' ) ) ) {
+				$failed[] = $recipient;
+			}
+			remove_action( 'phpmailer_init', $alt );
+		}
 		remove_action( 'wp_mail_failed', $fail );
+		$sent = $to && ! $failed;
 		if ( ! $to ) {
 			$error = __( 'No valid email address.', 'smart-cookie-consent-manager' );
-		} elseif ( ! $sent && '' === $error ) {
-			$error = __( 'WordPress could not send the email (wp_mail returned false).', 'smart-cookie-consent-manager' );
+		} elseif ( $failed ) {
+			$error = ( '' !== $error ? $error : __( 'WordPress could not send the email (wp_mail returned false).', 'smart-cookie-consent-manager' ) )
+				/* translators: %s: email addresses */
+				. ' ' . sprintf( __( 'Not sent to: %s.', 'smart-cookie-consent-manager' ), implode( ', ', $failed ) );
 		}
 		update_option(
 			self::MAIL_OPTION,
@@ -1179,7 +1200,7 @@ class SCCM_Scanner {
 				'time'    => time(),
 				'ok'      => $sent,
 				'to'      => $to,
-				'subject' => $email['subject'],
+				'subject' => $subject,
 				'error'   => $sent ? '' : wp_strip_all_tags( $error ),
 			),
 			false
@@ -1188,15 +1209,26 @@ class SCCM_Scanner {
 	}
 
 	/**
+	 * The website's address without "https://", e.g. "example.com" or "example.com/shop", so an
+	 * email says which website it is about (a staging copy has the same name).
+	 *
+	 * @return string
+	 */
+	private static function site_address() {
+		return (string) preg_replace( '#^https?://#i', '', untrailingslashit( home_url() ) );
+	}
+
+	/**
 	 * Build the daily change email: subject, HTML (inline styles, table layout for email clients)
 	 * and text. No links into the WordPress admin: some recipients may not have an account.
 	 *
-	 * @param array      $queue Items from SCCM_Cookies::queue_alert().
-	 * @param bool       $test  Mark the email as a sample.
-	 * @param array|null $list  list_summary(): how many cookies the banner lists.
+	 * @param array      $queue     Items from SCCM_Cookies::queue_alert().
+	 * @param bool       $test      Mark the email as a sample.
+	 * @param array|null $list      list_summary(): how many cookies the banner lists.
+	 * @param string     $recipient The one address this email goes to (named in the footer).
 	 * @return array subject, html, text.
 	 */
-	public static function build_email( array $queue, $test = false, $list = null ) {
+	public static function build_email( array $queue, $test = false, $list = null, $recipient = '' ) {
 		$groups = array(
 			'pending'      => array(),
 			'active'       => array(),
@@ -1229,8 +1261,9 @@ class SCCM_Scanner {
 			$subject = sprintf( __( 'Sample: %s', 'smart-cookie-consent-manager' ), $subject );
 		}
 
-		$recipients = implode( ', ', SCCM_Settings::alert_recipients() );
-		$limit      = 25;
+		$address = self::site_address();
+		$footer  = self::email_footer( $recipient );
+		$limit   = 25;
 
 		/* ---- HTML
 		 * Built like a bulletproof email: tables, inline styles and bgcolor attributes. A light design
@@ -1275,10 +1308,10 @@ class SCCM_Scanner {
 		$h .= '<table role="presentation" class="sccm-e-page" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f3f4f6" style="background:#f3f4f6;"><tr><td align="center" style="padding:24px 12px;">';
 		$h .= '<table role="presentation" class="sccm-e-card" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;">';
 
-		// Header: coloured line, site name, title.
+		// Header: coloured line, site name and address, title.
 		$h .= '<tr><td height="4" bgcolor="#2563eb" style="height:4px;line-height:4px;font-size:4px;background:#2563eb;border-radius:10px 10px 0 0;">&nbsp;</td></tr>';
 		$h .= '<tr><td class="sccm-e-pad" style="padding:24px 32px 8px;">';
-		$h .= '<div class="sccm-e-muted" style="' . $font . 'font-size:12px;line-height:16px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;">' . esc_html( $site ) . '</div>';
+		$h .= '<div class="sccm-e-muted" style="' . $font . 'font-size:12px;line-height:16px;color:#6b7280;"><span style="letter-spacing:.08em;text-transform:uppercase;">' . esc_html( $site ) . '</span> · ' . esc_html( $address ) . '</div>';
 		$h .= '<div class="sccm-e-h" style="' . $font . 'font-size:22px;line-height:28px;font-weight:700;color:#111827;margin-top:4px;">' . esc_html__( 'Cookie changes in the last 24 hours', 'smart-cookie-consent-manager' ) . '</div>';
 		$h .= '</td></tr>';
 
@@ -1338,12 +1371,12 @@ class SCCM_Scanner {
 
 		// Footer.
 		$h .= '<tr><td class="sccm-e-pad" style="padding:28px 32px 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="sccm-e-row" style="border-top:1px solid #e5e7eb;padding-top:16px;">';
-		$h .= '<div class="sccm-e-muted" style="' . $font . 'font-size:12px;line-height:18px;color:#6b7280;">' . esc_html( self::email_footer( $recipients ) ) . '</div>';
+		$h .= '<div class="sccm-e-muted" style="' . $font . 'font-size:12px;line-height:18px;color:#6b7280;">' . esc_html( $footer ) . '</div>';
 		$h .= '</td></tr></table></td></tr>';
 		$h .= '</table></td></tr></table></body></html>';
 
 		/* ---- Plain text */
-		$t = $site . ' — ' . __( 'Cookie changes in the last 24 hours', 'smart-cookie-consent-manager' ) . "\n" . str_repeat( '=', 40 ) . "\n\n";
+		$t = $site . ' (' . $address . ') — ' . __( 'Cookie changes in the last 24 hours', 'smart-cookie-consent-manager' ) . "\n" . str_repeat( '=', 40 ) . "\n\n";
 		if ( $list ) {
 			$t .= self::email_list_line( $list ) . "\n\n";
 		}
@@ -1351,14 +1384,14 @@ class SCCM_Scanner {
 			$t .= __( 'NEEDS REVIEW', 'smart-cookie-consent-manager' ) . ' (' . $n_review . ")\n";
 			$t .= __( 'Someone who manages the website should choose a category for each one in WordPress under Compliance → Cookies. Until then visitors do not see them.', 'smart-cookie-consent-manager' ) . "\n";
 			foreach ( array_slice( $groups['pending'], 0, $limit ) as $item ) {
-				$t .= '  - ' . $item['name'] . ' (' . $item['type'] . ")\n";
+				$t .= '  - ' . $item['name'] . ' (' . $item['type'] . ')' . self::email_origin_text( $item ) . "\n";
 			}
 			$t .= "\n";
 		}
 		if ( $n_auto ) {
 			$t .= __( 'ADDED AUTOMATICALLY', 'smart-cookie-consent-manager' ) . ' (' . $n_auto . ")\n";
 			foreach ( array_slice( $groups['active'], 0, $limit ) as $item ) {
-				$t .= '  - ' . $item['name'] . ' → ' . SCCM_Categories::label( $item['category'] ) . "\n";
+				$t .= '  - ' . $item['name'] . ' → ' . SCCM_Categories::label( $item['category'] ) . self::email_origin_text( $item ) . "\n";
 			}
 			$t .= "\n";
 		}
@@ -1370,7 +1403,7 @@ class SCCM_Scanner {
 			}
 			$t .= "\n";
 		}
-		$t .= '--' . "\n" . self::email_footer( $recipients ) . "\n";
+		$t .= '--' . "\n" . $footer . "\n";
 
 		return array(
 			'subject' => $subject,
@@ -1396,15 +1429,22 @@ class SCCM_Scanner {
 	}
 
 	/**
-	 * Footer: who gets the email and where it is set up (no admin link: recipients may not have an account).
+	 * Footer: which website sent it, to whom, and where it is set up (no admin link: recipients
+	 * may not have an account). Only the recipient's own address: each recipient gets their own
+	 * email, and the other addresses are not shown.
 	 *
-	 * @param string $recipients Comma-separated addresses.
+	 * @param string $recipient The address this email goes to ('' when unknown).
 	 * @return string
 	 */
-	private static function email_footer( $recipients ) {
+	private static function email_footer( $recipient ) {
 		$hour = wp_date( get_option( 'time_format' ), ( new DateTimeImmutable( 'today', wp_timezone() ) )->setTime( (int) SCCM_Settings::get( 'alert_hour' ), 0 )->getTimestamp() );
-		/* translators: 1: email addresses, 2: time of day */
-		return sprintf( __( 'Sent by Smart Cookie Consent Manager to %1$s. This email is sent once a day at %2$s, only when something changed. The website\'s administrator can change this in WordPress under Compliance → Settings.', 'smart-cookie-consent-manager' ), $recipients, $hour );
+		$sent = '' !== $recipient
+			/* translators: 1: website address, 2: email address */
+			? sprintf( __( 'Sent by Smart Cookie Consent Manager on %1$s to %2$s.', 'smart-cookie-consent-manager' ), self::site_address(), $recipient )
+			/* translators: %s: website address */
+			: sprintf( __( 'Sent by Smart Cookie Consent Manager on %s.', 'smart-cookie-consent-manager' ), self::site_address() );
+		/* translators: %s: time of day */
+		return $sent . ' ' . sprintf( __( 'This email is sent once a day at %s, only when something changed. The website\'s administrator can change this in WordPress under Compliance → Settings.', 'smart-cookie-consent-manager' ), $hour );
 	}
 
 	/**
@@ -1454,12 +1494,44 @@ class SCCM_Scanner {
 				? ( 'cookie' === $item['type'] ? __( 'Cookie', 'smart-cookie-consent-manager' ) : $item['type'] )
 				: SCCM_Categories::label( $item['category'] );
 			$color  = $pending ? '#b45309' : '#15803d';
+			$found  = self::email_origin( $item );
 			$h     .= '<tr>'
-				. '<td class="sccm-e-row" style="' . $border . 'padding:10px 14px;"><span class="sccm-e-h" style="' . $mono . 'font-size:13px;line-height:18px;color:#111827;word-break:break-all;">' . esc_html( $item['name'] ) . '</span></td>'
+				. '<td class="sccm-e-row" style="' . $border . 'padding:10px 14px;"><span class="sccm-e-h" style="' . $mono . 'font-size:13px;line-height:18px;color:#111827;word-break:break-all;">' . esc_html( $item['name'] ) . '</span>'
+				. ( '' !== $found ? '<div class="sccm-e-muted" style="' . $font . 'font-size:12px;line-height:16px;color:#6b7280;margin-top:2px;">' . esc_html( $found ) . '</div>' : '' )
+				. '</td>'
 				. '<td class="sccm-e-row" align="right" style="' . $border . 'padding:10px 14px;white-space:nowrap;"><span class="sccm-e-pill-' . ( $pending ? 'pending' : 'active' ) . '" style="' . $font . 'font-size:12px;line-height:16px;font-weight:700;color:' . $color . ';border:1px solid ' . $color . ';border-radius:999px;padding:2px 10px;">' . esc_html( $label ) . '</span></td>'
 				. '</tr>';
 		}
 		return $h . '</table>';
+	}
+
+	/**
+	 * How a cookie in the email was found ('' for items queued before this was recorded).
+	 *
+	 * @param array $item Queue item.
+	 * @return string
+	 */
+	private static function email_origin( array $item ) {
+		switch ( isset( $item['origin'] ) ? $item['origin'] : '' ) {
+			case 'visitors':
+				return __( 'Found in visitors\' browsers', 'smart-cookie-consent-manager' );
+			case 'scan':
+				return __( 'Found by the cookie scan', 'smart-cookie-consent-manager' );
+			case 'admin_browser':
+				return __( 'Found only in your browser during "Scan now"', 'smart-cookie-consent-manager' );
+		}
+		return '';
+	}
+
+	/**
+	 * The same for the plain-text email: " — Found …" or ''.
+	 *
+	 * @param array $item Queue item.
+	 * @return string
+	 */
+	private static function email_origin_text( array $item ) {
+		$found = self::email_origin( $item );
+		return '' !== $found ? ' — ' . $found : '';
 	}
 
 	/**

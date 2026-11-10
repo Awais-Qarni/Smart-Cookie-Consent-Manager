@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Cookie Consent Manager 1.3.4\n"
+"Project-Id-Version: Smart Cookie Consent Manager 1.3.5\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/claude things\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-03T17:08:19+00:00\n"
+"POT-Creation-Date: 2026-11-10T15:49:07+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: smart-cookie-consent-manager\n"
@@ -740,7 +740,7 @@ msgid "Optional. Elements use the <code>sccm-</code> prefix, e.g. <code>#sccm-ba
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:24
-#: includes/class-sccm-scanner.php:1454
+#: includes/class-sccm-scanner.php:1494
 msgid "Cookie"
 msgstr ""
 
@@ -830,7 +830,7 @@ msgstr ""
 
 #: includes/admin/views/tab-cookies.php:80
 #: includes/admin/views/tab-help.php:303
-#: includes/class-sccm-scanner.php:1312
+#: includes/class-sccm-scanner.php:1345
 msgid "Needs review"
 msgstr ""
 
@@ -1019,7 +1019,7 @@ msgstr ""
 
 #: includes/admin/views/tab-cookies.php:328
 #: includes/admin/views/tab-dashboard.php:223
-#: includes/class-sccm-scanner.php:1334
+#: includes/class-sccm-scanner.php:1367
 msgid "Other third-party files"
 msgstr ""
 
@@ -1618,7 +1618,7 @@ msgid "Scan my website / Learn from visitors"
 msgstr ""
 
 #: includes/admin/views/tab-help.php:175
-msgid "How often your website is scanned, and whether visitors' browsers may report cookies (names only, never values, never from logged-in users, only after enough different visitors report the same cookie: default 2 within 14 days)."
+msgid "How often your website is scanned, and whether visitors' browsers may report cookies (names only, never values, never from browsers of people who log in to this website, also after they logged out, only after enough different visitors report the same cookie: default 2 within 14 days)."
 msgstr ""
 
 #: includes/admin/views/tab-help.php:176
@@ -2345,7 +2345,7 @@ msgid "Also learn from visitors"
 msgstr ""
 
 #: includes/admin/views/tab-settings.php:177
-msgid "Catches cookies that only JavaScript sets, which a scan cannot see. Only cookie names are sent (never values), never from logged-in users, and a cookie is listed only after several different visitors reported it, so your list stays short."
+msgid "Catches cookies that only JavaScript sets, which a scan cannot see. Only cookie names are sent (never values), never from browsers of people who log in to this website (also after they logged out), and a cookie is listed only after several different visitors reported it, so your list stays short."
 msgstr ""
 
 #: includes/admin/views/tab-settings.php:180
@@ -2667,20 +2667,20 @@ msgid_plural "%d months"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-sccm-cookies.php:836
+#: includes/class-sccm-cookies.php:838
 msgid "the first version"
 msgstr ""
 
-#: includes/class-sccm-cookies.php:838
+#: includes/class-sccm-cookies.php:840
 msgid "you asked everyone again"
 msgstr ""
 
-#: includes/class-sccm-cookies.php:838
+#: includes/class-sccm-cookies.php:840
 msgid "the cookie list changed"
 msgstr ""
 
 #. translators: 1: date, 2: reason
-#: includes/class-sccm-cookies.php:840
+#: includes/class-sccm-cookies.php:842
 #, php-format
 msgid "since %1$s, %2$s"
 msgstr ""
@@ -2728,16 +2728,22 @@ msgstr ""
 msgid "Google Fonts are loaded from inside CSS (e.g. an @import or a combined stylesheet). These requests cannot be blocked by the plugin. Host the fonts on your own server to avoid them."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1172
+#: includes/class-sccm-scanner.php:1191
 msgid "No valid email address."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1174
+#: includes/class-sccm-scanner.php:1193
 msgid "WordPress could not send the email (wp_mail returned false)."
 msgstr ""
 
+#. translators: %s: email addresses
+#: includes/class-sccm-scanner.php:1195
+#, php-format
+msgid "Not sent to: %s."
+msgstr ""
+
 #. translators: 1: site name, 2: number of cookies
-#: includes/class-sccm-scanner.php:1219
+#: includes/class-sccm-scanner.php:1251
 #, php-format
 msgid "[%1$s] %2$d new cookie needs review"
 msgid_plural "[%1$s] %2$d new cookies need review"
@@ -2745,7 +2751,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: site name, 2: number of cookies
-#: includes/class-sccm-scanner.php:1222
+#: includes/class-sccm-scanner.php:1254
 #, php-format
 msgid "[%1$s] %2$d cookie was added to your cookie banner"
 msgid_plural "[%1$s] %2$d cookies were added to your cookie banner"
@@ -2753,7 +2759,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: site name, 2: number of files
-#: includes/class-sccm-scanner.php:1225
+#: includes/class-sccm-scanner.php:1257
 #, php-format
 msgid "[%1$s] %2$d new third-party file found"
 msgid_plural "[%1$s] %2$d new third-party files found"
@@ -2761,84 +2767,108 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: subject
-#: includes/class-sccm-scanner.php:1229
+#: includes/class-sccm-scanner.php:1261
 #, php-format
 msgid "Sample: %s"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1282
-#: includes/class-sccm-scanner.php:1346
+#: includes/class-sccm-scanner.php:1315
+#: includes/class-sccm-scanner.php:1379
 msgid "Cookie changes in the last 24 hours"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1295
+#: includes/class-sccm-scanner.php:1328
 msgid "needs review"
 msgid_plural "need review"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-sccm-scanner.php:1296
+#: includes/class-sccm-scanner.php:1329
 msgid "added automatically"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1299
+#: includes/class-sccm-scanner.php:1332
 msgid "new third-party file"
 msgid_plural "new third-party files"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-sccm-scanner.php:1312
+#: includes/class-sccm-scanner.php:1345
 msgid "We could not tell what these cookies are for. Someone who manages the website should choose a category for each one in WordPress under Compliance → Cookies. Until then they are not shown to visitors."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1321
+#: includes/class-sccm-scanner.php:1354
 msgid "Added automatically"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1321
+#: includes/class-sccm-scanner.php:1354
 msgid "These are well-known cookies. They were put in the right category for you. Nothing to do unless you disagree."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1334
+#: includes/class-sccm-scanner.php:1367
 msgid "Scripts, frames or stylesheets from other websites that are not in the service library, so they are not blocked. The full addresses are in WordPress under Compliance → Cookies → Scan report (details) → Other third-party files. If one of them tracks visitors, add a blocking rule under Compliance → Settings → Blocking and Google → Your own blocking rules."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1351
+#: includes/class-sccm-scanner.php:1384
 msgid "NEEDS REVIEW"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1352
+#: includes/class-sccm-scanner.php:1385
 msgid "Someone who manages the website should choose a category for each one in WordPress under Compliance → Cookies. Until then visitors do not see them."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1359
+#: includes/class-sccm-scanner.php:1392
 msgid "ADDED AUTOMATICALLY"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1366
+#: includes/class-sccm-scanner.php:1399
 msgid "OTHER THIRD-PARTY FILES (not blocked)"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1367
+#: includes/class-sccm-scanner.php:1400
 msgid "Full addresses: WordPress → Compliance → Cookies → Scan report (details) → Other third-party files."
 msgstr ""
 
-#. translators: 1: email addresses, 2: time of day
-#: includes/class-sccm-scanner.php:1407
+#. translators: 1: website address, 2: email address
+#: includes/class-sccm-scanner.php:1443
 #, php-format
-msgid "Sent by Smart Cookie Consent Manager to %1$s. This email is sent once a day at %2$s, only when something changed. The website's administrator can change this in WordPress under Compliance → Settings."
+msgid "Sent by Smart Cookie Consent Manager on %1$s to %2$s."
+msgstr ""
+
+#. translators: %s: website address
+#: includes/class-sccm-scanner.php:1445
+#, php-format
+msgid "Sent by Smart Cookie Consent Manager on %s."
+msgstr ""
+
+#. translators: %s: time of day
+#: includes/class-sccm-scanner.php:1447
+#, php-format
+msgid "This email is sent once a day at %s, only when something changed. The website's administrator can change this in WordPress under Compliance → Settings."
 msgstr ""
 
 #. translators: 1: number of cookies, 2: count per category, e.g. "Necessary 3 · Statistics 2"
-#: includes/class-sccm-scanner.php:1422
+#: includes/class-sccm-scanner.php:1462
 #, php-format
 msgid "Your cookie banner now lists %1$d cookie (%2$s)."
 msgid_plural "Your cookie banner now lists %1$d cookies (%2$s)."
 msgstr[0] ""
 msgstr[1] ""
 
+#: includes/class-sccm-scanner.php:1517
+msgid "Found in visitors' browsers"
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1519
+msgid "Found by the cookie scan"
+msgstr ""
+
+#: includes/class-sccm-scanner.php:1521
+msgid "Found only in your browser during \"Scan now\""
+msgstr ""
+
 #. translators: %d: number of items
-#: includes/class-sccm-scanner.php:1477
+#: includes/class-sccm-scanner.php:1549
 #, php-format
 msgid "…and %d more. See the full list in the plugin."
 msgstr ""

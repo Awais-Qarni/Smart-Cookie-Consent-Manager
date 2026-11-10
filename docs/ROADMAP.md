@@ -87,6 +87,8 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
       30 days, page caches cleared when assets change)
 - [x] 1.3.4 (2026-11-03): records and reports go straight to admin-ajax.php when the REST API
       is blocked for visitors (no 401 first); setting "How records are sent"
+- [x] 1.3.5 (2026-11-10): admin-area cookies no longer listed (browsers of WordPress users never
+      report; "Scan now" as a visitor); one email per recipient, website address, how found
 
 ## Later (not in scope for 1.0)
 - Geo-targeting (different banner per region)

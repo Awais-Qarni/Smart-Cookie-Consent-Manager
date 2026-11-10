@@ -101,15 +101,34 @@ has. A cookie counts as the website's when a scanned page writes it (scan mode w
 `document.cookie` and `cookieStore.set`), or when it was not there before (also covers cookies
 set by responses to the page's requests). The rest is sent as `unconfirmed` and settled at the
 end by `SCCM_Scanner::settle_unconfirmed()`:
-- "Learn from visitors" on: not listed. Real visitors' browsers report unknown cookie names
-  (never from logged-in users), so a cookie the website really sets — even one a script sets
-  only when it is missing, which the admin's browser already had — is listed after the usual
-  number of visitors; admin-only cookies never come back.
+- "Learn from visitors" on: not listed. Real visitors' browsers report unknown cookie names,
+  so a cookie the website really sets — even one a script sets only when it is missing, which
+  the admin's browser already had — is listed after the usual number of visitors; admin-only
+  cookies never come back (see "Browsers of WordPress users" below).
 - "Learn from visitors" off: `SCCM_Cookies::record_unconfirmed()` puts them under Needs review
   (even when the library knows them), marked "Only found in your browser" (option
   `sccm_browser_only`).
 Server-set cookies are not affected: the server part requests pages without cookies, like a
 first-time visitor. Regression tests: admin e2e BU1–BU3.
+
+**Pages are built as for a logged-out visitor.** Scan mode needs the administrator (token +
+`manage_options`), but scripts that themes and plugins load only for logged-in users (admin
+bar tools, support chats, page builders) would write cookies visitors never get, and a known
+one would be listed at once. So `SCCM_Frontend::scan_as_visitor()` (on `setup_theme`, before
+the theme loads) decides scan mode first and then sets the current user to 0 for the rest of
+the page. The admin page reads the frame directly (same origin), so nothing in the frame needs
+the login. Regression test: admin e2e BU4.
+
+**Browsers of WordPress users never report.** Plugins load support chats and analytics on
+their own admin pages (production 1.3.4: Intercom on NitroPack's settings page), and those
+cookies are saved for the whole domain and stay in the browser after logging out. Several staff
+browsers visiting the site logged out were "several visitors", so a known cookie such as
+`intercom-id-*` was added automatically. Sign of such a browser: `wp-settings-*`, which
+WordPress sets in the admin area and keeps for a year, also after logging out. The browser does
+not report when it has one (`reportUnknown()`), and `SCCM_REST::store_report()` ignores a
+report when `SCCM_REST::is_wordpress_user_browser()` (logged in, a valid login cookie — a REST
+request without a nonce has no current user —, or a `wp-settings-*` cookie) or when the report
+lists a `wp-settings-*` cookie. Regression tests: admin e2e SB1–SB4, WP-CLI "visitor reports".
 
 ## Scan plan (which pages, how many)
 

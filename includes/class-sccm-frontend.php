@@ -30,13 +30,31 @@ class SCCM_Frontend {
 		add_filter( 'script_loader_tag', array( __CLASS__, 'script_tag' ), 10, 2 );
 		add_filter( 'style_loader_tag', array( __CLASS__, 'style_tag' ), 10, 2 );
 		add_action( 'template_redirect', array( __CLASS__, 'scan_mode_headers' ), 0 );
+		add_action( 'setup_theme', array( __CLASS__, 'scan_as_visitor' ), 0 );
+	}
+
+	/**
+	 * Scan mode: build the page as a logged-out visitor would get it.
+	 *
+	 * The scan runs in the administrator's browser, but scripts that themes and plugins load only
+	 * for logged-in users (admin bar tools, support chats, page builders) are not part of what
+	 * visitors get, so their cookies must not be found. Scan mode is decided first (it needs the
+	 * administrator), then the page is built without a user. Runs before the theme loads, so the
+	 * theme sees a visitor too.
+	 */
+	public static function scan_as_visitor() {
+		if ( is_admin() || wp_doing_ajax() || ! self::is_scan_mode() ) {
+			return;
+		}
+		wp_set_current_user( 0 );
 	}
 
 	/**
 	 * Scan mode: the admin's own browser loads a page in a hidden frame (Cookies → Scan now) with
 	 * every category allowed, so all scripts run and set their cookies, which the admin page then
 	 * reads. Needs a fresh one-time token (SCCM_Scanner::scan_token()) AND an administrator.
-	 * Visitors never see it, and nothing is recorded or stored.
+	 * Visitors never see it, and nothing is recorded or stored. The page itself is then built
+	 * as for a logged-out visitor (scan_as_visitor()).
 	 *
 	 * @return bool
 	 */

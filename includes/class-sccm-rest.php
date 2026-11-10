@@ -350,15 +350,20 @@ class SCCM_REST {
 	 * @return array|WP_Error array( ok, added ) or an error with an HTTP status.
 	 */
 	public static function store_report( $data ) {
-		// Never from logged-in users (also checked in the browser): their browsers carry admin
-		// tools and extensions that are not part of the website.
-		if ( ! SCCM_Settings::get( 'scanner_client' ) || is_user_logged_in() ) {
+		// Never from browsers of people who log in to this WordPress (also checked in the browser):
+		// they carry cookies of the admin area and of extensions that are not part of the website.
+		if ( ! SCCM_Settings::get( 'scanner_client' ) || self::is_wordpress_user_browser() ) {
 			return array( 'ok' => true );
 		}
 		if ( self::rate_limited( 'report', 10 ) ) {
 			return new WP_Error( 'sccm_rate_limited', 'Too many requests.', array( 'status' => 429 ) );
 		}
 		$items = is_array( $data ) && is_array( $data['items'] ?? null ) ? array_slice( $data['items'], 0, 30 ) : array();
+		foreach ( $items as $item ) {
+			if ( is_array( $item ) && isset( $item['n'] ) && is_string( $item['n'] ) && 0 === strpos( $item['n'], 'wp-settings-' ) ) {
+				return array( 'ok' => true ); // The same sign, seen in the browser.
+			}
+		}
 
 		$added = 0;
 		foreach ( $items as $item ) {
@@ -378,6 +383,29 @@ class SCCM_REST {
 			'ok'    => true,
 			'added' => $added,
 		);
+	}
+
+	/**
+	 * Whether this request comes from a browser that is, or was, logged in to this WordPress.
+	 *
+	 * Plugins load support chats and analytics on their admin pages (e.g. a chat on a cache
+	 * plugin's settings page), and those cookies stay in the browser after logging out. Signs:
+	 * a logged-in user (read from the login cookie too: a REST request without a nonce has no
+	 * current user), or a wp-settings-* cookie, which WordPress sets in the admin area and keeps
+	 * for a year, also after logging out.
+	 *
+	 * @return bool
+	 */
+	public static function is_wordpress_user_browser() {
+		if ( is_user_logged_in() || wp_validate_auth_cookie( '', 'logged_in' ) ) {
+			return true;
+		}
+		foreach ( array_keys( $_COOKIE ) as $name ) {
+			if ( 0 === strpos( (string) $name, 'wp-settings-' ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

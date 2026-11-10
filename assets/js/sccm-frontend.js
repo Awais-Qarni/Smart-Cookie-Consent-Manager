@@ -1125,9 +1125,16 @@
 		if (cls && (cls.contains('logged-in') || cls.contains('admin-bar'))) {
 			return;
 		}
+		// A browser that has been used to log in to this site (WordPress keeps a wp-settings-*
+		// cookie for a year, also after logging out) carries cookies of the admin area, e.g. a
+		// support chat on a plugin's settings page. Its cookies say nothing about the website.
+		var names = cookieNames();
+		if (names.some(function (name) { return name.indexOf('wp-settings-') === 0; })) {
+			return;
+		}
 		var known = C.known || [];
 		var items = [];
-		cookieNames().forEach(function (name) {
+		names.forEach(function (name) {
 			if (name === C.cookie || items.length >= 30) {
 				return;
 			}

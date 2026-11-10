@@ -2,6 +2,31 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.3.5] - 2026-11-10
+### Fixed
+- **Cookies from the WordPress admin area were added to the cookie list.** Some plugins load
+  a support chat or analytics on their own settings pages (for example Intercom on a cache
+  plugin's page). Those cookies are saved for the whole website and stay in the browser after
+  logging out. When people who use the admin area visited the website logged out, their
+  browsers reported those cookies like a visitor's, and a few such browsers were enough to add
+  a well-known cookie automatically (seen in production: Intercom, Hotjar and `_gid`, which the
+  website itself never sets). Now:
+  - a browser that has been used to log in to the website (WordPress leaves a `wp-settings-*`
+    cookie in it for a year) never reports cookies, checked in the browser and on the server;
+  - the server also reads the login cookie itself, so a logged-in user's report through the
+    REST API is ignored too;
+  - "Scan now" opens each page as a logged-out visitor, so scripts that load only for
+    logged-in users are not counted.
+  Remove cookies that were added this way under Compliance → Cookies (Delete).
+
+### Changed
+- **Daily email: one email per recipient.** The other recipients' addresses are no longer
+  shown; the footer names only the recipient's own address.
+- **The email names the website's address** (e.g. `example.com`) next to its name in the
+  header and in the footer, so emails from a staging copy and the live site can be told apart.
+- **Each cookie in the email says how it was found:** "Found by the cookie scan", "Found in
+  visitors' browsers" or "Found only in your browser during Scan now".
+
 ## [1.3.4] - 2026-11-03
 ### Changed
 - **No failed request when the REST API is blocked for visitors.** On sites where a plugin
