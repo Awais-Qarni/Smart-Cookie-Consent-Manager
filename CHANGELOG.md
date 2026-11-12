@@ -2,6 +2,19 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.4.1] - 2026-11-12
+### Fixed
+- **"Send report now" no longer holds the page.** The report was sent inside the page
+  request, so when the mail service did not answer (production: Microsoft Graph, during an
+  outage, timed out after 30 seconds) the page loaded for half a minute and the email failed.
+  It is now sent in the background, one recipient after the other: the page answers at once,
+  the Settings tab shows "Sending … of …" and then the result. A step that a host stops while
+  waiting for the mail service is noted as "did not answer in time", and the next recipients
+  still get the report. The scheduled Monday report works the same way.
+- **No "Class SCCM_Report not found" right after an update.** For a moment after updating,
+  a host can run the new Settings page with a cached copy of the old main plugin file. The
+  plugin's classes now also load by name when needed, so this cannot stop a page.
+
 ## [1.4.0] - 2026-11-12
 ### Added
 - **Weekly consent report.** Every Monday, at the time of the daily check, the recipients of

@@ -795,11 +795,15 @@ class SCCM_Admin {
 	public static function handle_send_report() {
 		self::require_cap();
 		check_admin_referer( 'sccm_send_report' );
-		if ( SCCM_Report::send( true ) ) {
-			/* translators: %s: email addresses */
-			self::back( 'settings', sprintf( __( 'Weekly consent report sent to %s.', 'smart-cookie-consent-manager' ), implode( ', ', SCCM_Settings::alert_recipients() ) ) );
+		$count = SCCM_Report::queue();
+		if ( -1 === $count ) {
+			self::back( 'settings', __( 'The weekly consent report is already being sent. The result appears below in a minute.', 'smart-cookie-consent-manager' ), true );
 		}
-		self::back( 'settings', __( 'The report could not be sent. Your website may not be set up to send email.', 'smart-cookie-consent-manager' ), true );
+		if ( ! $count ) {
+			self::back( 'settings', __( 'No valid email address to send the report to.', 'smart-cookie-consent-manager' ), true );
+		}
+		/* translators: %s: email addresses */
+		self::back( 'settings', sprintf( __( 'The weekly consent report is being sent to %s. It is sent in the background, so you can leave this page; the result appears below in a minute.', 'smart-cookie-consent-manager' ), implode( ', ', SCCM_Settings::alert_recipients() ) ) );
 	}
 
 	/**

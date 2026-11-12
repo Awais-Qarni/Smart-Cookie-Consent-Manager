@@ -61,29 +61,179 @@ class SCCM_Report {
 		if ( $last === $week ) {
 			return false;
 		}
-		$sent = self::send( false, $now );
-		if ( $sent ) {
-			update_option( self::SENT_OPTION, $week, false );
+		// Noted before sending: a recipient whose email fails is not sent the others' again tomorrow
+		// (the failure is shown on the Settings tab, and "Send report now" can repeat it).
+		update_option( self::SENT_OPTION, $week, false );
+		if ( ! self::start( false, $now ) ) {
+			return false;
 		}
-		return $sent;
+		self::work();
+		return true;
 	}
 
 	/**
-	 * Send the report to every recipient (one email each).
+	 * Option: the report being sent (recipients, how far, results); see start() / work().
+	 */
+	const JOB_OPTION = 'sccm_report_job';
+
+	/**
+	 * Cron hook: send the next emails of the report being sent.
+	 */
+	const EVENT = 'sccm_report_send_event';
+
+	/**
+	 * Seconds one step may start new emails for. A mail service can take 30 s to answer (or not
+	 * answer); hosts stop requests after about 60 s, so a step stops early and the next continues.
+	 */
+	const STEP_SECONDS = 15;
+
+	/**
+	 * Register hooks.
+	 */
+	public static function init() {
+		add_action( self::EVENT, array( __CLASS__, 'work' ) );
+	}
+
+	/**
+	 * "Send report now": start sending in the background, so the page answers at once and a
+	 * slow mail service cannot hold it (or have it stopped after the first recipient).
+	 *
+	 * @return int Number of recipients, 0 without any, -1 while a report is already being sent.
+	 */
+	public static function queue() {
+		if ( self::sending() ) {
+			return -1;
+		}
+		$count = self::start( true );
+		if ( $count ) {
+			spawn_cron();
+		}
+		return $count;
+	}
+
+	/**
+	 * Send the report now, in this request (tests, WP-CLI).
 	 *
 	 * @param bool                   $manual True for "Send report now".
 	 * @param DateTimeImmutable|null $now    Current time (site time zone).
-	 * @return bool
+	 * @return bool Whether every email was sent.
 	 */
 	public static function send( $manual = false, $now = null ) {
-		$now  = $now instanceof DateTimeImmutable ? $now : new DateTimeImmutable( 'now', wp_timezone() );
-		$data = self::data( $now );
-		return SCCM_Scanner::mail(
-			static function ( $recipient ) use ( $data, $manual, $now ) {
-				return self::build_email( $data, $recipient, $manual, $now );
-			},
-			self::MAIL_OPTION
+		return self::start( $manual, $now ) && self::work( PHP_INT_MAX );
+	}
+
+	/**
+	 * The report being sent (or null): recipients, next one, sent, failed.
+	 *
+	 * @return array|null
+	 */
+	public static function sending() {
+		$job = get_option( self::JOB_OPTION );
+		// A report nobody worked on for 15 minutes (WP-Cron off, host stopped it) no longer blocks.
+		return is_array( $job ) && time() - (int) $job['touched'] < 900 ? $job : null;
+	}
+
+	/**
+	 * Note a new report for every recipient.
+	 *
+	 * @param bool                   $manual Sent on request.
+	 * @param DateTimeImmutable|null $now    Current time (site time zone).
+	 * @return int Number of recipients.
+	 */
+	private static function start( $manual, $now = null ) {
+		$now = $now instanceof DateTimeImmutable ? $now : new DateTimeImmutable( 'now', wp_timezone() );
+		$to  = array_values( SCCM_Settings::alert_recipients() );
+		if ( ! $to ) {
+			return 0;
+		}
+		update_option(
+			self::JOB_OPTION,
+			array(
+				'manual'  => (bool) $manual,
+				'time'    => $now->getTimestamp(),
+				'touched' => time(),
+				'to'      => $to,
+				'next'    => 0,
+				'sent'    => array(),
+				'failed'  => array(),
+				'error'   => '',
+				'subject' => '',
+			),
+			false
 		);
+		wp_clear_scheduled_hook( self::EVENT );
+		wp_schedule_single_event( time(), self::EVENT );
+		return count( $to );
+	}
+
+	/**
+	 * Send the next emails of the report being sent, one recipient after the other, for at most
+	 * STEP_SECONDS; then the next step (WP-Cron) continues. When all are done, the result is
+	 * stored for the Settings tab.
+	 *
+	 * @param int $seconds Seconds this step may start new emails for.
+	 * @return bool Whether the report is done and every email was sent.
+	 */
+	public static function work( $seconds = self::STEP_SECONDS ) {
+		$job = get_option( self::JOB_OPTION );
+		if ( ! is_array( $job ) ) {
+			return false;
+		}
+		$started = microtime( true );
+		$first   = (int) $job['next'];
+		$total   = count( $job['to'] );
+		// The step before was stopped while sending (host time limit): that email got no answer.
+		if ( $job['next'] > count( $job['sent'] ) + count( $job['failed'] ) ) {
+			$job['failed'][] = $job['to'][ $job['next'] - 1 ];
+			$job['error']    = __( 'The mail service did not answer in time.', 'smart-cookie-consent-manager' );
+		}
+		$now  = ( new DateTimeImmutable( '@' . (int) $job['time'] ) )->setTimezone( wp_timezone() );
+		$data = null;
+		while ( $job['next'] < $total ) {
+			// Every step sends at least one email, so the report always moves on.
+			if ( $job['next'] > $first && microtime( true ) - $started > $seconds ) {
+				$job['touched'] = time();
+				update_option( self::JOB_OPTION, $job, false );
+				wp_clear_scheduled_hook( self::EVENT );
+				wp_schedule_single_event( time(), self::EVENT );
+				return false;
+			}
+			$recipient = $job['to'][ $job['next'] ];
+			++$job['next'];
+			$job['touched'] = time();
+			update_option( self::JOB_OPTION, $job, false );
+			// If this request is stopped while sending, this event continues the report.
+			wp_clear_scheduled_hook( self::EVENT );
+			wp_schedule_single_event( time() + 120, self::EVENT );
+
+			$data           = $data ? $data : self::data( $now );
+			$email          = self::build_email( $data, $recipient, $job['manual'], $now );
+			$job['subject'] = $email['subject'];
+			$reason         = '';
+			if ( SCCM_Scanner::send_one( $recipient, $email, $reason ) ) {
+				$job['sent'][] = $recipient;
+			} else {
+				$job['failed'][] = $recipient;
+				$job['error']    = '' !== $reason ? $reason : __( 'WordPress could not send the email (wp_mail returned false).', 'smart-cookie-consent-manager' );
+			}
+			update_option( self::JOB_OPTION, $job, false );
+		}
+		wp_clear_scheduled_hook( self::EVENT );
+		delete_option( self::JOB_OPTION );
+		$ok = ! $job['failed'];
+		update_option(
+			self::MAIL_OPTION,
+			array(
+				'time'    => time(),
+				'ok'      => $ok,
+				'to'      => $job['to'],
+				'subject' => $job['subject'],
+				/* translators: %s: email addresses */
+				'error'   => $ok ? '' : wp_strip_all_tags( $job['error'] . ' ' . sprintf( __( 'Not sent to: %s.', 'smart-cookie-consent-manager' ), implode( ', ', $job['failed'] ) ) ),
+			),
+			false
+		);
+		return $ok;
 	}
 
 	/**

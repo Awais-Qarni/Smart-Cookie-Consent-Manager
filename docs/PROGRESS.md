@@ -7,13 +7,30 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.4.0 (1.3.6 is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.4.1 (1.4.0 is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); 1.3.0 admin redesign after production feedback
-- **Last updated:** 2026-11-12 (session 13)
-- **Tests:** unit 33, WP-CLI 250, visitor e2e 120, admin e2e 137, all passing on **MySQL 8.4
+- **Last updated:** 2026-11-12 (session 13b)
+- **Tests:** unit 33, WP-CLI 258, visitor e2e 120, admin e2e 137, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-11-12 — Session 13b (1.4.1: report in the background, autoloader)
+
+**Found on production (1.4.0):** (1) right after the update the Settings tab stopped once with
+"Class SCCM_Report not found" (cached old main file with the new view); (2) "Send report now"
+loaded 30 s and the email failed: Microsoft Graph timed out (cURL 28), during a Microsoft email
+outage confirmed by the owner's admin. One recipient.
+
+**Done:** `SCCM_Report::queue()` / `start()` / `work()` (job option, cron steps of 15 s, follow-up
+event, stopped step noted, stale job after 15 min), `SCCM_Scanner::send_one()`, Settings shows the
+progress, autoloader in the main file. Tests: WP-CLI 258 (queue, steps, stopped step, stale job,
+failures, autoloader probe), admin WR2 with a mail service that takes 3 s per email (the button
+answers in ~1 s). Unit 33, visitor e2e 120, admin e2e 137.
+
+**Next:** owner installs 1.4.1; "Send report now" again once Microsoft mail works.
 
 ---
 

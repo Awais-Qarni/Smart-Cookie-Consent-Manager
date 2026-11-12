@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,10 @@ Use the floating button, the [sccm_cookie_settings] shortcode, or a menu link to
 Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 == Changelog ==
+
+= 1.4.1 =
+* "Send report now" sends the report in the background: the page answers at once, also when the mail service is slow or down.
+* Fixed: right after an update, a page could stop with "Class SCCM_Report not found" while the host still ran a cached copy of the old plugin file.
 
 = 1.4.0 =
 * New: weekly consent report. Every Monday the same recipients as the cookie change email get a report of the last 7 days with charts: choices day by day, how visitors chose, what they allowed, the last 8 weeks and the banner status. "Send report now" (Settings) sends it at any time.

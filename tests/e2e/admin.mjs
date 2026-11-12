@@ -123,11 +123,26 @@ check('E2 Settings shows the result of the last email', /Last email: .*owner@exa
 // Weekly consent report: on by default, and "Send report now" sends it at once to every recipient.
 check('WR1 the weekly consent report is on by default', option().report_enabled === 1 && await page.isChecked('#sccm-report_enabled'));
 if (fs.existsSync(CONTENT + '/mail-captured.json')) fs.unlinkSync(CONTENT + '/mail-captured.json');
-await Promise.all([page.waitForNavigation(), page.click('button:has-text("Send report now")')]);
-const reports = mails();
-check('WR2 "Send report now" sends the weekly report to every recipient, one email each', reports.length === 3 && reports.map((m) => m.to).join() === everyone.join() && reports.every((m) => /Weekly consent report/.test(m.subject) && m.has_html), JSON.stringify(reports.map((m) => [m.to, m.subject])));
+// A slow mail service (production: Microsoft Graph did not answer for 30 s) must not hold the page:
+// every email takes 3 s here, and the page still answers at once.
+fs.writeFileSync(CONTENT + '/mu-plugins/zz-sccm-slowmail.php', "<?php\nadd_filter( 'pre_wp_mail', function ( $r ) { sleep( 3 ); return $r; }, 1 );\n");
+// Timed: the button's own request (admin-post.php). The local test server answers one request at
+// a time, so the page after it may wait for the background sending; real hosts run them side by side.
+const clicked = Date.now();
+const [posted] = await Promise.all([page.waitForResponse((r) => r.url().includes('admin-post.php')), page.waitForNavigation({ timeout: 60000 }), page.click('button:has-text("Send report now")')]);
+await page.waitForLoadState('load');
+const pageSeconds = (posted.request().timing().responseEnd > 0 ? posted.request().timing().responseEnd : Date.now() - clicked) / 1000;
+check('WR2 "Send report now" answers at once, the report is sent in the background', pageSeconds < 3 && /is being sent to .*It is sent in the background/.test(await page.textContent('.notice')), pageSeconds.toFixed(1) + ' s');
+let reports = mails();
+for (let i = 0; i < 40 && reports.length < 3; i++) {
+	await page.waitForTimeout(1000);
+	if (i % 5 === 4) await fetch(BASE + '/wp-cron.php?doing_wp_cron'); // As a visitor's page view would.
+	reports = mails();
+}
+fs.unlinkSync(CONTENT + '/mu-plugins/zz-sccm-slowmail.php');
+check('WR2 the weekly report reaches every recipient, one email each', reports.length === 3 && reports.map((m) => m.to).join() === everyone.join() && reports.every((m) => /Weekly consent report/.test(m.subject) && m.has_html), JSON.stringify(reports.map((m) => [m.to, m.subject])));
 check('WR2 the report says it was sent on request', reports.length > 0 && /Sent on request on/.test(reports[0].message) && /The regular report goes out every Monday at/.test(reports[0].message));
-check('WR2 the result is shown', /Weekly consent report sent to/.test(await page.textContent('.notice')));
+await page.goto(admin('settings'));
 await page.locator('summary', { hasText: 'Cookie scan and email alerts' }).click();
 check('WR2 Settings shows the last weekly report', /Last weekly report: .*team@example\.com/.test(await page.textContent('.sccm-tab')));
 
@@ -673,7 +688,10 @@ wp('eval', 'SCCM_Consent_Log::delete_all();');
 await page.goto(admin('tools'));
 check('V2 Tools: "Ask everyone again" names the current and the next banner version', (await page.textContent('.sccm-tab')).includes(`Current banner version: ${current}`) && (await page.textContent('.sccm-tab')).includes(`starts banner version ${current + 1}`));
 
-check('no JavaScript errors in the admin', errors.length === 0, errors.join(' | '));
+// Chrome's page-transition animation (WordPress admin) reports this when the test navigates while
+// a transition runs; it is the browser's, not the plugin's.
+const ownErrors = errors.filter((e) => !/^Transition was aborted because of invalid state/.test(e));
+check('no JavaScript errors in the admin', ownErrors.length === 0, ownErrors.join(' | '));
 wp('eval', `SCCM_Settings::update(array_merge(SCCM_Settings::defaults(), array("policy_page_id" => SCCM_Settings::get("policy_page_id"))));`);
 fs.rmSync(MU, { force: true });
 fs.rmSync(CONTENT + '/mail-captured.json', { force: true });

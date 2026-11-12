@@ -245,22 +245,7 @@ SCCM_Admin::form_open( 'settings' );
 					printf( esc_html__( 'Send waiting alerts now (%d)', 'smart-cookie-consent-manager' ), count( $sccm_queue ) );
 					?>
 				</button>
-				<p class="description"><?php esc_html_e( 'Save your changes first. The sample and the report go to the addresses saved above. "Send report now" sends the weekly consent report of the last 7 days at once, also when the weekly report is switched off.', 'smart-cookie-consent-manager' ); ?></p>
-				<?php $sccm_report = get_option( SCCM_Report::MAIL_OPTION ); ?>
-				<?php if ( is_array( $sccm_report ) ) : ?>
-					<p class="sccm-mail-status <?php echo ! empty( $sccm_report['ok'] ) ? 'sccm-mail-status--ok' : 'sccm-mail-status--error'; ?>">
-						<?php
-						$sccm_when = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $sccm_report['time'] );
-						echo esc_html(
-							! empty( $sccm_report['ok'] )
-								/* translators: 1: date and time, 2: email addresses */
-								? sprintf( __( 'Last weekly report: %1$s, to %2$s.', 'smart-cookie-consent-manager' ), $sccm_when, implode( ', ', (array) $sccm_report['to'] ) )
-								/* translators: 1: date and time, 2: error message */
-								: sprintf( __( 'Last weekly report failed (%1$s): %2$s', 'smart-cookie-consent-manager' ), $sccm_when, $sccm_report['error'] )
-						);
-						?>
-					</p>
-				<?php endif; ?>
+				<p class="description"><?php esc_html_e( 'Save your changes first. The sample and the report go to the addresses saved above. "Send report now" sends the weekly consent report of the last 7 days right away, in the background, also when the weekly report is switched off.', 'smart-cookie-consent-manager' ); ?></p>
 				<?php $sccm_mail = get_option( SCCM_Scanner::MAIL_OPTION ); ?>
 				<?php if ( is_array( $sccm_mail ) ) : ?>
 					<?php $sccm_when = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $sccm_mail['time'] ); ?>
@@ -279,6 +264,30 @@ SCCM_Admin::form_open( 'settings' );
 							?>
 						</p>
 					<?php endif; ?>
+				<?php endif; ?>
+				<?php $sccm_job = SCCM_Report::sending(); ?>
+				<?php if ( $sccm_job ) : ?>
+					<p class="sccm-mail-status">
+						<?php
+						/* translators: 1: emails done, 2: all emails */
+						echo esc_html( sprintf( __( 'Sending the weekly consent report: %1$s of %2$s done. Reload this page in a minute to see the result.', 'smart-cookie-consent-manager' ), number_format_i18n( count( $sccm_job['sent'] ) + count( $sccm_job['failed'] ) ), number_format_i18n( count( $sccm_job['to'] ) ) ) );
+						?>
+					</p>
+				<?php endif; ?>
+				<?php $sccm_report = get_option( SCCM_Report::MAIL_OPTION ); ?>
+				<?php if ( is_array( $sccm_report ) && ! $sccm_job ) : ?>
+					<p class="sccm-mail-status <?php echo ! empty( $sccm_report['ok'] ) ? 'sccm-mail-status--ok' : 'sccm-mail-status--error'; ?>">
+						<?php
+						$sccm_when = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $sccm_report['time'] );
+						echo esc_html(
+							! empty( $sccm_report['ok'] )
+								/* translators: 1: date and time, 2: email addresses */
+								? sprintf( __( 'Last weekly report: %1$s, to %2$s.', 'smart-cookie-consent-manager' ), $sccm_when, implode( ', ', (array) $sccm_report['to'] ) )
+								/* translators: 1: date and time, 2: error message */
+								: sprintf( __( 'Last weekly report failed (%1$s): %2$s', 'smart-cookie-consent-manager' ), $sccm_when, $sccm_report['error'] )
+						);
+						?>
+					</p>
 				<?php endif; ?>
 			</td>
 		</tr>

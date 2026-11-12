@@ -91,6 +91,7 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
       report; "Scan now" as a visitor); one email per recipient, website address, how found
 - [x] 1.3.6 (2026-11-10): everything the plugin keeps in the browser is in the sccm_consent cookie
 - [x] 1.4.0 (2026-11-12): weekly consent report email for stakeholders (charts), "Send report now"
+- [x] 1.4.1 (2026-11-12): report sent in the background (no page held by a slow mail service); classes load by name
 
 ## Later (not in scope for 1.0)
 - Geo-targeting (different banner per region)
