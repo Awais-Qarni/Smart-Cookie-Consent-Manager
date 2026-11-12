@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.3.6
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,9 @@ Use the floating button, the [sccm_cookie_settings] shortcode, or a menu link to
 Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 == Changelog ==
+
+= 1.4.0 =
+* New: weekly consent report. Every Monday the same recipients as the cookie change email get a report of the last 7 days with charts: choices day by day, how visitors chose, what they allowed, the last 8 weeks and the banner status. "Send report now" (Settings) sends it at any time.
 
 = 1.3.6 =
 * Everything the plugin keeps in the visitor's browser is now in its one cookie, sccm_consent (no separate browser storage).

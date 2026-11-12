@@ -274,6 +274,25 @@ the linked page or, if there is none, finds the oldest published page containing
 the Dashboard, after Tools → Reset and in "Create the page" (which then says it linked the
 existing page instead of creating one). The front end never runs this query.
 
+## Weekly consent report (`SCCM_Report`)
+
+Sent from the daily check (`SCCM_Scanner::daily()` → `SCCM_Report::maybe_send()`): once per
+ISO week (option `sccm_report_sent` = `o-W` of the week's Monday), on Monday or, if Monday's
+check was missed, on the next daily check of that week. The first check after installing or
+updating only notes the week, so the first report waits for the next Monday. Off with the
+setting `report_enabled` or while consent records are off. "Send report now" calls
+`SCCM_Report::send( true )` (works also when the weekly report is off).
+
+Data (`data()`): `SCCM_Consent_Log::daily( 56, yesterday )` in one query, cut into 8 blocks of
+7 days; the last block is "these 7 days", the one before is the comparison.
+`category_counts_between()` gives what was allowed per category. Mail goes through
+`SCCM_Scanner::mail()` (one email per recipient), the result in `sccm_last_report_mail`.
+
+Email: tables only (no SVG, images or scripts); bar heights are pixel cells, segments are
+separated by 2px cells, colours of the choices as on the Dashboard except "Denied" (orange,
+so it does not read as "no data"; palette validated for colour-vision deficiency). Light
+design with dark-mode overrides (`.e-*` classes, also Outlook `[data-ogsc]`/`[data-ogsb]`).
+
 ## Consent cookie
 
 **One cookie for everything** (1.3.6): the plugin keeps nothing else in the browser (no

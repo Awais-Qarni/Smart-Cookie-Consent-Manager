@@ -2,6 +2,20 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.4.0] - 2026-11-12
+### Added
+- **Weekly consent report.** Every Monday, at the time of the daily check, the recipients of
+  the cookie change email get a report of the last 7 days, one email each: a one-sentence
+  summary, the number of choices, the share that allowed all and the share that denied
+  (each compared with the week before), choices day by day as a chart, how visitors chose,
+  what they allowed per category, the last 8 weeks, and the banner status (cookies listed,
+  changes, last scan, Consent Mode, privacy signal, banner version). The charts are built from
+  tables, so they show in Gmail, Outlook and Apple Mail, also in dark mode and on phones.
+- **Send report now** (Settings → Cookie scan and email alerts) sends it at any time; the
+  footer then says it was sent on request and when the regular report goes out.
+- New setting "Weekly consent report" (on by default). The first report after installing or
+  updating goes out on the next Monday. No scheduled report while consent records are off.
+
 ## [1.3.6] - 2026-11-10
 ### Changed
 - **One cookie for everything.** The plugin kept two small notes in the browser's session

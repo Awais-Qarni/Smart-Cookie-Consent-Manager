@@ -26,7 +26,7 @@ class SCCM_Admin {
 		add_filter( 'plugin_action_links_' . SCCM_BASENAME, array( __CLASS__, 'action_links' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'notices' ) );
 
-		$actions = array( 'save', 'cookie_save', 'cookie_delete', 'cookie_status', 'ignore_all', 'add_service', 'scan_now', 'send_digest', 'send_test_email', 'export_log', 'purge_log', 'delete_log', 'export_settings', 'import_settings', 'bump_version', 'create_policy_page', 'reset_settings', 'test_record' );
+		$actions = array( 'save', 'cookie_save', 'cookie_delete', 'cookie_status', 'ignore_all', 'add_service', 'scan_now', 'send_digest', 'send_report', 'send_test_email', 'export_log', 'purge_log', 'delete_log', 'export_settings', 'import_settings', 'bump_version', 'create_policy_page', 'reset_settings', 'test_record' );
 		foreach ( $actions as $action ) {
 			add_action( 'admin_post_sccm_' . $action, array( __CLASS__, 'handle_' . $action ) );
 		}
@@ -787,6 +787,19 @@ class SCCM_Admin {
 		check_admin_referer( 'sccm_send_digest' );
 		$sent = SCCM_Scanner::send_digest();
 		self::back( 'settings', $sent ? __( 'Email sent.', 'smart-cookie-consent-manager' ) : __( 'Nothing to send, or the email could not be sent.', 'smart-cookie-consent-manager' ), ! $sent );
+	}
+
+	/**
+	 * "Send report now": the weekly consent report, out of schedule.
+	 */
+	public static function handle_send_report() {
+		self::require_cap();
+		check_admin_referer( 'sccm_send_report' );
+		if ( SCCM_Report::send( true ) ) {
+			/* translators: %s: email addresses */
+			self::back( 'settings', sprintf( __( 'Weekly consent report sent to %s.', 'smart-cookie-consent-manager' ), implode( ', ', SCCM_Settings::alert_recipients() ) ) );
+		}
+		self::back( 'settings', __( 'The report could not be sent. Your website may not be set up to send email.', 'smart-cookie-consent-manager' ), true );
 	}
 
 	/**

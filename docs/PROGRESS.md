@@ -7,13 +7,29 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.3.6 (1.3.5 is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.4.0 (1.3.6 is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); 1.3.0 admin redesign after production feedback
-- **Last updated:** 2026-11-10 (session 12b)
-- **Tests:** unit 33, WP-CLI 225, visitor e2e 120, admin e2e 132, all passing on **MySQL 8.4
+- **Last updated:** 2026-11-12 (session 13)
+- **Tests:** unit 33, WP-CLI 250, visitor e2e 120, admin e2e 137, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-11-12 — Session 13 (1.4.0: weekly consent report)
+
+**Done:** design approved by the owner (mock with sample data, desktop + phone), then built as
+`SCCM_Report` (includes/class-sccm-report.php): data from the consent log (56 days in one query,
+`daily()` got a last-day argument, new `category_counts_between()`), email of tables (palette
+validated; "Denied" orange instead of gray), sent per recipient through the now public
+`SCCM_Scanner::mail( $build, $option )`, Monday schedule from the daily check (once per ISO
+week; the first check after an update only notes the week), setting `report_enabled`,
+"Send report now" (`send_report` action) with the result shown, Help tab line. Checked with
+2,967 sample records on the local site (light, dark, phone, on request). Unit 33, WP-CLI 250,
+visitor e2e 120, admin e2e 137.
+
+**Next:** owner installs 1.4.0 and clicks "Send report now" to see the first report.
 
 ---
 

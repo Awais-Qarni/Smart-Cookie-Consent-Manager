@@ -120,6 +120,17 @@ check('E1 sample email subject is marked as a sample', /^Sample: /.test(mail.sub
 await page.locator('summary', { hasText: 'Cookie scan and email alerts' }).click();
 check('E2 Settings shows the result of the last email', /Last email: .*owner@example\.com/.test(await page.textContent('.sccm-mail-status--ok')));
 
+// Weekly consent report: on by default, and "Send report now" sends it at once to every recipient.
+check('WR1 the weekly consent report is on by default', option().report_enabled === 1 && await page.isChecked('#sccm-report_enabled'));
+if (fs.existsSync(CONTENT + '/mail-captured.json')) fs.unlinkSync(CONTENT + '/mail-captured.json');
+await Promise.all([page.waitForNavigation(), page.click('button:has-text("Send report now")')]);
+const reports = mails();
+check('WR2 "Send report now" sends the weekly report to every recipient, one email each', reports.length === 3 && reports.map((m) => m.to).join() === everyone.join() && reports.every((m) => /Weekly consent report/.test(m.subject) && m.has_html), JSON.stringify(reports.map((m) => [m.to, m.subject])));
+check('WR2 the report says it was sent on request', reports.length > 0 && /Sent on request on/.test(reports[0].message) && /The regular report goes out every Monday at/.test(reports[0].message));
+check('WR2 the result is shown', /Weekly consent report sent to/.test(await page.textContent('.notice')));
+await page.locator('summary', { hasText: 'Cookie scan and email alerts' }).click();
+check('WR2 Settings shows the last weekly report', /Last weekly report: .*team@example\.com/.test(await page.textContent('.sccm-tab')));
+
 // Banner tab: pick positions
 await page.goto(admin('banner'));
 await page.click('.sccm-picker--banner .sccm-pos:has(input[value=center])');

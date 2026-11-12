@@ -1084,6 +1084,7 @@ class SCCM_Scanner {
 	 */
 	public static function daily() {
 		self::send_digest();
+		SCCM_Report::maybe_send();
 		SCCM_Consent_Log::purge( (int) SCCM_Settings::get( 'retention_months' ) );
 
 		// Keep the chosen hour (a "daily" repeat drifts by an hour when the clocks change).
@@ -1161,10 +1162,11 @@ class SCCM_Scanner {
 	 * recipient sees the other addresses. Remember the result (shown on the Settings tab, so a
 	 * host that drops mail is noticed).
 	 *
-	 * @param callable $build Returns build_email() for one recipient address.
+	 * @param callable $build  Returns array( subject, html, text ) for one recipient address.
+	 * @param string   $option Where the result is remembered (the weekly report has its own).
 	 * @return bool Whether every email was sent.
 	 */
-	private static function mail( callable $build ) {
+	public static function mail( callable $build, $option = self::MAIL_OPTION ) {
 		$to      = SCCM_Settings::alert_recipients();
 		$error   = '';
 		$failed  = array();
@@ -1195,7 +1197,7 @@ class SCCM_Scanner {
 				. ' ' . sprintf( __( 'Not sent to: %s.', 'smart-cookie-consent-manager' ), implode( ', ', $failed ) );
 		}
 		update_option(
-			self::MAIL_OPTION,
+			$option,
 			array(
 				'time'    => time(),
 				'ok'      => $sent,

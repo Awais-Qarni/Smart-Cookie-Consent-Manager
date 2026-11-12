@@ -246,15 +246,16 @@ class SCCM_Consent_Log {
 	}
 
 	/**
-	 * Choices per day for the dashboard chart (site time zone), oldest day first.
+	 * Choices per day for the dashboard chart and the weekly report (site time zone), oldest day first.
 	 *
-	 * @param int $days Number of days, today included.
+	 * @param int                    $days Number of days, the last day included.
+	 * @param DateTimeImmutable|null $last The last day (site time zone); default today.
 	 * @return array Y-m-d => array( choice => count ) for every day, also days without records.
 	 */
-	public static function daily( $days = 30 ) {
+	public static function daily( $days = 30, $last = null ) {
 		global $wpdb;
 		$days   = max( 1, min( 365, absint( $days ) ) );
-		$today  = new DateTimeImmutable( 'today', wp_timezone() );
+		$today  = $last instanceof DateTimeImmutable ? $last->setTime( 0, 0 ) : new DateTimeImmutable( 'today', wp_timezone() );
 		$first  = $today->modify( '-' . ( $days - 1 ) . ' days' );
 		$offset = $today->getOffset();
 		$out    = array();
@@ -265,10 +266,11 @@ class SCCM_Consent_Log {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT DATE(DATE_ADD(created_at, INTERVAL %d SECOND)) AS day, choice, COUNT(*) AS total FROM %i WHERE created_at >= %s GROUP BY day, choice',
+				'SELECT DATE(DATE_ADD(created_at, INTERVAL %d SECOND)) AS day, choice, COUNT(*) AS total FROM %i WHERE created_at >= %s AND created_at < %s GROUP BY day, choice',
 				$offset,
 				self::table(),
-				gmdate( 'Y-m-d H:i:s', $first->getTimestamp() )
+				gmdate( 'Y-m-d H:i:s', $first->getTimestamp() ),
+				gmdate( 'Y-m-d H:i:s', $today->modify( '+1 day' )->getTimestamp() )
 			),
 			ARRAY_A
 		);
@@ -287,11 +289,21 @@ class SCCM_Consent_Log {
 	 * @return array category => count, plus 'total' => number of records.
 	 */
 	public static function category_counts( $days = 30 ) {
+		return self::category_counts_between( time() - absint( $days ) * DAY_IN_SECONDS, time() + 1 );
+	}
+
+	/**
+	 * How many records allowed each optional category, between two times (weekly report).
+	 *
+	 * @param int $from Unix time, included.
+	 * @param int $to   Unix time, excluded.
+	 * @return array category => count, plus 'total' => number of records.
+	 */
+	public static function category_counts_between( $from, $to ) {
 		global $wpdb;
-		$since = gmdate( 'Y-m-d H:i:s', time() - absint( $days ) * DAY_IN_SECONDS );
-		$out   = array( 'total' => 0 );
+		$out = array( 'total' => 0 );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT categories, COUNT(*) AS total FROM %i WHERE created_at >= %s GROUP BY categories', self::table(), $since ), ARRAY_A );
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT categories, COUNT(*) AS total FROM %i WHERE created_at >= %s AND created_at < %s GROUP BY categories', self::table(), gmdate( 'Y-m-d H:i:s', (int) $from ), gmdate( 'Y-m-d H:i:s', (int) $to ) ), ARRAY_A );
 		foreach ( SCCM_Categories::KEYS as $key ) {
 			if ( 'necessary' !== $key ) {
 				$out[ $key ] = 0;
