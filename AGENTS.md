@@ -55,6 +55,7 @@ includes/
   class-sccm-consent-log.php       Consent records (DB table sccm_consent_log), CSV export
   class-sccm-rest.php              REST: /sccm/v1/consent and /sccm/v1/report
   class-sccm-scanner.php           Server scan (cron) + visitor-reported cookies + email alerts
+  class-sccm-report.php            Weekly consent report email (data, email, Monday schedule)
   class-sccm-shortcodes.php        [sccm_cookie_policy], [sccm_cookie_settings], policy page (sidebar)
   class-sccm-cache.php             Clears page caches when settings / the cookie list change
   data/services.php                Service signatures (data only)

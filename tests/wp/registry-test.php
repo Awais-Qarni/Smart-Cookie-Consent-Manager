@@ -403,7 +403,7 @@ $capture               = function ( $null, $atts ) {
 	return true;
 };
 add_filter( 'pre_wp_mail', $capture, 10, 2 );
-SCCM_Settings::update( array( 'alerts_enabled' => 1, 'alert_email' => 'team@example.com', 'alert_hour' => 7, 'scan_schedule' => 'weekly' ) );
+SCCM_Settings::update( array( 'alerts_enabled' => 1, 'alert_email' => 'team@example.com', 'alert_hour' => 7, 'scan_schedule' => 'weekly', 'report_enabled' => 0 ) );
 delete_option( 'sccm_pending_alert' );
 
 SCCM_Scanner::daily();
@@ -446,6 +446,85 @@ sccm_check( 'a failed email is reported as failed', false === SCCM_Scanner::send
 $status = get_option( SCCM_Scanner::MAIL_OPTION );
 sccm_check( 'the failure and its reason are recorded (shown on the Settings tab), the changes are kept for the next day', empty( $status['ok'] ) && '' !== $status['error'] && get_option( 'sccm_pending_alert' ) );
 remove_filter( 'pre_wp_mail', $refuse );
+
+/* ---------------------------------------------------------------- Weekly consent report */
+
+SCCM_Consent_Log::delete_all();
+delete_option( SCCM_Report::SENT_OPTION );
+delete_option( SCCM_Report::MAIL_OPTION );
+$sccm_tz     = wp_timezone();
+$sccm_monday = ( new DateTimeImmutable( 'monday this week', $sccm_tz ) )->setTime( 9, 0 );
+// Records: the 7 days before this Monday (3 allowed all, 1 some (Statistics), 1 denied) and the 7 before that (2 + 2).
+$sccm_add = function ( $days_back, $choice, $cats ) use ( $sccm_monday ) {
+	global $wpdb;
+	$at = $sccm_monday->setTime( 12, 0 )->modify( "-{$days_back} days" );
+	$wpdb->insert( SCCM_Consent_Log::table(), array( 'consent_id' => wp_generate_uuid4(), 'choice' => $choice, 'categories' => $cats, 'consent_version' => 1, 'created_at' => gmdate( 'Y-m-d H:i:s', $at->getTimestamp() ) ) ); // phpcs:ignore
+};
+foreach ( array( 1, 2, 2 ) as $sccm_d ) {
+	$sccm_add( $sccm_d, 'accept_all', 'functional,analytics,marketing' );
+}
+$sccm_add( 3, 'custom', 'analytics' );
+$sccm_add( 7, 'reject_all', '' );
+$sccm_add( 8, 'accept_all', 'functional,analytics,marketing' );
+$sccm_add( 9, 'accept_all', 'functional,analytics,marketing' );
+$sccm_add( 10, 'reject_all', '' );
+$sccm_add( 14, 'reject_all', '' );
+$sccm_add( 0, 'accept_all', 'functional,analytics,marketing' ); // Today: not in the report yet.
+$sccm_data = SCCM_Report::data( $sccm_monday );
+sccm_check( 'report: the last 7 full days, ending yesterday (a Monday report covers Monday to Sunday)', $sccm_data['calendar'] && 7 === count( $sccm_data['days'] ) && $sccm_monday->modify( '-1 day' )->format( 'Y-m-d' ) === array_key_last( $sccm_data['days'] ) );
+sccm_check( 'report: choices of these 7 days and the 7 before are counted by choice', 5 === $sccm_data['this']['total'] && 3 === $sccm_data['this']['counts']['accept_all'] && 1 === $sccm_data['this']['counts']['custom'] && 1 === $sccm_data['this']['counts']['reject_all'] && 4 === $sccm_data['prev']['total'], wp_json_encode( array( $sccm_data['this'], $sccm_data['prev'] ) ) );
+sccm_check( 'report: what visitors allowed, per category', 4 === $sccm_data['categories']['analytics'] && 3 === $sccm_data['categories']['marketing'] && 5 === $sccm_data['categories']['total'] && 2 === $sccm_data['cat_prev']['analytics'] );
+sccm_check( 'report: 8 weeks of 7 days, the newest last', 8 === count( $sccm_data['weeks'] ) && 5 === end( $sccm_data['weeks'] )['total'] && $sccm_data['weeks'][0]['start'] === $sccm_monday->modify( '-56 days' )->format( 'Y-m-d' ) );
+$sccm_email = SCCM_Report::build_email( $sccm_data, 'team@example.com', false, $sccm_monday );
+sccm_check( 'report: the subject gives the headline numbers', false !== strpos( $sccm_email['subject'], 'Weekly consent report: 5 choices, 60% allowed all' ), $sccm_email['subject'] );
+sccm_check( 'report: the sentence at the top compares with last week', false !== strpos( $sccm_email['html'], '<strong>5 visitors</strong> answered the cookie banner, <strong>25% more</strong> than last week' ), wp_strip_all_tags( $sccm_email['text'] ) );
+sccm_check( 'report: numbers, day-by-day chart, share, categories, 8 weeks and banner status', false !== strpos( $sccm_email['html'], 'Choices made' ) && false !== strpos( $sccm_email['html'], 'This week, day by day' ) && false !== strpos( $sccm_email['html'], 'How visitors chose' ) && false !== strpos( $sccm_email['html'], 'What visitors allowed' ) && false !== strpos( $sccm_email['html'], 'The last 8 weeks' ) && false !== strpos( $sccm_email['html'], 'Your cookie banner' ) );
+sccm_check( 'report: charts are tables with sizes (no images, SVG or scripts, so every mail app shows them)', false !== strpos( $sccm_email['html'], 'bgcolor="#16a34a"' ) && false === stripos( $sccm_email['html'], '<svg' ) && false === stripos( $sccm_email['html'], '<img' ) && false === stripos( $sccm_email['html'], '<script' ) );
+sccm_check( 'report: names the website and only its own recipient; no links into the admin', substr_count( $sccm_email['html'], $sccm_address ) >= 2 && false !== strpos( $sccm_email['html'], 'to team@example.com.' ) && false === strpos( $sccm_email['html'], 'wp-admin' ) && false === strpos( $sccm_email['html'], '<a ' ) );
+sccm_check( 'report: a scheduled report says when it is sent', false !== strpos( $sccm_email['html'], 'This report is sent every Monday at' ) && false === strpos( $sccm_email['html'], 'Sent on request' ) );
+$sccm_manual = SCCM_Report::build_email( $sccm_data, 'team@example.com', true, $sccm_monday );
+sccm_check( '"Send report now": the footer says it was sent on request, and when the regular one goes out', false !== strpos( $sccm_manual['html'], 'Sent on request on' ) && false !== strpos( $sccm_manual['html'], 'The regular report goes out every Monday at' ) );
+sccm_check( 'report: plain-text version', false !== strpos( $sccm_email['text'], 'HOW VISITORS CHOSE' ) && false !== strpos( $sccm_email['text'], 'Allowed all: 3 (60%)' ) );
+$sccm_mid = SCCM_Report::data( $sccm_monday->modify( '+3 days' ) );
+sccm_check( 'report: sent on another day it covers the 7 days before that day ("the 7 days before", not "last week")', ! $sccm_mid['calendar'] && false !== strpos( SCCM_Report::build_email( $sccm_mid, 'a@example.com', true, $sccm_monday->modify( '+3 days' ) )['html'], 'the 7 days before' ) );
+$sccm_blogname = get_option( 'blogname' );
+update_option( 'blogname', 'Site <b>&amp; "Co"</b>' );
+$sccm_escaped = SCCM_Report::build_email( $sccm_data, 'a@example.com', false, $sccm_monday );
+sccm_check( 'report: the site name is escaped', false === strpos( $sccm_escaped['html'], '<b>' ) );
+update_option( 'blogname', $sccm_blogname );
+// Schedule: Monday, once per week, the same recipients, one email each.
+$GLOBALS['sccm_mails'] = array();
+add_filter( 'pre_wp_mail', $capture, 10, 2 );
+SCCM_Settings::update( array( 'report_enabled' => 1, 'alerts_enabled' => 1, 'alert_email' => 'team@example.com', 'alert_include_admin' => 1, 'log_enabled' => 1 ) );
+delete_option( SCCM_Report::SENT_OPTION );
+sccm_check( 'report: the first daily check after installing only notes the week (the first report waits for Monday)', ! SCCM_Report::maybe_send( $sccm_monday->modify( '+3 days' ) ) && 0 === count( $GLOBALS['sccm_mails'] ) && $sccm_monday->format( 'o-W' ) === get_option( SCCM_Report::SENT_OPTION ) );
+update_option( SCCM_Report::SENT_OPTION, '2000-01' );
+$sccm_sent = SCCM_Report::maybe_send( $sccm_monday );
+sccm_check( 'report: sent on Monday to the same recipients as the change email, one email each', $sccm_sent && 2 === count( $GLOBALS['sccm_mails'] ) && array( get_option( 'admin_email' ), 'team@example.com' ) === wp_list_pluck( $GLOBALS['sccm_mails'], 'to' ) && false !== strpos( $GLOBALS['sccm_mails'][0]['subject'], 'Weekly consent report' ) );
+sccm_check( 'report: not twice in the same week', ! SCCM_Report::maybe_send( $sccm_monday->modify( '+1 day' ) ) && 2 === count( $GLOBALS['sccm_mails'] ) );
+sccm_check( 'report: a week whose Monday check was missed gets it on the next daily check', SCCM_Report::maybe_send( $sccm_monday->modify( '+8 days' ) ) && 4 === count( $GLOBALS['sccm_mails'] ) );
+delete_option( 'sccm_pending_alert' );
+update_option( SCCM_Report::SENT_OPTION, '2000-01' );
+SCCM_Scanner::daily();
+sccm_check( 'report: the daily check sends it (once a week)', 6 === count( $GLOBALS['sccm_mails'] ) && false !== strpos( $GLOBALS['sccm_mails'][5]['subject'], 'Weekly consent report' ) );
+SCCM_Scanner::daily();
+sccm_check( 'report: the next daily check of the same week does not send it again', 6 === count( $GLOBALS['sccm_mails'] ) );
+update_option( SCCM_Report::SENT_OPTION, '2000-01' );
+SCCM_Settings::update( array( 'report_enabled' => 0 ) );
+sccm_check( 'report: switched off, no scheduled report', ! SCCM_Report::maybe_send( $sccm_monday ) && 6 === count( $GLOBALS['sccm_mails'] ) );
+SCCM_Settings::update( array( 'report_enabled' => 1, 'log_enabled' => 0 ) );
+sccm_check( 'report: no scheduled report while consent records are off (nothing to report)', ! SCCM_Report::maybe_send( $sccm_monday ) && 6 === count( $GLOBALS['sccm_mails'] ) );
+SCCM_Settings::update( array( 'log_enabled' => 1 ) );
+sccm_check( '"Send report now" also works when the weekly report is off', SCCM_Settings::update( array( 'report_enabled' => 0 ) ) && SCCM_Report::send( true ) && 8 === count( $GLOBALS['sccm_mails'] ) && false !== strpos( $GLOBALS['sccm_mails'][7]['message'], 'Sent on request' ) );
+$sccm_status = get_option( SCCM_Report::MAIL_OPTION );
+sccm_check( 'report: its result is kept apart from the change email\'s', ! empty( $sccm_status['ok'] ) && false !== strpos( $sccm_status['subject'], 'Weekly consent report' ) && false === strpos( (string) get_option( SCCM_Scanner::MAIL_OPTION )['subject'], 'Weekly consent report' ) );
+SCCM_Consent_Log::delete_all();
+$sccm_empty = SCCM_Report::build_email( SCCM_Report::data( $sccm_monday ), 'a@example.com', false, $sccm_monday );
+sccm_check( 'report: a week without choices says so, without empty charts', false !== strpos( $sccm_empty['subject'], 'Weekly consent report: no choices (' ) && false !== strpos( $sccm_empty['html'], 'Nobody answered the cookie banner in these 7 days.' ) && false === strpos( $sccm_empty['html'], 'Choices made' ) && false !== strpos( $sccm_empty['html'], 'The last 8 weeks' ) );
+remove_filter( 'pre_wp_mail', $capture, 10 );
+SCCM_Settings::update( array( 'report_enabled' => 1 ) );
+delete_option( SCCM_Report::SENT_OPTION );
+delete_option( SCCM_Report::MAIL_OPTION );
 
 SCCM_Install::schedule_events();
 $daily = wp_next_scheduled( SCCM_Scanner::DAILY_EVENT );

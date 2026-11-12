@@ -198,6 +198,7 @@ SCCM_Admin::form_open( 'settings' );
 			)
 		);
 		SCCM_Admin::checkbox( 'alerts_enabled', __( 'Email about cookie changes', 'smart-cookie-consent-manager' ), $settings['alerts_enabled'], __( 'Once a day the plugin checks whether anything changed in the last 24 hours (cookies added to the banner, cookies waiting for review, new third-party services). Only then it sends one email; no changes, no email.', 'smart-cookie-consent-manager' ) );
+		SCCM_Admin::checkbox( 'report_enabled', __( 'Weekly consent report', 'smart-cookie-consent-manager' ), $settings['report_enabled'], __( 'Every Monday at the time below, the same recipients get a report of the last 7 days: how many visitors answered the banner, what they chose day by day, what they allowed, the last 8 weeks and the banner status. Needs "Keep a record of every choice" (Consent records).', 'smart-cookie-consent-manager' ) );
 		$sccm_hours = array();
 		for ( $sccm_h = 0; $sccm_h < 24; $sccm_h++ ) {
 			$sccm_hours[ $sccm_h ] = wp_date( get_option( 'time_format' ), ( new DateTimeImmutable( 'today', wp_timezone() ) )->setTime( $sccm_h, 0 )->getTimestamp() );
@@ -237,13 +238,29 @@ SCCM_Admin::form_open( 'settings' );
 			<th scope="row"><?php esc_html_e( 'Try it', 'smart-cookie-consent-manager' ); ?></th>
 			<td>
 				<button type="submit" class="button" form="sccm-sample-email-form"><?php esc_html_e( 'Send me a sample email', 'smart-cookie-consent-manager' ); ?></button>
+				<button type="submit" class="button" form="sccm-report-form" <?php disabled( empty( $settings['log_enabled'] ) ); ?>><?php esc_html_e( 'Send report now', 'smart-cookie-consent-manager' ); ?></button>
 				<button type="submit" class="button" form="sccm-digest-form" <?php disabled( empty( $sccm_queue ) ); ?>>
 					<?php
 					/* translators: %d: items waiting */
 					printf( esc_html__( 'Send waiting alerts now (%d)', 'smart-cookie-consent-manager' ), count( $sccm_queue ) );
 					?>
 				</button>
-				<p class="description"><?php esc_html_e( 'Save your changes first. The sample goes to the addresses saved above.', 'smart-cookie-consent-manager' ); ?></p>
+				<p class="description"><?php esc_html_e( 'Save your changes first. The sample and the report go to the addresses saved above. "Send report now" sends the weekly consent report of the last 7 days at once, also when the weekly report is switched off.', 'smart-cookie-consent-manager' ); ?></p>
+				<?php $sccm_report = get_option( SCCM_Report::MAIL_OPTION ); ?>
+				<?php if ( is_array( $sccm_report ) ) : ?>
+					<p class="sccm-mail-status <?php echo ! empty( $sccm_report['ok'] ) ? 'sccm-mail-status--ok' : 'sccm-mail-status--error'; ?>">
+						<?php
+						$sccm_when = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $sccm_report['time'] );
+						echo esc_html(
+							! empty( $sccm_report['ok'] )
+								/* translators: 1: date and time, 2: email addresses */
+								? sprintf( __( 'Last weekly report: %1$s, to %2$s.', 'smart-cookie-consent-manager' ), $sccm_when, implode( ', ', (array) $sccm_report['to'] ) )
+								/* translators: 1: date and time, 2: error message */
+								: sprintf( __( 'Last weekly report failed (%1$s): %2$s', 'smart-cookie-consent-manager' ), $sccm_when, $sccm_report['error'] )
+						);
+						?>
+					</p>
+				<?php endif; ?>
 				<?php $sccm_mail = get_option( SCCM_Scanner::MAIL_OPTION ); ?>
 				<?php if ( is_array( $sccm_mail ) ) : ?>
 					<?php $sccm_when = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), (int) $sccm_mail['time'] ); ?>
@@ -313,4 +330,7 @@ SCCM_Admin::form_open( 'settings' );
 </form>
 <form id="sccm-digest-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 	<?php SCCM_Admin::action_fields( 'send_digest' ); ?>
+</form>
+<form id="sccm-report-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+	<?php SCCM_Admin::action_fields( 'send_report' ); ?>
 </form>

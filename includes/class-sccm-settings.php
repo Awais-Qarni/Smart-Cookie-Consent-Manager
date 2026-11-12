@@ -110,6 +110,7 @@ class SCCM_Settings {
 			'alert_hour'           => 9,          // Daily email time (0-23, site time zone); sent only when something changed.
 			'alert_email'          => '',
 			'alert_include_admin'  => 1,          // Also send to the site admin email.
+			'report_enabled'       => 1,          // Weekly consent report (Monday, at alert_hour) to the same recipients.
 
 			// Consent log.
 			'log_enabled'          => 1,
@@ -260,7 +261,7 @@ class SCCM_Settings {
 		$defaults = self::defaults();
 		$out      = $current;
 
-		$bools = array( 'enabled', 'floating_button', 'show_privacy_link', 'policy_hide_sidebar', 'reask_on_change', 'reload_on_withdraw', 'ads_data_redaction', 'url_passthrough', 'blocker_enabled', 'iframe_placeholder', 'gpc_enabled', 'scanner_client', 'alerts_enabled', 'alert_include_admin', 'log_enabled', 'delete_on_uninstall' );
+		$bools = array( 'enabled', 'floating_button', 'show_privacy_link', 'policy_hide_sidebar', 'reask_on_change', 'reload_on_withdraw', 'ads_data_redaction', 'url_passthrough', 'blocker_enabled', 'iframe_placeholder', 'gpc_enabled', 'scanner_client', 'alerts_enabled', 'alert_include_admin', 'report_enabled', 'log_enabled', 'delete_on_uninstall' );
 		foreach ( $bools as $key ) {
 			if ( array_key_exists( $key, $input ) ) {
 				$out[ $key ] = empty( $input[ $key ] ) ? 0 : 1;
