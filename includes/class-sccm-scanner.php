@@ -1171,23 +1171,15 @@ class SCCM_Scanner {
 		$error   = '';
 		$failed  = array();
 		$subject = '';
-		$fail    = static function ( $wp_error ) use ( &$error ) {
-			$error = is_wp_error( $wp_error ) ? $wp_error->get_error_message() : '';
-		};
-		add_action( 'wp_mail_failed', $fail );
 		foreach ( $to as $recipient ) {
 			$email   = $build( $recipient );
 			$subject = $email['subject'];
-			$alt     = static function ( $phpmailer ) use ( $email ) {
-				$phpmailer->AltBody = $email['text']; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
-			};
-			add_action( 'phpmailer_init', $alt );
-			if ( ! wp_mail( $recipient, $email['subject'], $email['html'], array( 'Content-Type: text/html; charset=UTF-8' ) ) ) {
+			$reason  = '';
+			if ( ! self::send_one( $recipient, $email, $reason ) ) {
 				$failed[] = $recipient;
+				$error    = '' !== $reason ? $reason : $error;
 			}
-			remove_action( 'phpmailer_init', $alt );
 		}
-		remove_action( 'wp_mail_failed', $fail );
 		$sent = $to && ! $failed;
 		if ( ! $to ) {
 			$error = __( 'No valid email address.', 'smart-cookie-consent-manager' );
@@ -1207,6 +1199,30 @@ class SCCM_Scanner {
 			),
 			false
 		);
+		return $sent;
+	}
+
+	/**
+	 * Send one email to one address (HTML + plain-text version).
+	 *
+	 * @param string $recipient Address.
+	 * @param array  $email     subject, html, text.
+	 * @param string $error     Set to the mail system's error message on failure.
+	 * @return bool
+	 */
+	public static function send_one( $recipient, array $email, &$error = '' ) {
+		$error = '';
+		$fail  = static function ( $wp_error ) use ( &$error ) {
+			$error = is_wp_error( $wp_error ) ? $wp_error->get_error_message() : '';
+		};
+		$alt   = static function ( $phpmailer ) use ( $email ) {
+			$phpmailer->AltBody = $email['text']; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		};
+		add_action( 'wp_mail_failed', $fail );
+		add_action( 'phpmailer_init', $alt );
+		$sent = (bool) wp_mail( $recipient, $email['subject'], $email['html'], array( 'Content-Type: text/html; charset=UTF-8' ) );
+		remove_action( 'phpmailer_init', $alt );
+		remove_action( 'wp_mail_failed', $fail );
 		return $sent;
 	}
 

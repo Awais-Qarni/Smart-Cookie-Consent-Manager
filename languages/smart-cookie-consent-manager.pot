@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Cookie Consent Manager 1.4.0\n"
+"Project-Id-Version: Smart Cookie Consent Manager 1.4.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/claude things\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-12T19:08:21+00:00\n"
+"POT-Creation-Date: 2026-11-12T19:43:10+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: smart-cookie-consent-manager\n"
@@ -279,93 +279,97 @@ msgstr ""
 msgid "Nothing to send, or the email could not be sent."
 msgstr ""
 
-#. translators: %s: email addresses
 #: includes/admin/class-sccm-admin.php:800
-#, php-format
-msgid "Weekly consent report sent to %s."
+msgid "The weekly consent report is already being sent. The result appears below in a minute."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:802
-msgid "The report could not be sent. Your website may not be set up to send email."
+#: includes/admin/class-sccm-admin.php:803
+msgid "No valid email address to send the report to."
 msgstr ""
 
 #. translators: %s: email addresses
-#: includes/admin/class-sccm-admin.php:814
+#: includes/admin/class-sccm-admin.php:806
+#, php-format
+msgid "The weekly consent report is being sent to %s. It is sent in the background, so you can leave this page; the result appears below in a minute."
+msgstr ""
+
+#. translators: %s: email addresses
+#: includes/admin/class-sccm-admin.php:818
 #, php-format
 msgid "Sample email sent to %s. If it does not arrive, check your spam folder or your site's email setup."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:816
+#: includes/admin/class-sccm-admin.php:820
 msgid "The sample email could not be sent. Your website may not be set up to send email."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:827
+#: includes/admin/class-sccm-admin.php:831
 #: includes/admin/views/tab-records.php:123
 msgid "Records are switched off: Settings → Consent records → \"Keep a record of every choice\"."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:847
+#: includes/admin/class-sccm-admin.php:851
 msgid "Database: OK, a record was saved."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:881
+#: includes/admin/class-sccm-admin.php:885
 msgid "Visitor route (admin-ajax.php): OK."
 msgstr ""
 
 #. translators: 1: HTTP status or 0, 2: reply
-#: includes/admin/class-sccm-admin.php:885
+#: includes/admin/class-sccm-admin.php:889
 #, php-format
 msgid "Visitor route (admin-ajax.php) from the server: HTTP %1$d, %2$s. A password-protected staging site or a firewall that blocks requests from the server itself can cause this test to fail even when visitors get through."
 msgstr ""
 
 #. translators: %d: rows
-#: includes/admin/class-sccm-admin.php:912
+#: includes/admin/class-sccm-admin.php:916
 #, php-format
 msgid "%d old record(s) deleted."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:922
+#: includes/admin/class-sccm-admin.php:926
 msgid "All consent records deleted."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:945
+#: includes/admin/class-sccm-admin.php:949
 msgid "Please choose a file."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:949
+#: includes/admin/class-sccm-admin.php:953
 msgid "This file is too big for a settings export (more than 2 MB)."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:956
+#: includes/admin/class-sccm-admin.php:960
 msgid "Settings imported."
 msgstr ""
 
 #. translators: %d: version
-#: includes/admin/class-sccm-admin.php:967
+#: includes/admin/class-sccm-admin.php:971
 #, php-format
 msgid "Banner version is now %d. Every visitor will be asked again. Supported page caches are cleared automatically; clear any other cache or CDN yourself."
 msgstr ""
 
 #. translators: %s: page title
-#: includes/admin/class-sccm-admin.php:980
+#: includes/admin/class-sccm-admin.php:984
 #, php-format
 msgid "Your existing Cookie Policy page \"%s\" was found and linked in the banner. No new page was created."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:984
+#: includes/admin/class-sccm-admin.php:988
 #: includes/class-sccm-settings.php:156
 msgid "Cookie Policy"
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:985
+#: includes/admin/class-sccm-admin.php:989
 msgid "This page explains which cookies this website uses and why. You can change your choice at any time."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:995
+#: includes/admin/class-sccm-admin.php:999
 msgid "Cookie Policy page created and linked in the banner."
 msgstr ""
 
-#: includes/admin/class-sccm-admin.php:1008
+#: includes/admin/class-sccm-admin.php:1012
 msgid "Settings reset to defaults."
 msgstr ""
 
@@ -750,7 +754,7 @@ msgid "Optional. Elements use the <code>sccm-</code> prefix, e.g. <code>#sccm-ba
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:24
-#: includes/class-sccm-scanner.php:1496
+#: includes/class-sccm-scanner.php:1512
 msgid "Cookie"
 msgstr ""
 
@@ -831,7 +835,7 @@ msgstr ""
 
 #: includes/admin/views/tab-cookies.php:77
 #: includes/admin/views/tab-dashboard.php:242
-#: includes/class-sccm-report.php:596
+#: includes/class-sccm-report.php:746
 msgid "Status"
 msgstr ""
 
@@ -841,7 +845,7 @@ msgstr ""
 
 #: includes/admin/views/tab-cookies.php:80
 #: includes/admin/views/tab-help.php:304
-#: includes/class-sccm-scanner.php:1347
+#: includes/class-sccm-scanner.php:1363
 msgid "Needs review"
 msgstr ""
 
@@ -1030,7 +1034,7 @@ msgstr ""
 
 #: includes/admin/views/tab-cookies.php:328
 #: includes/admin/views/tab-dashboard.php:223
-#: includes/class-sccm-scanner.php:1369
+#: includes/class-sccm-scanner.php:1385
 msgid "Other third-party files"
 msgstr ""
 
@@ -1118,13 +1122,13 @@ msgid "Advanced"
 msgstr ""
 
 #: includes/admin/views/tab-dashboard.php:88
-#: includes/class-sccm-report.php:593
+#: includes/class-sccm-report.php:743
 msgid "Off"
 msgstr ""
 
 #: includes/admin/views/tab-dashboard.php:92
 #: includes/admin/views/tab-records.php:18
-#: includes/class-sccm-report.php:410
+#: includes/class-sccm-report.php:560
 msgid "Allowed all"
 msgstr ""
 
@@ -1136,13 +1140,13 @@ msgstr ""
 
 #: includes/admin/views/tab-dashboard.php:94
 #: includes/admin/views/tab-records.php:19
-#: includes/class-sccm-report.php:412
+#: includes/class-sccm-report.php:562
 msgid "Denied"
 msgstr ""
 
 #: includes/admin/views/tab-dashboard.php:95
 #: includes/admin/views/tab-dashboard.php:244
-#: includes/class-sccm-report.php:413
+#: includes/class-sccm-report.php:563
 msgid "Privacy signal (GPC)"
 msgstr ""
 
@@ -1267,7 +1271,7 @@ msgid "Live"
 msgstr ""
 
 #: includes/admin/views/tab-dashboard.php:242
-#: includes/class-sccm-report.php:596
+#: includes/class-sccm-report.php:746
 msgid "Switched off"
 msgstr ""
 
@@ -1292,7 +1296,7 @@ msgstr ""
 #: includes/admin/views/tab-records.php:43
 #: includes/admin/views/tab-records.php:142
 #: includes/admin/views/tab-records.php:179
-#: includes/class-sccm-report.php:602
+#: includes/class-sccm-report.php:752
 #: includes/class-sccm-settings.php:165
 msgid "Banner version"
 msgstr ""
@@ -1604,7 +1608,7 @@ msgid "A script that already ran cannot be stopped, so the page reloads to stop 
 msgstr ""
 
 #: includes/admin/views/tab-help.php:171
-#: includes/class-sccm-report.php:413
+#: includes/class-sccm-report.php:563
 msgid "Browser privacy signal (GPC)"
 msgstr ""
 
@@ -1650,8 +1654,8 @@ msgstr ""
 
 #: includes/admin/views/tab-help.php:177
 #: includes/admin/views/tab-settings.php:201
-#: includes/class-sccm-report.php:229
-#: includes/class-sccm-report.php:627
+#: includes/class-sccm-report.php:379
+#: includes/class-sccm-report.php:777
 msgid "Weekly consent report"
 msgstr ""
 
@@ -2453,96 +2457,102 @@ msgid "Send waiting alerts now (%d)"
 msgstr ""
 
 #: includes/admin/views/tab-settings.php:248
-msgid "Save your changes first. The sample and the report go to the addresses saved above. \"Send report now\" sends the weekly consent report of the last 7 days at once, also when the weekly report is switched off."
+msgid "Save your changes first. The sample and the report go to the addresses saved above. \"Send report now\" sends the weekly consent report of the last 7 days right away, in the background, also when the weekly report is switched off."
 msgstr ""
 
 #. translators: 1: date and time, 2: email addresses
-#: includes/admin/views/tab-settings.php:257
-#, php-format
-msgid "Last weekly report: %1$s, to %2$s."
-msgstr ""
-
-#. translators: 1: date and time, 2: error message
-#: includes/admin/views/tab-settings.php:259
-#, php-format
-msgid "Last weekly report failed (%1$s): %2$s"
-msgstr ""
-
-#. translators: 1: date and time, 2: email addresses
-#: includes/admin/views/tab-settings.php:271
+#: includes/admin/views/tab-settings.php:256
 #, php-format
 msgid "Last email: %1$s, handed to your server for %2$s. If it did not arrive, check the spam folder; some hosts need an SMTP plugin (e.g. WP Mail SMTP) to deliver mail."
 msgstr ""
 
 #. translators: 1: date and time, 2: error message
-#: includes/admin/views/tab-settings.php:278
+#: includes/admin/views/tab-settings.php:263
 #, php-format
 msgid "Last email failed (%1$s): %2$s Your server could not send email. Install an SMTP plugin (e.g. WP Mail SMTP) or ask your host."
 msgstr ""
 
-#: includes/admin/views/tab-settings.php:289
-msgid "Consent records (the proof)"
+#. translators: 1: emails done, 2: all emails
+#: includes/admin/views/tab-settings.php:273
+#, php-format
+msgid "Sending the weekly consent report: %1$s of %2$s done. Reload this page in a minute to see the result."
 msgstr ""
 
-#: includes/admin/views/tab-settings.php:292
-msgid "Keep a record of every choice"
+#. translators: 1: date and time, 2: email addresses
+#: includes/admin/views/tab-settings.php:285
+#, php-format
+msgid "Last weekly report: %1$s, to %2$s."
 msgstr ""
 
-#: includes/admin/views/tab-settings.php:292
-msgid "Each choice is saved with its consent ID, date, categories and page. Keep this on if you may have to prove consent."
-msgstr ""
-
-#: includes/admin/views/tab-settings.php:295
-msgid "Visitor IP address"
+#. translators: 1: date and time, 2: error message
+#: includes/admin/views/tab-settings.php:287
+#, php-format
+msgid "Last weekly report failed (%1$s): %2$s"
 msgstr ""
 
 #: includes/admin/views/tab-settings.php:298
-msgid "Save it shortened (last part hidden, e.g. 203.0.113.***)"
-msgstr ""
-
-#: includes/admin/views/tab-settings.php:299
-msgid "Save it as a one-way code"
-msgstr ""
-
-#: includes/admin/views/tab-settings.php:300
-msgid "Save the full IP address"
+msgid "Consent records (the proof)"
 msgstr ""
 
 #: includes/admin/views/tab-settings.php:301
-msgid "Do not save it"
+msgid "Keep a record of every choice"
 msgstr ""
 
-#: includes/admin/views/tab-settings.php:303
-msgid "Shortened (default) is enough as proof for most websites. One-way code: the address cannot be read back, but you can still find a visitor's records by searching for their IP address. Full IP address: it is personal data under the GDPR; only choose it if you have a reason to keep it, and mention it in your privacy policy. The search box on Consent Records finds records by IP address in every mode except \"Do not save it\"."
+#: includes/admin/views/tab-settings.php:301
+msgid "Each choice is saved with its consent ID, date, categories and page. Keep this on if you may have to prove consent."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:304
+msgid "Visitor IP address"
 msgstr ""
 
 #: includes/admin/views/tab-settings.php:307
-msgid "How records are sent"
+msgid "Save it shortened (last part hidden, e.g. 203.0.113.***)"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:308
+msgid "Save it as a one-way code"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:309
+msgid "Save the full IP address"
 msgstr ""
 
 #: includes/admin/views/tab-settings.php:310
-msgid "Automatic (recommended)"
-msgstr ""
-
-#: includes/admin/views/tab-settings.php:311
-msgid "REST API (/wp-json/), admin-ajax.php if it fails"
+msgid "Do not save it"
 msgstr ""
 
 #: includes/admin/views/tab-settings.php:312
+msgid "Shortened (default) is enough as proof for most websites. One-way code: the address cannot be read back, but you can still find a visitor's records by searching for their IP address. Full IP address: it is personal data under the GDPR; only choose it if you have a reason to keep it, and mention it in your privacy policy. The search box on Consent Records finds records by IP address in every mode except \"Do not save it\"."
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:316
+msgid "How records are sent"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:319
+msgid "Automatic (recommended)"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:320
+msgid "REST API (/wp-json/), admin-ajax.php if it fails"
+msgstr ""
+
+#: includes/admin/views/tab-settings.php:321
 msgid "admin-ajax.php only"
 msgstr ""
 
 #. translators: %s: what the automatic check found
-#: includes/admin/views/tab-settings.php:316
+#: includes/admin/views/tab-settings.php:325
 #, php-format
 msgid "Automatic uses the REST API, unless a plugin or firewall blocks it for visitors (for example \"Disable REST API\" in Admin and Site Enhancements); then records and cookie reports go straight to admin-ajax.php, without a failed request first. Right now: %s"
 msgstr ""
 
-#: includes/admin/views/tab-settings.php:320
+#: includes/admin/views/tab-settings.php:329
 msgid "Keep records for (months)"
 msgstr ""
 
-#: includes/admin/views/tab-settings.php:320
+#: includes/admin/views/tab-settings.php:329
 msgid "Older records are deleted automatically every day. 0 = keep forever."
 msgstr ""
 
@@ -2735,7 +2745,7 @@ msgstr ""
 msgid "since %1$s, %2$s"
 msgstr ""
 
-#: includes/class-sccm-install.php:109
+#: includes/class-sccm-install.php:110
 #: includes/data/services.php:78
 #: includes/data/services.php:110
 #: includes/data/services.php:138
@@ -2746,16 +2756,32 @@ msgstr ""
 msgid "No expiry date (stays until cleared)"
 msgstr ""
 
-#: includes/class-sccm-report.php:200
+#: includes/class-sccm-report.php:188
+msgid "The mail service did not answer in time."
+msgstr ""
+
+#: includes/class-sccm-report.php:217
+#: includes/class-sccm-scanner.php:1187
+msgid "WordPress could not send the email (wp_mail returned false)."
+msgstr ""
+
+#. translators: %s: email addresses
+#: includes/class-sccm-report.php:232
+#: includes/class-sccm-scanner.php:1189
+#, php-format
+msgid "Not sent to: %s."
+msgstr ""
+
+#: includes/class-sccm-report.php:350
 msgid "last week"
 msgstr ""
 
-#: includes/class-sccm-report.php:200
+#: includes/class-sccm-report.php:350
 msgid "the 7 days before"
 msgstr ""
 
 #. translators: 1: site name, 2: number of choices, 3: percent, 4: dates
-#: includes/class-sccm-report.php:205
+#: includes/class-sccm-report.php:355
 #, php-format
 msgid "[%1$s] Weekly consent report: %2$s choice, %3$s%% allowed all (%4$s)"
 msgid_plural "[%1$s] Weekly consent report: %2$s choices, %3$s%% allowed all (%4$s)"
@@ -2763,48 +2789,48 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: site name, 2: dates
-#: includes/class-sccm-report.php:207
+#: includes/class-sccm-report.php:357
 #, php-format
 msgid "[%1$s] Weekly consent report: no choices (%2$s)"
 msgstr ""
 
 #. translators: 1: website address, 2: email address
-#: includes/class-sccm-report.php:250
-#: includes/class-sccm-scanner.php:1445
+#: includes/class-sccm-report.php:400
+#: includes/class-sccm-scanner.php:1461
 #, php-format
 msgid "Sent by Smart Cookie Consent Manager on %1$s to %2$s."
 msgstr ""
 
 #. translators: 1: date and time, 2: time of day
-#: includes/class-sccm-report.php:253
+#: includes/class-sccm-report.php:403
 #, php-format
 msgid "Sent on request on %1$s. The regular report goes out every Monday at %2$s."
 msgstr ""
 
 #. translators: %s: time of day
-#: includes/class-sccm-report.php:256
+#: includes/class-sccm-report.php:406
 #, php-format
 msgid "This report is sent every Monday at %s."
 msgstr ""
 
-#: includes/class-sccm-report.php:258
+#: includes/class-sccm-report.php:408
 msgid "The website's administrator can change this in WordPress under Compliance → Settings."
 msgstr ""
 
-#: includes/class-sccm-report.php:259
+#: includes/class-sccm-report.php:409
 msgid "\"Choices\" are answers to the cookie banner; a visitor who changes their mind later counts again. Visitors who closed the page without answering are not counted. Every choice is kept as proof under Compliance → Consent Records."
 msgstr ""
 
-#: includes/class-sccm-report.php:288
+#: includes/class-sccm-report.php:438
 msgid "Nobody answered the cookie banner in these 7 days."
 msgstr ""
 
-#: includes/class-sccm-report.php:289
+#: includes/class-sccm-report.php:439
 msgid "The cookie banner is switched off, so visitors were not asked."
 msgstr ""
 
 #. translators: %s: number of visitors
-#: includes/class-sccm-report.php:292
+#: includes/class-sccm-report.php:442
 #, php-format
 msgid "<strong>%s visitor</strong> answered the cookie banner"
 msgid_plural "<strong>%s visitors</strong> answered the cookie banner"
@@ -2812,241 +2838,241 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: percent, 2: "last week"
-#: includes/class-sccm-report.php:297
+#: includes/class-sccm-report.php:447
 #, php-format
 msgid "<strong>%1$s%% more</strong> than %2$s"
 msgstr ""
 
 #. translators: 1: percent, 2: "last week"
-#: includes/class-sccm-report.php:300
+#: includes/class-sccm-report.php:450
 #, php-format
 msgid "<strong>%1$s%% fewer</strong> than %2$s"
 msgstr ""
 
 #. translators: %s: "last week"
-#: includes/class-sccm-report.php:303
+#: includes/class-sccm-report.php:453
 #, php-format
 msgid "about as many as %s"
 msgstr ""
 
 #. translators: %s: number out of 10
-#: includes/class-sccm-report.php:307
+#: includes/class-sccm-report.php:457
 #, php-format
 msgid "<strong>%s in 10</strong> allowed all cookies"
 msgstr ""
 
 #. translators: %s: "last week"
-#: includes/class-sccm-report.php:313
+#: includes/class-sccm-report.php:463
 #, php-format
 msgid "about the same as %s"
 msgstr ""
 
 #. translators: %s: "last week"
-#: includes/class-sccm-report.php:316
+#: includes/class-sccm-report.php:466
 #, php-format
 msgid "a little more than %s"
 msgstr ""
 
 #. translators: %s: "last week"
-#: includes/class-sccm-report.php:316
+#: includes/class-sccm-report.php:466
 #, php-format
 msgid "a little fewer than %s"
 msgstr ""
 
 #. translators: %s: "last week"
-#: includes/class-sccm-report.php:319
+#: includes/class-sccm-report.php:469
 #, php-format
 msgid "more than %s"
 msgstr ""
 
 #. translators: %s: "last week"
-#: includes/class-sccm-report.php:319
+#: includes/class-sccm-report.php:469
 #, php-format
 msgid "fewer than %s"
 msgstr ""
 
 #. translators: 1: percent, 2: "last week", 3: number
-#: includes/class-sccm-report.php:358
+#: includes/class-sccm-report.php:508
 #, php-format
 msgid "%1$s%% vs %2$s (%3$s)"
 msgstr ""
 
-#: includes/class-sccm-report.php:360
+#: includes/class-sccm-report.php:510
 msgid "No choices the week before"
 msgstr ""
 
-#: includes/class-sccm-report.php:362
+#: includes/class-sccm-report.php:512
 msgid "Choices made"
 msgstr ""
 
-#: includes/class-sccm-report.php:363
+#: includes/class-sccm-report.php:513
 #: includes/class-sccm-settings.php:169
 msgid "Allowed all cookies"
 msgstr ""
 
-#: includes/class-sccm-report.php:363
-#: includes/class-sccm-report.php:412
+#: includes/class-sccm-report.php:513
+#: includes/class-sccm-report.php:562
 msgid "Denied optional cookies"
 msgstr ""
 
 #. translators: 1: number of points, 2: percent
-#: includes/class-sccm-report.php:366
+#: includes/class-sccm-report.php:516
 #, php-format
 msgid "%1$s point (was %2$s%%)"
 msgid_plural "%1$s points (was %2$s%%)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-sccm-report.php:411
+#: includes/class-sccm-report.php:561
 msgid "Chose some categories"
 msgstr ""
 
-#: includes/class-sccm-report.php:411
+#: includes/class-sccm-report.php:561
 msgid "Chose some"
 msgstr ""
 
 #. translators: 1: weekday, 2: number
-#: includes/class-sccm-report.php:430
+#: includes/class-sccm-report.php:580
 msgid "This week, day by day"
 msgstr ""
 
 #. translators: 1: weekday, 2: number
-#: includes/class-sccm-report.php:430
+#: includes/class-sccm-report.php:580
 msgid "Day by day"
 msgstr ""
 
 #. translators: 1: weekday, 2: number
-#: includes/class-sccm-report.php:430
+#: includes/class-sccm-report.php:580
 msgid "How many visitors answered the banner each day, and what they chose."
 msgstr ""
 
 #. translators: 1: weekday, 2: number
-#: includes/class-sccm-report.php:430
+#: includes/class-sccm-report.php:580
 #, php-format
 msgid "Busiest day: <strong>%1$s (%2$s)</strong>."
 msgstr ""
 
-#: includes/class-sccm-report.php:472
+#: includes/class-sccm-report.php:622
 msgid "How visitors chose"
 msgstr ""
 
-#: includes/class-sccm-report.php:472
+#: includes/class-sccm-report.php:622
 msgid "Every choice of these 7 days, as one bar."
 msgstr ""
 
-#: includes/class-sccm-report.php:506
+#: includes/class-sccm-report.php:656
 msgid "remember settings, chat"
 msgstr ""
 
-#: includes/class-sccm-report.php:507
+#: includes/class-sccm-report.php:657
 msgid "visitor counts, e.g. Google Analytics"
 msgstr ""
 
-#: includes/class-sccm-report.php:508
+#: includes/class-sccm-report.php:658
 msgid "ads, social media, video, maps"
 msgstr ""
 
-#: includes/class-sccm-report.php:510
+#: includes/class-sccm-report.php:660
 msgid "What visitors allowed"
 msgstr ""
 
-#: includes/class-sccm-report.php:510
+#: includes/class-sccm-report.php:660
 msgid "Share of choices that allowed each kind of cookie. Necessary cookies are always on."
 msgstr ""
 
 #. translators: %s: "last week"
-#: includes/class-sccm-report.php:535
+#: includes/class-sccm-report.php:685
 #, php-format
 msgid "▲ / ▼ = points compared with %s."
 msgstr ""
 
-#: includes/class-sccm-report.php:552
+#: includes/class-sccm-report.php:702
 msgid "The last 8 weeks"
 msgstr ""
 
-#: includes/class-sccm-report.php:552
+#: includes/class-sccm-report.php:702
 msgid "Choices per week, and the share that allowed all cookies."
 msgstr ""
 
-#: includes/class-sccm-report.php:563
+#: includes/class-sccm-report.php:713
 msgid "Last 7 days"
 msgstr ""
 
 #. translators: 1: number of choices, 2: percent
-#: includes/class-sccm-report.php:570
+#: includes/class-sccm-report.php:720
 #, php-format
 msgid "Bottom row: share that allowed all cookies. 8 weeks in total: <strong>%1$s choices</strong>, %2$s%% allowed all."
 msgstr ""
 
 #. translators: 1: number added, 2: number waiting for review
-#: includes/class-sccm-report.php:589
+#: includes/class-sccm-report.php:739
 #, php-format
 msgid "%1$s added · %2$s waiting for review"
 msgstr ""
 
-#: includes/class-sccm-report.php:591
+#: includes/class-sccm-report.php:741
 msgid "None"
 msgstr ""
 
-#: includes/class-sccm-report.php:593
+#: includes/class-sccm-report.php:743
 msgid "On"
 msgstr ""
 
-#: includes/class-sccm-report.php:594
+#: includes/class-sccm-report.php:744
 msgid "Respected"
 msgstr ""
 
-#: includes/class-sccm-report.php:594
+#: includes/class-sccm-report.php:744
 msgid "Not used"
 msgstr ""
 
-#: includes/class-sccm-report.php:596
+#: includes/class-sccm-report.php:746
 msgid "Live on every page"
 msgstr ""
 
-#: includes/class-sccm-report.php:597
+#: includes/class-sccm-report.php:747
 msgid "Cookies listed"
 msgstr ""
 
-#: includes/class-sccm-report.php:598
+#: includes/class-sccm-report.php:748
 msgid "Cookie changes in these 7 days"
 msgstr ""
 
-#: includes/class-sccm-report.php:599
+#: includes/class-sccm-report.php:749
 msgid "Last cookie scan"
 msgstr ""
 
-#: includes/class-sccm-report.php:599
+#: includes/class-sccm-report.php:749
 msgid "Not yet"
 msgstr ""
 
-#: includes/class-sccm-report.php:600
+#: includes/class-sccm-report.php:750
 msgid "Google Consent Mode · Privacy signal"
 msgstr ""
 
 #. translators: %s: date
-#: includes/class-sccm-report.php:602
+#: includes/class-sccm-report.php:752
 #, php-format
 msgid "since %s"
 msgstr ""
 
-#: includes/class-sccm-report.php:604
+#: includes/class-sccm-report.php:754
 msgid "Your cookie banner"
 msgstr ""
 
-#: includes/class-sccm-report.php:629
+#: includes/class-sccm-report.php:779
 msgid "HOW VISITORS CHOSE"
 msgstr ""
 
-#: includes/class-sccm-report.php:633
+#: includes/class-sccm-report.php:783
 msgid "DAY BY DAY"
 msgstr ""
 
-#: includes/class-sccm-report.php:637
+#: includes/class-sccm-report.php:787
 msgid "WHAT VISITORS ALLOWED"
 msgstr ""
 
-#: includes/class-sccm-report.php:644
+#: includes/class-sccm-report.php:794
 msgid "THE LAST 8 WEEKS"
 msgstr ""
 
@@ -3082,22 +3108,12 @@ msgstr ""
 msgid "Google Fonts are loaded from inside CSS (e.g. an @import or a combined stylesheet). These requests cannot be blocked by the plugin. Host the fonts on your own server to avoid them."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1193
+#: includes/class-sccm-scanner.php:1185
 msgid "No valid email address."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1195
-msgid "WordPress could not send the email (wp_mail returned false)."
-msgstr ""
-
-#. translators: %s: email addresses
-#: includes/class-sccm-scanner.php:1197
-#, php-format
-msgid "Not sent to: %s."
-msgstr ""
-
 #. translators: 1: site name, 2: number of cookies
-#: includes/class-sccm-scanner.php:1253
+#: includes/class-sccm-scanner.php:1269
 #, php-format
 msgid "[%1$s] %2$d new cookie needs review"
 msgid_plural "[%1$s] %2$d new cookies need review"
@@ -3105,7 +3121,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: site name, 2: number of cookies
-#: includes/class-sccm-scanner.php:1256
+#: includes/class-sccm-scanner.php:1272
 #, php-format
 msgid "[%1$s] %2$d cookie was added to your cookie banner"
 msgid_plural "[%1$s] %2$d cookies were added to your cookie banner"
@@ -3113,7 +3129,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: site name, 2: number of files
-#: includes/class-sccm-scanner.php:1259
+#: includes/class-sccm-scanner.php:1275
 #, php-format
 msgid "[%1$s] %2$d new third-party file found"
 msgid_plural "[%1$s] %2$d new third-party files found"
@@ -3121,102 +3137,102 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: subject
-#: includes/class-sccm-scanner.php:1263
+#: includes/class-sccm-scanner.php:1279
 #, php-format
 msgid "Sample: %s"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1317
-#: includes/class-sccm-scanner.php:1381
+#: includes/class-sccm-scanner.php:1333
+#: includes/class-sccm-scanner.php:1397
 msgid "Cookie changes in the last 24 hours"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1330
+#: includes/class-sccm-scanner.php:1346
 msgid "needs review"
 msgid_plural "need review"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-sccm-scanner.php:1331
+#: includes/class-sccm-scanner.php:1347
 msgid "added automatically"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1334
+#: includes/class-sccm-scanner.php:1350
 msgid "new third-party file"
 msgid_plural "new third-party files"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-sccm-scanner.php:1347
+#: includes/class-sccm-scanner.php:1363
 msgid "We could not tell what these cookies are for. Someone who manages the website should choose a category for each one in WordPress under Compliance → Cookies. Until then they are not shown to visitors."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1356
+#: includes/class-sccm-scanner.php:1372
 msgid "Added automatically"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1356
+#: includes/class-sccm-scanner.php:1372
 msgid "These are well-known cookies. They were put in the right category for you. Nothing to do unless you disagree."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1369
+#: includes/class-sccm-scanner.php:1385
 msgid "Scripts, frames or stylesheets from other websites that are not in the service library, so they are not blocked. The full addresses are in WordPress under Compliance → Cookies → Scan report (details) → Other third-party files. If one of them tracks visitors, add a blocking rule under Compliance → Settings → Blocking and Google → Your own blocking rules."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1386
+#: includes/class-sccm-scanner.php:1402
 msgid "NEEDS REVIEW"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1387
+#: includes/class-sccm-scanner.php:1403
 msgid "Someone who manages the website should choose a category for each one in WordPress under Compliance → Cookies. Until then visitors do not see them."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1394
+#: includes/class-sccm-scanner.php:1410
 msgid "ADDED AUTOMATICALLY"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1401
+#: includes/class-sccm-scanner.php:1417
 msgid "OTHER THIRD-PARTY FILES (not blocked)"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1402
+#: includes/class-sccm-scanner.php:1418
 msgid "Full addresses: WordPress → Compliance → Cookies → Scan report (details) → Other third-party files."
 msgstr ""
 
 #. translators: %s: website address
-#: includes/class-sccm-scanner.php:1447
+#: includes/class-sccm-scanner.php:1463
 #, php-format
 msgid "Sent by Smart Cookie Consent Manager on %s."
 msgstr ""
 
 #. translators: %s: time of day
-#: includes/class-sccm-scanner.php:1449
+#: includes/class-sccm-scanner.php:1465
 #, php-format
 msgid "This email is sent once a day at %s, only when something changed. The website's administrator can change this in WordPress under Compliance → Settings."
 msgstr ""
 
 #. translators: 1: number of cookies, 2: count per category, e.g. "Necessary 3 · Statistics 2"
-#: includes/class-sccm-scanner.php:1464
+#: includes/class-sccm-scanner.php:1480
 #, php-format
 msgid "Your cookie banner now lists %1$d cookie (%2$s)."
 msgid_plural "Your cookie banner now lists %1$d cookies (%2$s)."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-sccm-scanner.php:1519
+#: includes/class-sccm-scanner.php:1535
 msgid "Found in visitors' browsers"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1521
+#: includes/class-sccm-scanner.php:1537
 msgid "Found by the cookie scan"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1523
+#: includes/class-sccm-scanner.php:1539
 msgid "Found only in your browser during \"Scan now\""
 msgstr ""
 
 #. translators: %d: number of items
-#: includes/class-sccm-scanner.php:1551
+#: includes/class-sccm-scanner.php:1567
 #, php-format
 msgid "…and %d more. See the full list in the plugin."
 msgstr ""

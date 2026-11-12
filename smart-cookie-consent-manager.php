@@ -3,7 +3,7 @@
  * Plugin Name:       Smart Cookie Consent Manager
  * Plugin URI:        https://github.com/Awais-Qarni/Smart-Cookie-Consent-Manager
  * Description:       Plug-and-play cookie consent: Accept / Reject / Manage Preferences banner, blocking until consent, Google Consent Mode v2, GPC, consent records, cookie scanner and an automatic cookie policy.
- * Version:           1.4.0
+ * Version:           1.4.1
  * Requires at least: 6.2
  * Requires PHP:      7.4
  * Author:            Muhammad Awais
@@ -18,11 +18,29 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'SCCM_VERSION', '1.4.0' );
+define( 'SCCM_VERSION', '1.4.1' );
 define( 'SCCM_FILE', __FILE__ );
 define( 'SCCM_PATH', plugin_dir_path( __FILE__ ) );
 define( 'SCCM_URL', plugin_dir_url( __FILE__ ) );
 define( 'SCCM_BASENAME', plugin_basename( __FILE__ ) );
+
+// Load a plugin class by its name (SCCM_Foo_Bar → includes/class-sccm-foo-bar.php or
+// includes/admin/…) if it is not loaded yet. The files below are still required as usual; this
+// only matters when a host briefly runs a cached older copy of this file after an update.
+spl_autoload_register(
+	static function ( $class ) {
+		if ( 0 !== strpos( $class, 'SCCM_' ) ) {
+			return;
+		}
+		$file = 'class-' . strtolower( str_replace( '_', '-', $class ) ) . '.php';
+		foreach ( array( 'includes/', 'includes/admin/' ) as $dir ) {
+			if ( is_readable( SCCM_PATH . $dir . $file ) ) {
+				require_once SCCM_PATH . $dir . $file;
+				return;
+			}
+		}
+	}
+);
 
 require_once SCCM_PATH . 'includes/class-sccm-install.php';
 require_once SCCM_PATH . 'includes/class-sccm-settings.php';

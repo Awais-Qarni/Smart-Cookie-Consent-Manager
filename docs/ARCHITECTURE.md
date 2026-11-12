@@ -285,8 +285,23 @@ setting `report_enabled` or while consent records are off. "Send report now" cal
 
 Data (`data()`): `SCCM_Consent_Log::daily( 56, yesterday )` in one query, cut into 8 blocks of
 7 days; the last block is "these 7 days", the one before is the comparison.
-`category_counts_between()` gives what was allowed per category. Mail goes through
-`SCCM_Scanner::mail()` (one email per recipient), the result in `sccm_last_report_mail`.
+`category_counts_between()` gives what was allowed per category.
+
+Sending is a small job (option `sccm_report_job`, cron hook `sccm_report_send_event`):
+`start()` notes the recipients, `work()` sends one email after the other with
+`SCCM_Scanner::send_one()` and starts new emails for at most `STEP_SECONDS` (15 s; every step
+sends at least one), then the next WP-Cron step continues. Before each email a follow-up event
+is scheduled 120 s ahead, so a step that the host stops while the mail service does not answer
+is continued; that recipient is noted as "did not answer in time". "Send report now" only
+queues the job and calls `spawn_cron()`, so the admin page answers at once (production 1.4.0:
+Microsoft Graph timed out after 30 s and held the page). The scheduled report starts the job
+and works on it in the daily cron request. The result is stored in `sccm_last_report_mail`; a job
+untouched for 15 minutes no longer blocks the button.
+
+**Classes load by name** (`spl_autoload_register` in the main file, `SCCM_Foo` →
+`includes/[admin/]class-sccm-foo.php`), besides the usual `require_once`: right after an update a
+host can briefly run a cached older main file with newer view files (production 1.4.0: "Class
+SCCM_Report not found" on the Settings tab).
 
 Email: tables only (no SVG, images or scripts); bar heights are pixel cells, segments are
 separated by 2px cells, colours of the choices as on the Dashboard except "Denied" (orange,

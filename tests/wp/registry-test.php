@@ -521,10 +521,50 @@ sccm_check( 'report: its result is kept apart from the change email\'s', ! empty
 SCCM_Consent_Log::delete_all();
 $sccm_empty = SCCM_Report::build_email( SCCM_Report::data( $sccm_monday ), 'a@example.com', false, $sccm_monday );
 sccm_check( 'report: a week without choices says so, without empty charts', false !== strpos( $sccm_empty['subject'], 'Weekly consent report: no choices (' ) && false !== strpos( $sccm_empty['html'], 'Nobody answered the cookie banner in these 7 days.' ) && false === strpos( $sccm_empty['html'], 'Choices made' ) && false !== strpos( $sccm_empty['html'], 'The last 8 weeks' ) );
+// "Send report now" sends in the background (the page answers at once; production: a mail
+// service that did not answer for 30 s held the page).
+$GLOBALS['sccm_mails'] = array();
+delete_option( SCCM_Report::JOB_OPTION );
+$sccm_count = SCCM_Report::queue();
+sccm_check( 'report now: queued for every recipient, nothing sent inside the page request', 2 === $sccm_count && 0 === count( $GLOBALS['sccm_mails'] ) && SCCM_Report::sending() && wp_next_scheduled( SCCM_Report::EVENT ) );
+sccm_check( 'report now: a second click while it is being sent does not send it twice', -1 === SCCM_Report::queue() );
+SCCM_Report::work( 0 );
+sccm_check( 'report now: each background step sends at least one email, then the next step continues', 1 === count( $GLOBALS['sccm_mails'] ) && SCCM_Report::sending() && wp_next_scheduled( SCCM_Report::EVENT ) );
+SCCM_Report::work( 0 );
+$sccm_status = get_option( SCCM_Report::MAIL_OPTION );
+sccm_check( 'report now: when all are sent the result is stored and nothing is left', 2 === count( $GLOBALS['sccm_mails'] ) && ! SCCM_Report::sending() && ! wp_next_scheduled( SCCM_Report::EVENT ) && ! empty( $sccm_status['ok'] ) );
+// A step stopped by the host while the mail service did not answer: that recipient is failed, the rest go on.
+SCCM_Report::queue();
+$sccm_job         = get_option( SCCM_Report::JOB_OPTION );
+$sccm_job['next'] = 1;
+update_option( SCCM_Report::JOB_OPTION, $sccm_job, false );
+SCCM_Report::work();
+$sccm_status = get_option( SCCM_Report::MAIL_OPTION );
+sccm_check( 'report now: an email whose step was stopped is reported as not answered; the next recipient still gets it', 3 === count( $GLOBALS['sccm_mails'] ) && empty( $sccm_status['ok'] ) && false !== strpos( $sccm_status['error'], 'did not answer in time' ) && false !== strpos( $sccm_status['error'], get_option( 'admin_email' ) ), (string) $sccm_status['error'] );
+$sccm_job = get_option( SCCM_Report::JOB_OPTION );
+SCCM_Report::queue();
+$sccm_job          = get_option( SCCM_Report::JOB_OPTION );
+$sccm_job['touched'] = time() - 1000;
+update_option( SCCM_Report::JOB_OPTION, $sccm_job, false );
+sccm_check( 'report now: a report nobody worked on for 15 minutes no longer blocks the button', ! SCCM_Report::sending() && SCCM_Report::queue() > 0 );
+SCCM_Report::work( PHP_INT_MAX );
 remove_filter( 'pre_wp_mail', $capture, 10 );
+add_filter( 'pre_wp_mail', $refuse );
+SCCM_Report::send( true );
+$sccm_status = get_option( SCCM_Report::MAIL_OPTION );
+sccm_check( 'report now: a failed email is shown with the addresses it did not reach', empty( $sccm_status['ok'] ) && false !== strpos( $sccm_status['error'], 'Not sent to: ' . get_option( 'admin_email' ) . ', team@example.com.' ), (string) $sccm_status['error'] );
+remove_filter( 'pre_wp_mail', $refuse );
+// Classes load by name, so a page never misses a newer class (a host may run a cached older
+// copy of the main file for a moment after an update; production 1.4.0: "Class SCCM_Report not found").
+$sccm_probe = SCCM_PATH . 'includes/class-sccm-autoload-probe.php';
+file_put_contents( $sccm_probe, "<?php\nclass SCCM_Autoload_Probe {}\n" );
+sccm_check( 'plugin classes load by name when a file was not required', class_exists( 'SCCM_Autoload_Probe' ) && ! class_exists( 'SCCM_No_Such_Class' ) );
+wp_delete_file( $sccm_probe );
 SCCM_Settings::update( array( 'report_enabled' => 1 ) );
 delete_option( SCCM_Report::SENT_OPTION );
 delete_option( SCCM_Report::MAIL_OPTION );
+delete_option( SCCM_Report::JOB_OPTION );
+wp_clear_scheduled_hook( SCCM_Report::EVENT );
 
 SCCM_Install::schedule_events();
 $daily = wp_next_scheduled( SCCM_Scanner::DAILY_EVENT );
