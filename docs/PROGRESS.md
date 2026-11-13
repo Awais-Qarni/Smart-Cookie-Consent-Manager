@@ -7,13 +7,24 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.4.1 (1.4.0 is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.4.2 (1.4.1 is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); 1.3.0 admin redesign after production feedback
-- **Last updated:** 2026-11-12 (session 13b)
-- **Tests:** unit 33, WP-CLI 258, visitor e2e 120, admin e2e 137, all passing on **MySQL 8.4
+- **Last updated:** 2026-11-13 (session 14)
+- **Tests:** unit 33, WP-CLI 262, visitor e2e 120, admin e2e 137, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-11-13 — Session 14 (1.4.2: weekly report readability)
+
+**From the owner (report seen in Outlook):** blurry serif font, 69% + 28% left 3% unexplained,
+arrows not coloured, alignment and spacing. **Done:** font on every text + `[if mso]` rule;
+`change()` → ▲ green / ▼ red / "No change" with "Last week: …" on its own line; "The other N%: …"
+line; margins → padding and spacer rows. WP-CLI 262, admin e2e 137.
+
+**Next:** owner installs 1.4.2 and checks the report in Outlook.
 
 ---
 

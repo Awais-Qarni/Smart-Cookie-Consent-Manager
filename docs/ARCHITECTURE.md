@@ -307,6 +307,10 @@ Email: tables only (no SVG, images or scripts); bar heights are pixel cells, seg
 separated by 2px cells, colours of the choices as on the Dashboard except "Denied" (orange,
 so it does not read as "no data"; palette validated for colour-vision deficiency). Light
 design with dark-mode overrides (`.e-*` classes, also Outlook `[data-ogsc]`/`[data-ogsb]`).
+Every text element carries the font stack inline (added in `build_email()` to each
+`style="font-size:…"`), plus an `[if mso]` rule: Outlook for Windows does not inherit the font
+from the card table. No `margin` (Outlook ignores it): padding and spacer rows instead. Changes
+are ▲ green / ▼ red with the value before on its own line, so the tiles line up.
 
 ## Consent cookie
 

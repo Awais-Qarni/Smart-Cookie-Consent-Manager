@@ -485,6 +485,10 @@ sccm_check( 'report: a scheduled report says when it is sent', false !== strpos(
 $sccm_manual = SCCM_Report::build_email( $sccm_data, 'team@example.com', true, $sccm_monday );
 sccm_check( '"Send report now": the footer says it was sent on request, and when the regular one goes out', false !== strpos( $sccm_manual['html'], 'Sent on request on' ) && false !== strpos( $sccm_manual['html'], 'The regular report goes out every Monday at' ) );
 sccm_check( 'report: plain-text version', false !== strpos( $sccm_email['text'], 'HOW VISITORS CHOSE' ) && false !== strpos( $sccm_email['text'], 'Allowed all: 3 (60%)' ) );
+sccm_check( 'report: up arrows are green, down arrows red, an unchanged value says "No change"', false !== strpos( $sccm_email['html'], 'color:#15803d;font-weight:700;">▲ 25%' ) && false !== strpos( SCCM_Report::build_email( SCCM_Report::data( $sccm_monday->modify( '+7 days' ) ), 'a@example.com', false, $sccm_monday->modify( '+7 days' ) )['html'], 'color:#dc2626;font-weight:700;">▼ ' ) );
+sccm_check( 'report: each tile shows the change and the value before on their own lines (tiles line up)', false !== strpos( $sccm_email['html'], '>Last week: 4<' ) && false !== strpos( $sccm_email['html'], '>Last week: 50%<' ) );
+sccm_check( 'report: says who the rest are when allowed all + denied is not 100%', false !== strpos( $sccm_email['html'], 'The other 20%: 1 visitor chose only some categories.' ) );
+sccm_check( 'report: every text carries the font itself (Outlook does not inherit it), plus an Outlook-only rule', 0 === preg_match( '/style="font-size:/', $sccm_email['html'] ) && false !== strpos( $sccm_email['html'], '<!--[if mso]>' ) && 0 === substr_count( $sccm_email['html'], 'margin-top:' ) );
 $sccm_mid = SCCM_Report::data( $sccm_monday->modify( '+3 days' ) );
 sccm_check( 'report: sent on another day it covers the 7 days before that day ("the 7 days before", not "last week")', ! $sccm_mid['calendar'] && false !== strpos( SCCM_Report::build_email( $sccm_mid, 'a@example.com', true, $sccm_monday->modify( '+3 days' ) )['html'], 'the 7 days before' ) );
 $sccm_blogname = get_option( 'blogname' );

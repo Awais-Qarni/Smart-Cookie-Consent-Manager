@@ -2,6 +2,18 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.4.2] - 2026-11-13
+### Changed
+- **Weekly report, easier to read:**
+  - Clear font in Outlook: the font is set on every text (Outlook for Windows does not take
+    it from the outer table and showed Times New Roman), plus an Outlook-only rule.
+  - Changes in colour: ▲ green, ▼ red; an unchanged value says "No change".
+  - The three tiles line up: each shows the change and, on its own line, the value before
+    ("Last week: 401") instead of one long line that wrapped differently in each tile.
+  - When "Allowed all" and "Denied" do not add up to 100%, a line says who the rest are
+    (visitors who chose only some categories, browsers that sent a privacy signal).
+  - Spacing uses padding and spacer rows instead of margins, which Outlook ignores.
+
 ## [1.4.1] - 2026-11-12
 ### Fixed
 - **"Send report now" no longer holds the page.** The report was sent inside the page
