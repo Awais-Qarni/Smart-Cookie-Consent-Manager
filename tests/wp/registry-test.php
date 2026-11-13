@@ -489,6 +489,7 @@ sccm_check( 'report: up arrows are green, down arrows red, an unchanged value sa
 sccm_check( 'report: each tile shows the change and the value before on their own lines (tiles line up)', false !== strpos( $sccm_email['html'], '>Last week: 4<' ) && false !== strpos( $sccm_email['html'], '>Last week: 50%<' ) );
 sccm_check( 'report: says who the rest are when allowed all + denied is not 100%', false !== strpos( $sccm_email['html'], 'The other 20%: 1 visitor chose only some categories.' ) );
 sccm_check( 'report: every text carries the font itself (Outlook does not inherit it), plus an Outlook-only rule', 0 === preg_match( '/style="font-size:/', $sccm_email['html'] ) && false !== strpos( $sccm_email['html'], '<!--[if mso]>' ) && 0 === substr_count( $sccm_email['html'], 'margin-top:' ) );
+sccm_check( 'report: legend colours are coloured ■ characters (Outlook ignores empty coloured boxes)', false !== strpos( $sccm_email['html'], 'color:#16a34a;font-size:15px;line-height:15px;">&#9632;</span>' ) && false === strpos( $sccm_email['html'], 'display:inline-block;width:10px' ) );
 $sccm_mid = SCCM_Report::data( $sccm_monday->modify( '+3 days' ) );
 sccm_check( 'report: sent on another day it covers the 7 days before that day ("the 7 days before", not "last week")', ! $sccm_mid['calendar'] && false !== strpos( SCCM_Report::build_email( $sccm_mid, 'a@example.com', true, $sccm_monday->modify( '+3 days' ) )['html'], 'the 7 days before' ) );
 $sccm_blogname = get_option( 'blogname' );

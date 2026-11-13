@@ -2,6 +2,15 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.4.3] - 2026-11-13
+### Fixed
+- **Weekly report: legend colours in Outlook.** The colour squares under the charts were empty
+  boxes with a background, which Outlook does not show. They are now coloured "■" characters.
+- **Weekly report, checked in Outlook (dark mode):** no small grey square between the three
+  number boxes; in "The last 8 weeks" earlier weeks are gray and the newest blue (Outlook's dark
+  mode swapped light and dark blue, so the old weeks stood out); the two footer paragraphs are
+  apart again (Outlook ignores spacing on text blocks, a spacer line is used).
+
 ## [1.4.2] - 2026-11-13
 ### Changed
 - **Weekly report, easier to read:**

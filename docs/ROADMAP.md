@@ -93,6 +93,7 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - [x] 1.4.0 (2026-11-12): weekly consent report email for stakeholders (charts), "Send report now"
 - [x] 1.4.1 (2026-11-12): report sent in the background (no page held by a slow mail service); classes load by name
 - [x] 1.4.2 (2026-11-13): weekly report readability (Outlook font, green/red arrows, aligned tiles, the rest explained)
+- [x] 1.4.3 (2026-11-13): legend colours in Outlook (■ characters)
 
 ## Later (not in scope for 1.0)
 - Geo-targeting (different banner per region)
