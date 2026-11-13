@@ -2,6 +2,11 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.4.3] - 2026-11-13
+### Fixed
+- **Weekly report: legend colours in Outlook.** The colour squares under the charts were empty
+  boxes with a background, which Outlook does not show. They are now coloured "■" characters.
+
 ## [1.4.2] - 2026-11-13
 ### Changed
 - **Weekly report, easier to read:**

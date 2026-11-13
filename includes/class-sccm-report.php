@@ -570,13 +570,14 @@ class SCCM_Report {
 	}
 
 	/**
-	 * A small colour square for legends.
+	 * A small colour square for legends: a coloured "■" character, because Outlook ignores the
+	 * size and background of an empty box (the legend then showed no colours).
 	 *
 	 * @param string $color Colour.
 	 * @return string HTML.
 	 */
 	private static function swatch( $color ) {
-		return '<span style="display:inline-block;width:10px;height:10px;background:' . esc_attr( $color ) . ';border-radius:2px;vertical-align:middle;"></span>';
+		return '<span style="color:' . esc_attr( $color ) . ';font-size:15px;line-height:15px;">&#9632;</span>';
 	}
 
 	/**

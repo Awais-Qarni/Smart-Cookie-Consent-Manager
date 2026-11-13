@@ -7,13 +7,20 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.4.2 (1.4.1 is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.4.3 (1.4.2 is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); 1.3.0 admin redesign after production feedback
-- **Last updated:** 2026-11-13 (session 14)
-- **Tests:** unit 33, WP-CLI 262, visitor e2e 120, admin e2e 137, all passing on **MySQL 8.4
+- **Last updated:** 2026-11-13 (session 14b)
+- **Tests:** unit 33, WP-CLI 263, visitor e2e 120, admin e2e 137, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-11-13 — Session 14b (1.4.3: legend colours in Outlook)
+
+**Done:** `swatch()` returns a coloured `&#9632;` instead of an empty inline-block box (Outlook
+showed the legend without colours). WP-CLI 263.
 
 ---
 
