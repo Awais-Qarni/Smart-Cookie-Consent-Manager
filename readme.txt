@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.1
+Stable tag: 1.4.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,9 @@ Use the floating button, the [sccm_cookie_settings] shortcode, or a menu link to
 Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 == Changelog ==
+
+= 1.4.2 =
+* Weekly report: clear font in Outlook, green ▲ / red ▼, tiles that line up, and a line saying who the rest are when "allowed all" and "denied" do not add up to 100%.
 
 = 1.4.1 =
 * "Send report now" sends the report in the background: the page answers at once, also when the mail service is slow or down.
