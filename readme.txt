@@ -42,7 +42,7 @@ Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 == Changelog ==
 
 = 1.4.3 =
-* Weekly report: the colour squares of the chart legends now show in Outlook.
+* Weekly report, checked in Outlook: legend colours show, no grey square between the number boxes, the newest week stands out in dark mode, footer spacing.
 
 = 1.4.2 =
 * Weekly report: clear font in Outlook, green ▲ / red ▼, tiles that line up, and a line saying who the rest are when "allowed all" and "denied" do not add up to 100%.

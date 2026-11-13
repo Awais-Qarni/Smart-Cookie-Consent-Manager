@@ -413,7 +413,9 @@ class SCCM_Report {
 
 		$h .= '<tr><td class="e-pad" style="padding:28px 32px 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="e-line" style="border-top:1px solid #e5e7eb;padding-top:16px;">';
 		$h .= '<div class="e-muted" style="font-size:12px;line-height:18px;color:#6b7280;">' . esc_html( $note ) . '</div>';
-		$h .= '<div class="e-muted" style="font-size:12px;line-height:18px;color:#6b7280;padding-top:10px;">' . esc_html( $footer ) . '</div>';
+		// A spacer line: Outlook ignores padding and margins on text blocks.
+		$h .= '<div style="font-size:10px;line-height:10px;">&nbsp;</div>';
+		$h .= '<div class="e-muted" style="font-size:12px;line-height:18px;color:#6b7280;">' . esc_html( $footer ) . '</div>';
 		$h .= '</td></tr></table></td></tr>';
 		$h .= '</table></td></tr></table></body></html>';
 		// Every text gets the font itself: mail apps (Outlook) do not inherit it from the card.
@@ -530,7 +532,7 @@ class SCCM_Report {
 		}
 		$h = '<tr><td class="e-pad" style="padding:16px 32px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed;"><tr>';
 		foreach ( $tiles as $i => $tile ) {
-			$h .= ( $i ? '<td class="e-kgap" width="12" style="width:12px;font-size:0;line-height:0;">&nbsp;</td>' : '' )
+			$h .= ( $i ? '<td class="e-kgap e-gap" width="12" bgcolor="#ffffff" style="width:12px;background:#ffffff;font-size:0;line-height:0;">&nbsp;</td>' : '' )
 				. '<td class="e-kpi e-box" valign="top" bgcolor="#f9fafb" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px 16px;">'
 				. '<div class="e-muted" style="font-size:12px;line-height:16px;color:#6b7280;">' . esc_html( $tile[0] ) . '</div>'
 				. '<div class="e-h" style="font-size:30px;line-height:38px;font-weight:700;color:#111827;padding:2px 0 4px;">' . esc_html( $tile[1] ) . '</div>'
@@ -736,7 +738,9 @@ class SCCM_Report {
 		$rows  = array( '', '', '' );
 		foreach ( $weeks as $i => $w ) {
 			$now     = $last === $i;
-			$color   = $now ? '#2563eb' : '#93c5fd';
+			// Earlier weeks gray, the newest blue: a hue difference survives Outlook's dark mode, which
+			// makes light colours dark and dark ones light (light vs dark blue swapped the emphasis).
+			$color   = $now ? '#2563eb' : '#cbd5e1';
 			$height  = $w['total'] > 0 ? max( 2, (int) round( 90 * $w['total'] / $max ) ) : 0;
 			$rows[0] .= '<td align="center" valign="bottom" style="padding:0 3px;"><div class="' . ( $now ? 'e-h' : 'e-muted' ) . '" style="font-size:11px;line-height:14px;padding-bottom:3px;color:' . ( $now ? '#111827;font-weight:700' : '#6b7280' ) . ';">' . esc_html( number_format_i18n( $w['total'] ) ) . '</div>'
 				. ( $height ? '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:40px;"><tr><td height="' . $height . '" bgcolor="' . $color . '" style="height:' . $height . 'px;font-size:0;line-height:' . $height . 'px;background:' . $color . ';border-radius:3px 3px 0 0;">&nbsp;</td></tr></table>' : '' )
