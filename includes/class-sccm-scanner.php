@@ -1532,7 +1532,11 @@ class SCCM_Scanner {
 	private static function email_origin( array $item ) {
 		switch ( isset( $item['origin'] ) ? $item['origin'] : '' ) {
 			case 'visitors':
-				return __( 'Found in visitors\' browsers', 'smart-cookie-consent-manager' );
+				$pages = SCCM_Cookies::found_on( $item['name'] );
+				return $pages
+					/* translators: %s: page addresses, e.g. "/, /contact/" */
+					? sprintf( __( 'Found in visitors\' browsers on: %s', 'smart-cookie-consent-manager' ), implode( ', ', $pages ) )
+					: __( 'Found in visitors\' browsers', 'smart-cookie-consent-manager' );
 			case 'scan':
 				return __( 'Found by the cookie scan', 'smart-cookie-consent-manager' );
 			case 'admin_browser':

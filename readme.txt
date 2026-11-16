@@ -4,7 +4,7 @@ Tags: cookie consent, gdpr, cookie banner, consent mode, gpc
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.4.3
+Stable tag: 1.4.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,9 @@ Use the floating button, the [sccm_cookie_settings] shortcode, or a menu link to
 Use `<script type="text/plain" data-sccm-category="analytics">…</script>`.
 
 == Changelog ==
+
+= 1.4.4 =
+* New: for cookies found in visitors' browsers, the page they were seen on is shown in the change email and in the Cookies list ("Seen on: /contact/").
 
 = 1.4.3 =
 * Weekly report, checked in Outlook: legend colours show, no grey square between the number boxes, the newest week stands out in dark mode, footer spacing.

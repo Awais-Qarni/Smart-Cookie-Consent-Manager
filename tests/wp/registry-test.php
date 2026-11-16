@@ -1047,6 +1047,26 @@ $logged = SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'wp-se
 sccm_check( 'visitor reports: a report that lists a wp-settings-* cookie is ignored', is_array( $logged ) && ! isset( $logged['added'] ) && ! isset( ( (array) get_option( 'sccm_candidates', array() ) )['cookie:from_a_staff_list'] ) );
 $logged = SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'from_a_real_visitor', 't' => 'cookie' ) ) ) );
 sccm_check( 'visitor reports: a real visitor\'s report still counts', is_array( $logged ) && isset( $logged['added'] ) );
+// The page a cookie was reported from is kept (path only), so the owner sees where it shows up.
+delete_option( SCCM_Cookies::FOUND_ON_OPTION );
+$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '%sccm\_rl\_%'" );
+wp_cache_flush();
+SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'seen_on_cookie', 't' => 'cookie' ), array( 'n' => '_uetsid', 't' => 'cookie' ) ), 'url' => home_url( '/contact/?email=someone@example.com#top' ) ) );
+SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'seen_on_cookie', 't' => 'cookie' ) ), 'url' => 'https://another-site.example/landing/' ) );
+sccm_check( 'found on: the page of a report is noted as a path, without query string (no personal data)', array( '/contact/' ) === SCCM_Cookies::found_on( 'seen_on_cookie' ) && false === strpos( wp_json_encode( get_option( SCCM_Cookies::FOUND_ON_OPTION ) ), 'someone' ), wp_json_encode( get_option( SCCM_Cookies::FOUND_ON_OPTION ) ) );
+sccm_check( 'found on: a known cookie is noted under its listed name; other websites\' addresses are ignored', array( '/contact/' ) === SCCM_Cookies::found_on( '_uetsid' ) && 1 === count( SCCM_Cookies::found_on( 'seen_on_cookie' ) ) );
+foreach ( array( '/a/', '/b/', '/c/', '/d/' ) as $sccm_p ) {
+	SCCM_Cookies::note_page( 'seen_on_cookie', home_url( $sccm_p ) );
+}
+sccm_check( 'found on: at most 3 pages per cookie', 3 === count( SCCM_Cookies::found_on( 'seen_on_cookie' ) ) && 'Seen on: /contact/, /a/, /b/' === SCCM_Cookies::found_on_text( 'seen_on_cookie' ) );
+$sccm_mail_item = SCCM_Scanner::build_email( array( array( 'name' => '_uetsid', 'type' => 'cookie', 'status' => 'active', 'category' => 'marketing', 'origin' => 'visitors', 'time' => time() ) ) );
+sccm_check( 'found on: the change email names the page', false !== strpos( $sccm_mail_item['html'], 'Found in visitors&#039; browsers on: /contact/' ) && false !== strpos( $sccm_mail_item['text'], 'browsers on: /contact/' ), substr( wp_strip_all_tags( $sccm_mail_item['text'] ), 0, 300 ) );
+$sccm_row_id = SCCM_Cookies::save( array( 'name' => 'seen_on_cookie', 'type' => 'cookie', 'category' => 'necessary', 'status' => 'pending', 'source' => 'scanner' ) );
+$sccm_found_row = SCCM_Cookies::find_matching( 'seen_on_cookie', 'cookie' );
+SCCM_Cookies::delete( (int) $sccm_found_row['id'] );
+sccm_check( 'found on: forgotten when the cookie is deleted', array() === SCCM_Cookies::found_on( 'seen_on_cookie' ) );
+delete_option( SCCM_Cookies::FOUND_ON_OPTION );
+delete_option( 'sccm_candidates' );
 SCCM_Settings::update( array( 'scanner_client' => $was_learning ) );
 
 // Scan: speed hints (preconnect, dns-prefetch) are not third-party files; stylesheets are.

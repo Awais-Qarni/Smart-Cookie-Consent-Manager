@@ -409,6 +409,11 @@ class SCCM_Cookies {
 		$old        = self::get( $id );
 		$ok         = $wpdb->delete( self::table(), array( 'id' => (int) $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		self::$rows = null;
+		$found      = get_option( self::FOUND_ON_OPTION, array() );
+		if ( $ok && $old && is_array( $found ) && isset( $found[ $old['name'] ] ) ) {
+			unset( $found[ $old['name'] ] );
+			update_option( self::FOUND_ON_OPTION, $found, false );
+		}
 		if ( $ok && $old && 'active' === $old['status'] ) {
 			self::list_changed();
 		}
@@ -613,6 +618,65 @@ class SCCM_Cookies {
 		update_option( self::BROWSER_ONLY_OPTION, array_values( array_unique( array_merge( $marked, array( $row['name'] ) ) ) ), false );
 		self::queue_alert( $row['name'], 'cookie', 'pending', '', 'admin_browser' );
 		return true;
+	}
+
+	/**
+	 * Option: pages (paths only) visitors' browsers reported a cookie from: name => paths.
+	 */
+	const FOUND_ON_OPTION = 'sccm_found_on';
+
+	/**
+	 * Note the page a visitor's browser reported a cookie from, so the owner can see where it
+	 * shows up. Only the path of a page of this website is kept (no query string, which may hold
+	 * personal data), at most 3 pages per cookie and 200 cookies. A cookie stays in the browser
+	 * from page to page, so this is where it was seen, not always the page that set it.
+	 *
+	 * @param string $name Cookie name as reported.
+	 * @param string $url  Page address sent with the report.
+	 */
+	public static function note_page( $name, $url ) {
+		$parts = wp_parse_url( (string) $url );
+		$host  = wp_parse_url( home_url(), PHP_URL_HOST );
+		if ( empty( $parts['host'] ) || strtolower( $parts['host'] ) !== strtolower( (string) $host ) ) {
+			return;
+		}
+		$path = isset( $parts['path'] ) ? substr( sanitize_text_field( rawurldecode( $parts['path'] ) ), 0, 150 ) : '/';
+		$path = '' === $path ? '/' : $path;
+		// The name the cookie is listed under (a library pattern such as "_ga_*", or its own).
+		$known = SCCM_Services::match_cookie( $name );
+		$key   = $known ? $known['name'] : $name;
+		$all   = get_option( self::FOUND_ON_OPTION, array() );
+		$all   = is_array( $all ) ? $all : array();
+		$pages = isset( $all[ $key ] ) ? (array) $all[ $key ] : array();
+		if ( in_array( $path, $pages, true ) || count( $pages ) >= 3 || ( ! isset( $all[ $key ] ) && count( $all ) >= 200 ) ) {
+			return;
+		}
+		$pages[]     = $path;
+		$all[ $key ] = $pages;
+		update_option( self::FOUND_ON_OPTION, $all, false );
+	}
+
+	/**
+	 * Pages visitors' browsers reported a cookie from (see note_page()).
+	 *
+	 * @param string $name Listed cookie name.
+	 * @return string[] Paths, e.g. array( '/', '/contact/' ).
+	 */
+	public static function found_on( $name ) {
+		$all = get_option( self::FOUND_ON_OPTION, array() );
+		return is_array( $all ) && isset( $all[ $name ] ) ? array_map( 'strval', (array) $all[ $name ] ) : array();
+	}
+
+	/**
+	 * "Seen on: /, /contact/" for a cookie, or ''.
+	 *
+	 * @param string $name Listed cookie name.
+	 * @return string
+	 */
+	public static function found_on_text( $name ) {
+		$pages = self::found_on( $name );
+		/* translators: %s: page addresses, e.g. "/, /contact/" */
+		return $pages ? sprintf( __( 'Seen on: %s', 'smart-cookie-consent-manager' ), implode( ', ', $pages ) ) : '';
 	}
 
 	/**
