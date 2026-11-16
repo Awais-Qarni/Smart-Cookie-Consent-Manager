@@ -121,6 +121,9 @@ $sccm_sources    = array(
 								?>
 							<?php endif; ?>
 						</small>
+						<?php if ( '' !== SCCM_Cookies::found_on_text( $sccm_row['name'] ) ) : ?>
+							<small class="sccm-inbox__note"><?php echo esc_html( SCCM_Cookies::found_on_text( $sccm_row['name'] ) ); ?></small>
+						<?php endif; ?>
 						<?php if ( SCCM_Cookies::only_in_admin_browser( $sccm_row ) ) : ?>
 							<small class="sccm-inbox__note"><?php esc_html_e( 'Only found in your browser: none of your pages set it during the scan. It may come from your admin tools or a browser extension. Ignore it if your visitors do not get it.', 'smart-cookie-consent-manager' ); ?></small>
 						<?php endif; ?>
@@ -230,7 +233,7 @@ $sccm_sources    = array(
 						<td data-label="<?php esc_attr_e( 'Provider', 'smart-cookie-consent-manager' ); ?>"><?php echo esc_html( $sccm_row['provider'] ); ?></td>
 						<td data-label="<?php esc_attr_e( 'What it does', 'smart-cookie-consent-manager' ); ?>"><?php echo esc_html( $sccm_row['purpose'] ); ?></td>
 						<td data-label="<?php esc_attr_e( 'Lasts', 'smart-cookie-consent-manager' ); ?>"><?php echo esc_html( $sccm_row['duration'] ); ?></td>
-						<td data-label="<?php esc_attr_e( 'Added', 'smart-cookie-consent-manager' ); ?>"><small><?php echo esc_html( $sccm_sources[ $sccm_row['source'] ] ?? $sccm_row['source'] ); ?></small></td>
+						<td data-label="<?php esc_attr_e( 'Added', 'smart-cookie-consent-manager' ); ?>"><small><?php echo esc_html( $sccm_sources[ $sccm_row['source'] ] ?? $sccm_row['source'] ); ?></small><?php if ( '' !== SCCM_Cookies::found_on_text( $sccm_row['name'] ) ) : ?><br><small class="sccm-found-on"><?php echo esc_html( SCCM_Cookies::found_on_text( $sccm_row['name'] ) ); ?></small><?php endif; ?></td>
 						<td class="sccm-row-actions">
 							<a class="button button-small" href="<?php echo esc_url( SCCM_Admin::url( 'cookies', array( 'edit' => (int) $sccm_row['id'] ) ) ); ?>"><?php esc_html_e( 'Edit', 'smart-cookie-consent-manager' ); ?></a>
 							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">

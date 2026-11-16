@@ -7,13 +7,27 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.4.3 (1.4.2 is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.4.4 (1.4.3 is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); 1.3.0 admin redesign after production feedback
-- **Last updated:** 2026-11-13 (session 14b)
-- **Tests:** unit 33, WP-CLI 263, visitor e2e 120, admin e2e 137, all passing on **MySQL 8.4
+- **Last updated:** 2026-11-16 (session 15)
+- **Tests:** unit 33, WP-CLI 268, visitor e2e 120, admin e2e 137, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-11-16 — Session 15 (1.4.4: where a reported cookie was seen)
+
+**Production:** the change email added `_uetsid` / `_uetvid` (Microsoft Advertising) "found in
+visitors' browsers". Checked: none of the 107 published pages/posts (cache bypassed), the GTM
+container (only the Google tag), the 3 Elementor custom-code snippets, the 12 plugins or the 81
+admin pages loads bat.bing.com; the owner's browser does not have the cookies. Source unknown
+(likely something in those visitors' browsers). **Done:** `SCCM_Cookies::note_page()` keeps the
+path of the page a report came from (option `sccm_found_on`, 3 per cookie, own host only, no
+query string); shown in the email and the Cookies tab; forgotten on delete. WP-CLI 268.
+
+**Next:** if the cookies are reported again, the page is now visible.
 
 ---
 

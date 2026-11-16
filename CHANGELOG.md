@@ -2,6 +2,15 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.4.4] - 2026-11-16
+### Added
+- **Where a cookie was seen.** When visitors' browsers report a cookie, the page they were on
+  is now kept (up to 3 pages per cookie) and shown in the change email ("Found in visitors'
+  browsers on: /contact/") and in the Cookies tab ("Seen on: …"), so you can check that page.
+  Only the path of a page of your own website is stored, never the query string. A cookie
+  stays in the browser from page to page, so this is where it was seen, not always the page
+  that set it. Shown for cookies reported from now on.
+
 ## [1.4.3] - 2026-11-13
 ### Fixed
 - **Weekly report: legend colours in Outlook.** The colour squares under the charts were empty

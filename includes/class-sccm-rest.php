@@ -375,6 +375,9 @@ class SCCM_REST {
 			if ( ! self::valid_name( $name ) || 'cookie' !== $type ) {
 				continue;
 			}
+			if ( ! SCCM_Cookies::find_matching( $name, 'cookie' ) ) {
+				SCCM_Cookies::note_page( $name, is_array( $data ) && isset( $data['url'] ) && is_string( $data['url'] ) ? $data['url'] : '' );
+			}
 			if ( '' !== SCCM_Cookies::record_seen( $name, 'cookie', 'visitor' ) ) {
 				++$added;
 			}

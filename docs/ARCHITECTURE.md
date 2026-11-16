@@ -119,6 +119,11 @@ the theme loads) decides scan mode first and then sets the current user to 0 for
 the page. The admin page reads the frame directly (same origin), so nothing in the frame needs
 the login. Regression test: admin e2e BU4.
 
+**Where a reported cookie was seen.** `store_report()` passes the report's page address to
+`SCCM_Cookies::note_page()` for cookies not listed yet: only the path, only this website's host,
+at most 3 per cookie (option `sccm_found_on`, keyed by the listed name). Shown in the change
+email and the Cookies tab, so a surprising finding can be traced to a page.
+
 **Browsers of WordPress users never report.** Plugins load support chats and analytics on
 their own admin pages (production 1.3.4: Intercom on NitroPack's settings page), and those
 cookies are saved for the whole domain and stay in the browser after logging out. Several staff
