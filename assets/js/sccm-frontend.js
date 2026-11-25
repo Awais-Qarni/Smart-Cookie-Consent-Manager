@@ -319,7 +319,7 @@
 	/*
 	 * Everything the plugin keeps in the browser is in its one cookie (C.cookie): the choice
 	 * (id, v, t, c, m, g) and, under "x", small notes that are also needed before a choice
-	 * (a: when the REST API refused a request, r: the last cookie report). A cookie with notes
+	 * (a: when the REST API refused a request). A cookie with notes
 	 * only has no id/categories, so it never counts as a choice (see sccm-boot.js).
 	 */
 
@@ -381,15 +381,6 @@
 			o.x[key] = value;
 			writeCookieObject(o);
 		} catch (e) { /* A note must never break the page. */ }
-	}
-
-	/** Short hash of a text (keeps the cookie small). */
-	function shortHash(text) {
-		var h = 5381;
-		for (var i = 0; i < text.length; i++) {
-			h = ((h << 5) + h + text.charCodeAt(i)) | 0;
-		}
-		return (h >>> 0).toString(36);
 	}
 
 	function deleteCookie(name) {
@@ -1182,58 +1173,6 @@
 		});
 	}
 
-	/* ------------------------------------------------------------------ Scanner (names only) */
-
-	/**
-	 * Tell the server about cookie NAMES (never values) that are not in the list yet.
-	 * Cookies only, and never from logged-in users (their browsers carry extensions and admin
-	 * tools that are not part of the website). The server lists a cookie only after several
-	 * different visitors reported it.
-	 */
-	function reportUnknown() {
-		if (!C.scan || !C.rest.report) {
-			return;
-		}
-		var cls = d.body ? d.body.classList : null;
-		if (cls && (cls.contains('logged-in') || cls.contains('admin-bar'))) {
-			return;
-		}
-		// A browser that has been used to log in to this site (WordPress keeps a wp-settings-*
-		// cookie for a year, also after logging out) carries cookies of the admin area, e.g. a
-		// support chat on a plugin's settings page. Its cookies say nothing about the website.
-		var names = cookieNames();
-		if (names.some(function (name) { return name.indexOf('wp-settings-') === 0; })) {
-			return;
-		}
-		var known = C.known || [];
-		var items = [];
-		names.forEach(function (name) {
-			if (name === C.cookie || items.length >= 30) {
-				return;
-			}
-			var isKnown = known.some(function (pattern) {
-				return nameMatches(pattern, name);
-			});
-			if (!isKnown) {
-				items.push({ n: name, t: 'cookie' });
-			}
-		});
-		if (!items.length) {
-			return;
-		}
-		// The same names were reported in the last day: do not send them again.
-		var signature = shortHash(items.map(function (i) {
-			return i.n;
-		}).sort().join('|'));
-		var last = readNote('r');
-		var now = Math.floor(Date.now() / 1000);
-		if (last && last[0] === signature && now - last[1] < NOTE_DAYS * 86400) {
-			return;
-		}
-		writeNote('r', [signature, now]);
-		post(C.rest.report, { items: items, url: w.location.href.split('#')[0] }, 'sccm_report');
-	}
-
 	/* ------------------------------------------------------------------ Wiring */
 
 	function onClick(event) {
@@ -1313,16 +1252,6 @@
 		} else if (w.location.hash === '#sccm-banner') {
 			// Preview the banner (e.g. from the admin Banner tab).
 			showBanner(true);
-		}
-		if (C.scan) {
-			// Low priority: wait until the page is idle so it never competes with the visitor.
-			setTimeout(function () {
-				if (w.requestIdleCallback) {
-					w.requestIdleCallback(reportUnknown, { timeout: 3000 });
-				} else {
-					reportUnknown();
-				}
-			}, 4000);
 		}
 		emit('sccm:ready', { grants: state.grants, consent: state.consent });
 	}

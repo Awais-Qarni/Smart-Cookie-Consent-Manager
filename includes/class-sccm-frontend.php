@@ -299,14 +299,6 @@ class SCCM_Frontend {
 			}
 		}
 
-		// Cookie names already in the registry (any status): the visitor-side scanner skips these.
-		$known = array();
-		foreach ( SCCM_Cookies::all_rows() as $row ) {
-			if ( 'cookie' === $row['type'] ) {
-				$known[] = $row['name'];
-			}
-		}
-
 		$config = array(
 			'v'           => (int) get_option( 'sccm_consent_version', 1 ),
 			'cookie'      => 'sccm_consent',
@@ -337,12 +329,9 @@ class SCCM_Frontend {
 				'passthrough' => (bool) $settings['url_passthrough'],
 			),
 			'cleanup'     => $cleanup,
-			'known'       => $known,
 			'log'         => (bool) $settings['log_enabled'],
-			'scan'        => (bool) $settings['scanner_client'],
 			'rest'        => array(
 				'consent'   => self::same_site_url( rest_url( 'sccm/v1/consent' ) ),
-				'report'    => self::same_site_url( rest_url( 'sccm/v1/report' ) ),
 				'ajax'      => self::same_site_url( admin_url( 'admin-ajax.php' ) ),
 				// 'ajax' when the REST API is blocked for visitors: no failed request first.
 				'transport' => SCCM_REST::transport(),

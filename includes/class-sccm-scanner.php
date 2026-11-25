@@ -408,6 +408,16 @@ class SCCM_Scanner {
 			}
 		}
 
+		// Google Tag Manager: the tags it loads are in its container, not in the page.
+		if ( preg_match_all( '/\bGTM-[A-Z0-9]{4,12}\b/', $html, $containers ) ) {
+			foreach ( array_unique( $containers[0] ) as $id ) {
+				if ( empty( $results['gtm'][ $id ] ) ) {
+					$results['gtm'][ $id ] = true;
+					self::analyse_gtm( $id, $results );
+				}
+			}
+		}
+
 		// Inline scripts that load services (e.g. pixel snippets).
 		preg_match_all( '#<script\b[^>]*>(.*?)</script\s*>#is', $html, $inline );
 		foreach ( $inline[1] as $code ) {
@@ -442,6 +452,12 @@ class SCCM_Scanner {
 		}
 		$service = SCCM_Services::match_resource( $url );
 		if ( $service ) {
+			// A file the admin's browser loaded during "Scan now" counts only for a service the
+			// website's own code loads (an extension can add scripts to every page it opens).
+			if ( 'browser' === $tag && ! self::proven( $service, $results ) ) {
+				self::not_loaded( $results, $service );
+				return;
+			}
 			self::add_service_hit( $results, $service, $url );
 			return;
 		}
@@ -703,6 +719,13 @@ class SCCM_Scanner {
 					if ( ! SCCM_REST::valid_name( $name ) || self::is_admin_cookie( $name ) ) {
 						continue;
 					}
+					// A known service's cookie counts only when the website's own code loads the
+					// service (an extension in the admin's browser can set it on any page).
+					$known = SCCM_Services::match_cookie( $name );
+					if ( $known && ! self::proven( $known['service'], $results ) ) {
+						self::not_loaded( $results, $known['service'], $name );
+						continue;
+					}
 					$seen[ $name ] = true;
 					SCCM_Cookies::record_seen( $name, 'cookie', 'scanner' );
 				}
@@ -723,6 +746,10 @@ class SCCM_Scanner {
 					// dashboard or an extension; those count only when the library knows them.
 					$known = SCCM_Services::match_cookie( $name );
 					if ( empty( $item['new'] ) && ! ( $known && $known['type'] === $type ) ) {
+						continue;
+					}
+					if ( $known && ! self::proven( $known['service'], $results ) ) {
+						self::not_loaded( $results, $known['service'], $name );
 						continue;
 					}
 					$seen[ $name ] = true;
@@ -772,14 +799,12 @@ class SCCM_Scanner {
 	}
 
 	/**
-	 * End of "Scan now": cookies that were only in the admin's own browser. The scan opens the
+	 * End of "Scan now": how many cookies were only in the admin's own browser. The scan opens the
 	 * pages in that browser, which also holds cookies of admin tools, other plugins' dashboards
 	 * and extensions. A cookie counts as the website's only with proof: the server part received
-	 * it as a new visitor, a scanned page wrote it, or it appeared during the scan. The others:
-	 * - "Learn from visitors" on: not listed; real visitors' browsers report it if the website
-	 *   sets it for them too (then it is listed as usual), admin-only cookies never come back.
-	 * - "Learn from visitors" off: nothing else would find them, so they wait for review, marked
-	 *   "Only found in your browser". Nothing is dropped without a way back.
+	 * it as a new visitor, or a scanned page wrote it (in scan mode pages see an empty cookie jar,
+	 * so scripts that set a cookie only when it is missing write it too). The others are not
+	 * listed, not queued for review: only counted for the result message.
 	 *
 	 * @return int How many cookies were only in the admin's browser.
 	 */
@@ -796,11 +821,6 @@ class SCCM_Scanner {
 				}
 			)
 		);
-		if ( $names && ! SCCM_Settings::get( 'scanner_client' ) ) {
-			foreach ( $names as $name ) {
-				SCCM_Cookies::record_unconfirmed( $name );
-			}
-		}
 		return count( $names );
 	}
 
@@ -821,14 +841,17 @@ class SCCM_Scanner {
 	}
 
 	/**
-	 * Record a detected service.
+	 * Record a service the website's own code loads: found by the server scan in a page's HTML
+	 * or in the site's Google Tag Manager container. Only such services are "proven" (see
+	 * proven()); a browser can hold much more (extensions, company tools, admin dashboards).
 	 *
 	 * @param array  $results Results (by reference).
 	 * @param string $key     Service id.
-	 * @param string $where   URL or "inline script".
+	 * @param string $where   URL, "inline script" or "Google Tag Manager GTM-…".
 	 */
 	private static function add_service_hit( array &$results, $key, $where ) {
-		$service = SCCM_Services::get( $key );
+		$results['site_services'][ $key ] = true;
+		$service                          = SCCM_Services::get( $key );
 		if ( ! isset( $results['services'][ $key ] ) ) {
 			$results['services'][ $key ] = array(
 				'name'     => $service['name'],
@@ -838,6 +861,88 @@ class SCCM_Scanner {
 		}
 		if ( count( $results['services'][ $key ]['examples'] ) < 3 && ! in_array( $where, $results['services'][ $key ]['examples'], true ) ) {
 			$results['services'][ $key ]['examples'][] = mb_substr( $where, 0, 200 );
+		}
+	}
+
+	/**
+	 * Whether the website itself loads a service: the server scan found it in a page or in the
+	 * Google Tag Manager container, or the WordPress plugin that loads it from its own script is
+	 * active (library key "plugins", e.g. GTranslate: the page loads the plugin's float.js, which
+	 * then loads the service). Services without detection patterns (WordPress, WooCommerce, this
+	 * plugin…) run on the site itself and are always proven.
+	 *
+	 * @param string $key     Service id.
+	 * @param array  $results Scan results.
+	 * @return bool
+	 */
+	public static function proven( $key, array $results ) {
+		$service = SCCM_Services::get( $key );
+		if ( ! $service || empty( $service['patterns'] ) || ! empty( $results['site_services'][ $key ] ) ) {
+			return true;
+		}
+		$active = (array) get_option( 'active_plugins', array() );
+		if ( is_multisite() ) {
+			$active = array_merge( $active, array_keys( (array) get_site_option( 'active_sitewide_plugins', array() ) ) );
+		}
+		return (bool) array_intersect( (array) ( $service['plugins'] ?? array() ), $active );
+	}
+
+	/**
+	 * A cookie or service the browser part of "Scan now" saw, but the website's own code does not
+	 * load (an extension or tool in the admin's browser): not listed, only shown in the report.
+	 *
+	 * @param array  $results Results (by reference).
+	 * @param string $key     Service id.
+	 * @param string $name    Cookie / storage name, or '' for a file of the service.
+	 */
+	private static function not_loaded( array &$results, $key, $name = '' ) {
+		if ( ! isset( $results['not_loaded'][ $key ] ) ) {
+			$service                         = SCCM_Services::get( $key );
+			$results['not_loaded'][ $key ] = array(
+				'name'  => $service ? $service['name'] : $key,
+				'items' => array(),
+			);
+		}
+		if ( '' !== $name && count( $results['not_loaded'][ $key ]['items'] ) < 10 && ! in_array( $name, $results['not_loaded'][ $key ]['items'], true ) ) {
+			$results['not_loaded'][ $key ]['items'][] = $name;
+		}
+	}
+
+	/**
+	 * Services a page's Google Tag Manager container loads: its tags are not in the page's HTML.
+	 * The container is public (the same file every visitor's browser loads). Tags are matched by
+	 * the library's patterns (custom HTML and template code contain the service's address) and by
+	 * Google tag IDs (G- = Google Analytics 4, AW- = Google Ads, UA- = Universal Analytics).
+	 *
+	 * @param string $id      Container ID, e.g. GTM-ABC123.
+	 * @param array  $results Results (by reference).
+	 */
+	private static function analyse_gtm( $id, array &$results ) {
+		$response = wp_remote_get( 'https://www.googletagmanager.com/gtm.js?id=' . rawurlencode( $id ), array( 'timeout' => 15 ) );
+		if ( is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code( $response ) ) {
+			/* translators: %s: container ID */
+			$results['notes'][ 'gtm_' . $id ] = sprintf( __( 'The Google Tag Manager container %s could not be read, so services loaded only through it may be missing. Run the scan again later.', 'smart-cookie-consent-manager' ), $id );
+			return;
+		}
+		$code  = (string) wp_remote_retrieve_body( $response );
+		$where = 'Google Tag Manager ' . $id;
+		foreach ( SCCM_Services::all() as $key => $service ) {
+			foreach ( $service['patterns'] as $pattern ) {
+				if ( 'google-tag-manager' !== $key && '' !== $pattern && false !== stripos( $code, $pattern ) ) {
+					self::add_service_hit( $results, $key, $where );
+					break;
+				}
+			}
+		}
+		$ids = array(
+			'google-analytics'    => '/"(?:vtp_tagId|vtp_measurementId|tag_id)"\s*:\s*"G-[A-Z0-9]+"|"G-[A-Z0-9]{6,}"/',
+			'google-ads'          => '/"AW-[0-9]{6,}/',
+			'universal-analytics' => '/"UA-[0-9]+-[0-9]+"/',
+		);
+		foreach ( $ids as $key => $regex ) {
+			if ( SCCM_Services::get( $key ) && preg_match( $regex, $code ) ) {
+				self::add_service_hit( $results, $key, $where );
+			}
 		}
 	}
 
@@ -1531,12 +1636,8 @@ class SCCM_Scanner {
 	 */
 	private static function email_origin( array $item ) {
 		switch ( isset( $item['origin'] ) ? $item['origin'] : '' ) {
-			case 'visitors':
-				$pages = SCCM_Cookies::found_on( $item['name'] );
-				return $pages
-					/* translators: %s: page addresses, e.g. "/, /contact/" */
-					? sprintf( __( 'Found in visitors\' browsers on: %s', 'smart-cookie-consent-manager' ), implode( ', ', $pages ) )
-					: __( 'Found in visitors\' browsers', 'smart-cookie-consent-manager' );
+			case 'visitors': // Queued by an older version.
+				return __( 'Found in visitors\' browsers', 'smart-cookie-consent-manager' );
 			case 'scan':
 				return __( 'Found by the cookie scan', 'smart-cookie-consent-manager' );
 			case 'admin_browser':

@@ -174,29 +174,6 @@ SCCM_Admin::form_open( 'settings' );
 			),
 			__( 'The scan looks for cookies and third-party services on your pages. Small websites (up to 40 pages) are scanned completely; bigger ones get more pages the bigger they are (100 pages → 55, 300 → 72, at most 80): every main page first, one item of each content type, then sub pages and sub-sub pages from every section in turn.', 'smart-cookie-consent-manager' )
 		);
-		SCCM_Admin::checkbox( 'scanner_client', __( 'Also learn from visitors', 'smart-cookie-consent-manager' ), $settings['scanner_client'], __( 'Catches cookies that only JavaScript sets, which a scan cannot see. Only cookie names are sent (never values), never from browsers of people who log in to this website (also after they logged out), and a cookie is listed only after several different visitors reported it, so your list stays short.', 'smart-cookie-consent-manager' ) );
-		SCCM_Admin::input(
-			'learn_visitors',
-			__( 'Different visitors needed', 'smart-cookie-consent-manager' ),
-			$settings['learn_visitors'],
-			'number',
-			__( 'How many different visitors must report a cookie before it is listed. 2 suits most websites; raise it on busy websites so only cookies many visitors have are listed. 1 is not recommended: then a single browser (or someone sending fake reports) is enough.', 'smart-cookie-consent-manager' ),
-			array(
-				'min' => 1,
-				'max' => 50,
-			)
-		);
-		SCCM_Admin::input(
-			'learn_days',
-			__( '…within (days)', 'smart-cookie-consent-manager' ),
-			$settings['learn_days'],
-			'number',
-			__( 'The reports must come within this many days. Use more days on quiet websites (few visitors), fewer on busy ones.', 'smart-cookie-consent-manager' ),
-			array(
-				'min' => 1,
-				'max' => 90,
-			)
-		);
 		SCCM_Admin::checkbox( 'alerts_enabled', __( 'Email about cookie changes', 'smart-cookie-consent-manager' ), $settings['alerts_enabled'], __( 'Once a day the plugin checks whether anything changed in the last 24 hours (cookies added to the banner, cookies waiting for review, new third-party services). Only then it sends one email; no changes, no email.', 'smart-cookie-consent-manager' ) );
 		SCCM_Admin::checkbox( 'report_enabled', __( 'Weekly consent report', 'smart-cookie-consent-manager' ), $settings['report_enabled'], __( 'Every Monday at the time below, the same recipients get a report of the last 7 days: how many visitors answered the banner, what they chose day by day, what they allowed, the last 8 weeks and the banner status. Needs "Keep a record of every choice" (Consent records).', 'smart-cookie-consent-manager' ) );
 		$sccm_hours = array();

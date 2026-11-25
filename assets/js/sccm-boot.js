@@ -60,10 +60,25 @@
 		var lifetimes = w.__sccmScanCookies = {};
 		try {
 			var desc = Object.getOwnPropertyDescriptor(w.Document.prototype, 'cookie');
+			// The page sees an empty cookie jar, as a first-time visitor's browser would: cookies the
+			// admin's browser already had are hidden from the page's scripts, so a script that sets
+			// a cookie only when it is missing writes it now, which proves it is the site's own.
+			var before = {};
+			String(desc.get.call(d) || '').split(';').forEach(function (part) {
+				var name = part.split('=')[0].trim();
+				if (name) {
+					before[name] = true;
+				}
+			});
 			Object.defineProperty(d, 'cookie', {
 				configurable: true,
 				get: function () {
-					return desc.get.call(d);
+					return String(desc.get.call(d) || '').split(';').filter(function (part) {
+						var name = part.split('=')[0].trim();
+						return name && (!before[name] || Object.prototype.hasOwnProperty.call(lifetimes, name));
+					}).map(function (part) {
+						return part.trim();
+					}).join('; ');
 				},
 				set: function (value) {
 					try {

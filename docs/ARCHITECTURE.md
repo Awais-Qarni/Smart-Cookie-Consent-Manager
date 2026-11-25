@@ -36,9 +36,7 @@ Browser
   7. Delete known cookies/localStorage of denied categories
   8. On a choice: write cookie → POST /wp-json/sccm/v1/consent → gtag update → release
      (if a previously granted category is withdrawn → clean up + reload)
-  9. Scanner: compare cookie names with the registry → POST /sccm/v1/report
-     (cookies only, never from logged-in users; the server lists a cookie only after
-     several different visitors reported it)
+  (Visitors' browsers report nothing: removed in 1.5.0, see "Only proof from the website".)
 ```
 
 ## Data
@@ -59,7 +57,6 @@ Browser
 |---|---|
 | Install | `sccm_consent` (and WooCommerce's cookies when active). Not the WordPress login cookies: only logged-in users have them. |
 | Server scan (cron / "Scan now") | Cookies in `Set-Cookie` headers of real pages (known → Active, unknown → Needs review), with their real lifetime (Max-Age / Expires → `record_lifetime()`, which only replaces a library value, an empty one or its own earlier measurement); for each service detected in the HTML, the cookies it always sets. |
-| Visitor reports | Known library cookies → Active at once. Unknown cookies → candidates in option `sccm_candidates`; listed as Needs review only after `SCCM_Cookies::min_visitors()` (setting `learn_visitors`, default 2) different visitors reported them within `learn_days` (default 14) days. |
 
 Guards: pending items are capped (`MAX_PENDING` = 50), ignored cookies are never re-added, a
 scan bumps the consent version at most once (never on the first scan), and approving needs an
@@ -93,47 +90,32 @@ Admin clicks "Scan now"  (assets/js/sccm-admin.js → browserScan)
 If a security header forbids framing the site, the scan reports it and the server scan result
 stands.
 
-**Cookies the admin's browser already had.** The frames share the admin's cookie jar, which
-also holds cookies of admin tools (e.g. NitroPack's dashboard, its Intercom support chat),
-other plugins and extensions. No list of such cookies could ever be complete, so the rule is
-proof, not names: before the first page opens, `runScan` notes the cookie names the browser
-has. A cookie counts as the website's when a scanned page writes it (scan mode wraps
-`document.cookie` and `cookieStore.set`), or when it was not there before (also covers cookies
-set by responses to the page's requests). The rest is sent as `unconfirmed` and settled at the
-end by `SCCM_Scanner::settle_unconfirmed()`:
-- "Learn from visitors" on: not listed. Real visitors' browsers report unknown cookie names,
-  so a cookie the website really sets — even one a script sets only when it is missing, which
-  the admin's browser already had — is listed after the usual number of visitors; admin-only
-  cookies never come back (see "Browsers of WordPress users" below).
-- "Learn from visitors" off: `SCCM_Cookies::record_unconfirmed()` puts them under Needs review
-  (even when the library knows them), marked "Only found in your browser" (option
-  `sccm_browser_only`).
-Server-set cookies are not affected: the server part requests pages without cookies, like a
-first-time visitor. Regression tests: admin e2e BU1–BU3.
-
-**Pages are built as for a logged-out visitor.** Scan mode needs the administrator (token +
-`manage_options`), but scripts that themes and plugins load only for logged-in users (admin
-bar tools, support chats, page builders) would write cookies visitors never get, and a known
-one would be listed at once. So `SCCM_Frontend::scan_as_visitor()` (on `setup_theme`, before
-the theme loads) decides scan mode first and then sets the current user to 0 for the rest of
-the page. The admin page reads the frame directly (same origin), so nothing in the frame needs
-the login. Regression test: admin e2e BU4.
-
-**Where a reported cookie was seen.** `store_report()` passes the report's page address to
-`SCCM_Cookies::note_page()` for cookies not listed yet: only the path, only this website's host,
-at most 3 per cookie (option `sccm_found_on`, keyed by the listed name). Shown in the change
-email and the Cookies tab, so a surprising finding can be traced to a page.
-
-**Browsers of WordPress users never report.** Plugins load support chats and analytics on
-their own admin pages (production 1.3.4: Intercom on NitroPack's settings page), and those
-cookies are saved for the whole domain and stay in the browser after logging out. Several staff
-browsers visiting the site logged out were "several visitors", so a known cookie such as
-`intercom-id-*` was added automatically. Sign of such a browser: `wp-settings-*`, which
-WordPress sets in the admin area and keeps for a year, also after logging out. The browser does
-not report when it has one (`reportUnknown()`), and `SCCM_REST::store_report()` ignores a
-report when `SCCM_REST::is_wordpress_user_browser()` (logged in, a valid login cookie — a REST
-request without a nonce has no current user —, or a `wp-settings-*` cookie) or when the report
-lists a `wp-settings-*` cookie. Regression tests: admin e2e SB1–SB4, WP-CLI "visitor reports".
+**Only proof from the website counts** (1.5.0). The browser that runs "Scan now" holds much more
+than the website: cookies of admin tools (e.g. a cache plugin's dashboard with its support chat),
+other plugins' dashboards and extensions, which can also add scripts to every page they open.
+Visitors' browsers are the same, which is why visitor reports were removed in 1.5.0 (they listed
+Intercom, Hotjar, `_gid`, Microsoft Ads and Clarity cookies the website never set). Proof is:
+- **Server scan:** `Set-Cookie` headers of pages fetched without cookies (a new visitor), and the
+  services a page's HTML loads (`analyse_html()`: script / iframe / stylesheet addresses, inline
+  snippets).
+- **Google Tag Manager:** for every `GTM-…` ID in a page the server reads the public container
+  (`analyse_gtm()`): library patterns in it (custom HTML and template code hold the service's
+  address) and Google tag IDs (`G-` Google Analytics 4, `AW-` Google Ads, `UA-` Universal
+  Analytics). A container that cannot be read is named in the report.
+  Both mark `$results['site_services']`; `SCCM_Scanner::proven()` is true for those and for
+  services without detection patterns (they run on the site itself: WordPress, WooCommerce, this
+  plugin).
+- **"Scan now", in the browser:** pages are built as for a logged-out visitor
+  (`scan_as_visitor()`), and in scan mode `sccm-boot.js` shows the page an **empty cookie jar**:
+  the `document.cookie` getter hides the cookies the browser already had unless the page writes
+  them, so a script that sets a cookie only when it is missing writes it too. A cookie counts
+  when a page wrote it or it appeared during the scan; a known service's cookie or file counts
+  only when the service is proven. Everything else is not listed and not queued for review:
+  unproven services go to `$results['not_loaded']` (shown in the scan report as "Not loaded by
+  your website", addable by hand), and cookies only in the admin's browser are counted for the
+  result message (`settle_unconfirmed()`).
+Regression tests: WP-CLI "proof: …", admin e2e BU1 (empty jar, admin-only cookies), BU2 (an
+extension adding Clarity and Microsoft Ads to every page), BU4 (admin-only chat).
 
 ## Scan plan (which pages, how many)
 

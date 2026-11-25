@@ -2,6 +2,30 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.5.1] - 2026-11-25
+### Fixed
+- Found by the first live scan with 1.5.0: GTranslate was named "Not loaded by your website", because its plugin loads the service from the site's own script (`/wp-content/plugins/gtranslate/js/float.js`), so no page names the service itself. A library service can now name its WordPress plugin; when that plugin is active, the website loads the service.
+
+## [1.5.0] - 2026-11-25
+### Changed
+- **Only what your website itself loads is listed.** Three times cookies were listed that the
+  website never sets: Intercom and Hotjar from other plugins' dashboards, Microsoft Advertising
+  (`_uetsid`, `_uetvid`) and Microsoft Clarity (`_clck`) from something in visitors' browsers
+  (for example an extension). They all came in the same way: a browser holds much more than the
+  website. Now only proof from the website counts:
+  - cookies your server sends to a new visitor;
+  - cookies your pages write during "Scan now" (pages now see an empty cookie jar there, so a
+    script that sets a cookie only when it is missing is found too);
+  - the cookies of services that a page or your **Google Tag Manager** container loads (the
+    scan now reads the container).
+  Cookies that are only in a browser are never listed, not even for review. A service seen in
+  your browser but not loaded by your website is named in the scan report under "Not loaded by
+  your website", and can be added by hand if your website does use it.
+### Removed
+- **Visitor scanning** ("Learn from visitors"): visitors' browsers no longer send cookie names,
+  the `/sccm/v1/report` endpoint and its settings are gone, and so are the "Seen on" pages
+  (1.4.4) and the "Only found in your browser" review items. Stored data is removed on update.
+
 ## [1.4.4] - 2026-11-16
 ### Added
 - **Where a cookie was seen.** When visitors' browsers report a cookie, the page they were on
