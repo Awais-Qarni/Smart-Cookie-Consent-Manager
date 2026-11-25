@@ -2,6 +2,10 @@
 
 All notable changes are listed here. Format: [Keep a Changelog](https://keepachangelog.com/).
 
+## [1.5.1] - 2026-11-25
+### Fixed
+- Found by the first live scan with 1.5.0: GTranslate was named "Not loaded by your website", because its plugin loads the service from the site's own script (`/wp-content/plugins/gtranslate/js/float.js`), so no page names the service itself. A library service can now name its WordPress plugin; when that plugin is active, the website loads the service.
+
 ## [1.5.0] - 2026-11-25
 ### Changed
 - **Only what your website itself loads is listed.** Three times cookies were listed that the

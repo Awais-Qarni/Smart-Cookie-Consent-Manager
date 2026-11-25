@@ -6,10 +6,12 @@
  *  - name, provider, category (necessary|functional|analytics|marketing)
  *  - google:   true if the service honours Google Consent Mode (skipped by the blocker in Advanced mode)
  *  - patterns: substrings matched against script src / iframe src / link href / inline script code
+ *  - plugins:  optional WordPress plugins ("folder/file.php") that load the service from their own
+ *              script; when one is active the website loads the service (see SCCM_Scanner::proven())
  *  - cookies:  list of array( name (supports * wildcard), duration, purpose, type = cookie|localStorage,
  *              only_if_seen = false, category = the service's )
  *              A cookie marked only_if_seen (5th value true) is only set in special cases (e.g. after an ad click).
- *              It is recognised and categorised when a scan or visitor reports it, but not listed just because
+ *              It is recognised and categorised when a scan sees it, but not listed just because
  *              the service was found. A 6th value gives one cookie its own category (e.g. a
  *              necessary service that also stores an optional preference).
  *
@@ -134,6 +136,7 @@ return array(
 		'provider' => 'GTranslate',
 		'category' => 'necessary',
 		'patterns' => array( 'cdn.gtranslate.net', 'gtranslate.net/widgets', 'translate.google.com/translate_a' ),
+		'plugins'  => array( 'gtranslate/gtranslate.php' ), // Loads the service from the site's own float.js.
 		'cookies'  => array(
 			array( '__GT_TRANSLATE_LANGS', __( 'No expiry date (stays until cleared)', 'smart-cookie-consent-manager' ), __( 'Stores the languages the website can be translated into.', 'smart-cookie-consent-manager' ), 'localStorage' ),
 			array( 'gt_autoswitch', __( 'No expiry date (stays until cleared)', 'smart-cookie-consent-manager' ), __( 'Remembers whether the language is chosen automatically from your browser.', 'smart-cookie-consent-manager' ), 'localStorage', false, 'functional' ),

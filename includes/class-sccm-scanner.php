@@ -866,8 +866,10 @@ class SCCM_Scanner {
 
 	/**
 	 * Whether the website itself loads a service: the server scan found it in a page or in the
-	 * Google Tag Manager container. Services without detection patterns (WordPress, WooCommerce,
-	 * this plugin…) run on the site itself and are always proven.
+	 * Google Tag Manager container, or the WordPress plugin that loads it from its own script is
+	 * active (library key "plugins", e.g. GTranslate: the page loads the plugin's float.js, which
+	 * then loads the service). Services without detection patterns (WordPress, WooCommerce, this
+	 * plugin…) run on the site itself and are always proven.
 	 *
 	 * @param string $key     Service id.
 	 * @param array  $results Scan results.
@@ -875,7 +877,14 @@ class SCCM_Scanner {
 	 */
 	public static function proven( $key, array $results ) {
 		$service = SCCM_Services::get( $key );
-		return ! $service || empty( $service['patterns'] ) || ! empty( $results['site_services'][ $key ] );
+		if ( ! $service || empty( $service['patterns'] ) || ! empty( $results['site_services'][ $key ] ) ) {
+			return true;
+		}
+		$active = (array) get_option( 'active_plugins', array() );
+		if ( is_multisite() ) {
+			$active = array_merge( $active, array_keys( (array) get_site_option( 'active_sitewide_plugins', array() ) ) );
+		}
+		return (bool) array_intersect( (array) ( $service['plugins'] ?? array() ), $active );
 	}
 
 	/**

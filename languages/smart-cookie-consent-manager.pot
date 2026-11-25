@@ -2,14 +2,14 @@
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: Smart Cookie Consent Manager 1.5.0\n"
+"Project-Id-Version: Smart Cookie Consent Manager 1.5.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/claude things\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-25T16:42:20+00:00\n"
+"POT-Creation-Date: 2026-11-25T18:30:22+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: smart-cookie-consent-manager\n"
@@ -752,7 +752,7 @@ msgid "Optional. Elements use the <code>sccm-</code> prefix, e.g. <code>#sccm-ba
 msgstr ""
 
 #: includes/admin/views/tab-cookies.php:24
-#: includes/class-sccm-scanner.php:1608
+#: includes/class-sccm-scanner.php:1617
 msgid "Cookie"
 msgstr ""
 
@@ -843,7 +843,7 @@ msgstr ""
 
 #: includes/admin/views/tab-cookies.php:80
 #: includes/admin/views/tab-help.php:304
-#: includes/class-sccm-scanner.php:1459
+#: includes/class-sccm-scanner.php:1468
 msgid "Needs review"
 msgstr ""
 
@@ -1036,7 +1036,7 @@ msgstr ""
 
 #: includes/admin/views/tab-cookies.php:335
 #: includes/admin/views/tab-dashboard.php:223
-#: includes/class-sccm-scanner.php:1481
+#: includes/class-sccm-scanner.php:1490
 msgid "Other third-party files"
 msgstr ""
 
@@ -2148,7 +2148,7 @@ msgid "Until the browser is closed"
 msgstr ""
 
 #: includes/admin/views/tab-settings.php:23
-#: includes/data/services.php:208
+#: includes/data/services.php:211
 msgid "1 week"
 msgstr ""
 
@@ -2157,23 +2157,23 @@ msgid "1 month"
 msgstr ""
 
 #: includes/admin/views/tab-settings.php:25
-#: includes/data/services.php:335
-#: includes/data/services.php:346
-#: includes/data/services.php:348
-#: includes/data/services.php:438
+#: includes/data/services.php:338
+#: includes/data/services.php:349
+#: includes/data/services.php:351
+#: includes/data/services.php:441
 msgid "3 months"
 msgstr ""
 
 #: includes/admin/views/tab-settings.php:26
-#: includes/data/services.php:77
-#: includes/data/services.php:197
-#: includes/data/services.php:237
-#: includes/data/services.php:360
-#: includes/data/services.php:408
-#: includes/data/services.php:409
-#: includes/data/services.php:447
-#: includes/data/services.php:457
-#: includes/data/services.php:458
+#: includes/data/services.php:79
+#: includes/data/services.php:200
+#: includes/data/services.php:240
+#: includes/data/services.php:363
+#: includes/data/services.php:411
+#: includes/data/services.php:412
+#: includes/data/services.php:450
+#: includes/data/services.php:460
+#: includes/data/services.php:461
 msgid "6 months"
 msgstr ""
 
@@ -2629,36 +2629,36 @@ msgstr ""
 
 #: includes/class-sccm-cookies.php:132
 #: includes/class-sccm-settings.php:143
-#: includes/data/services.php:29
-#: includes/data/services.php:38
-#: includes/data/services.php:51
-#: includes/data/services.php:106
-#: includes/data/services.php:116
-#: includes/data/services.php:164
-#: includes/data/services.php:173
-#: includes/data/services.php:184
-#: includes/data/services.php:298
-#: includes/data/services.php:318
+#: includes/data/services.php:31
+#: includes/data/services.php:40
+#: includes/data/services.php:53
+#: includes/data/services.php:108
+#: includes/data/services.php:118
+#: includes/data/services.php:167
+#: includes/data/services.php:176
+#: includes/data/services.php:187
+#: includes/data/services.php:301
+#: includes/data/services.php:321
 msgid "This website"
 msgstr ""
 
 #: includes/class-sccm-cookies.php:157
-#: includes/data/services.php:44
 #: includes/data/services.php:46
-#: includes/data/services.php:55
-#: includes/data/services.php:56
-#: includes/data/services.php:68
-#: includes/data/services.php:79
-#: includes/data/services.php:90
-#: includes/data/services.php:120
-#: includes/data/services.php:129
-#: includes/data/services.php:140
-#: includes/data/services.php:178
-#: includes/data/services.php:198
-#: includes/data/services.php:312
-#: includes/data/services.php:322
-#: includes/data/services.php:411
-#: includes/data/services.php:456
+#: includes/data/services.php:48
+#: includes/data/services.php:57
+#: includes/data/services.php:58
+#: includes/data/services.php:70
+#: includes/data/services.php:81
+#: includes/data/services.php:92
+#: includes/data/services.php:122
+#: includes/data/services.php:131
+#: includes/data/services.php:143
+#: includes/data/services.php:181
+#: includes/data/services.php:201
+#: includes/data/services.php:315
+#: includes/data/services.php:325
+#: includes/data/services.php:414
+#: includes/data/services.php:459
 msgid "Session"
 msgstr ""
 
@@ -2721,13 +2721,13 @@ msgid "since %1$s, %2$s"
 msgstr ""
 
 #: includes/class-sccm-install.php:131
-#: includes/data/services.php:78
-#: includes/data/services.php:110
-#: includes/data/services.php:138
-#: includes/data/services.php:139
-#: includes/data/services.php:218
-#: includes/data/services.php:459
-#: includes/data/services.php:460
+#: includes/data/services.php:80
+#: includes/data/services.php:112
+#: includes/data/services.php:141
+#: includes/data/services.php:142
+#: includes/data/services.php:221
+#: includes/data/services.php:462
+#: includes/data/services.php:463
 msgid "No expiry date (stays until cleared)"
 msgstr ""
 
@@ -2736,13 +2736,13 @@ msgid "The mail service did not answer in time."
 msgstr ""
 
 #: includes/class-sccm-report.php:217
-#: includes/class-sccm-scanner.php:1283
+#: includes/class-sccm-scanner.php:1292
 msgid "WordPress could not send the email (wp_mail returned false)."
 msgstr ""
 
 #. translators: %s: email addresses
 #: includes/class-sccm-report.php:232
-#: includes/class-sccm-scanner.php:1285
+#: includes/class-sccm-scanner.php:1294
 #, php-format
 msgid "Not sent to: %s."
 msgstr ""
@@ -2771,7 +2771,7 @@ msgstr ""
 
 #. translators: 1: website address, 2: email address
 #: includes/class-sccm-report.php:403
-#: includes/class-sccm-scanner.php:1557
+#: includes/class-sccm-scanner.php:1566
 #, php-format
 msgid "Sent by Smart Cookie Consent Manager on %1$s to %2$s."
 msgstr ""
@@ -3116,17 +3116,17 @@ msgid "Google Fonts are loaded from inside CSS (e.g. an @import or a combined st
 msgstr ""
 
 #. translators: %s: container ID
-#: includes/class-sccm-scanner.php:915
+#: includes/class-sccm-scanner.php:924
 #, php-format
 msgid "The Google Tag Manager container %s could not be read, so services loaded only through it may be missing. Run the scan again later."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1281
+#: includes/class-sccm-scanner.php:1290
 msgid "No valid email address."
 msgstr ""
 
 #. translators: 1: site name, 2: number of cookies
-#: includes/class-sccm-scanner.php:1365
+#: includes/class-sccm-scanner.php:1374
 #, php-format
 msgid "[%1$s] %2$d new cookie needs review"
 msgid_plural "[%1$s] %2$d new cookies need review"
@@ -3134,7 +3134,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: site name, 2: number of cookies
-#: includes/class-sccm-scanner.php:1368
+#: includes/class-sccm-scanner.php:1377
 #, php-format
 msgid "[%1$s] %2$d cookie was added to your cookie banner"
 msgid_plural "[%1$s] %2$d cookies were added to your cookie banner"
@@ -3142,7 +3142,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: site name, 2: number of files
-#: includes/class-sccm-scanner.php:1371
+#: includes/class-sccm-scanner.php:1380
 #, php-format
 msgid "[%1$s] %2$d new third-party file found"
 msgid_plural "[%1$s] %2$d new third-party files found"
@@ -3150,102 +3150,102 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %s: subject
-#: includes/class-sccm-scanner.php:1375
+#: includes/class-sccm-scanner.php:1384
 #, php-format
 msgid "Sample: %s"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1429
-#: includes/class-sccm-scanner.php:1493
+#: includes/class-sccm-scanner.php:1438
+#: includes/class-sccm-scanner.php:1502
 msgid "Cookie changes in the last 24 hours"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1442
+#: includes/class-sccm-scanner.php:1451
 msgid "needs review"
 msgid_plural "need review"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-sccm-scanner.php:1443
+#: includes/class-sccm-scanner.php:1452
 msgid "added automatically"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1446
+#: includes/class-sccm-scanner.php:1455
 msgid "new third-party file"
 msgid_plural "new third-party files"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-sccm-scanner.php:1459
+#: includes/class-sccm-scanner.php:1468
 msgid "We could not tell what these cookies are for. Someone who manages the website should choose a category for each one in WordPress under Compliance → Cookies. Until then they are not shown to visitors."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1468
+#: includes/class-sccm-scanner.php:1477
 msgid "Added automatically"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1468
+#: includes/class-sccm-scanner.php:1477
 msgid "These are well-known cookies. They were put in the right category for you. Nothing to do unless you disagree."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1481
+#: includes/class-sccm-scanner.php:1490
 msgid "Scripts, frames or stylesheets from other websites that are not in the service library, so they are not blocked. The full addresses are in WordPress under Compliance → Cookies → Scan report (details) → Other third-party files. If one of them tracks visitors, add a blocking rule under Compliance → Settings → Blocking and Google → Your own blocking rules."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1498
+#: includes/class-sccm-scanner.php:1507
 msgid "NEEDS REVIEW"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1499
+#: includes/class-sccm-scanner.php:1508
 msgid "Someone who manages the website should choose a category for each one in WordPress under Compliance → Cookies. Until then visitors do not see them."
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1506
+#: includes/class-sccm-scanner.php:1515
 msgid "ADDED AUTOMATICALLY"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1513
+#: includes/class-sccm-scanner.php:1522
 msgid "OTHER THIRD-PARTY FILES (not blocked)"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1514
+#: includes/class-sccm-scanner.php:1523
 msgid "Full addresses: WordPress → Compliance → Cookies → Scan report (details) → Other third-party files."
 msgstr ""
 
 #. translators: %s: website address
-#: includes/class-sccm-scanner.php:1559
+#: includes/class-sccm-scanner.php:1568
 #, php-format
 msgid "Sent by Smart Cookie Consent Manager on %s."
 msgstr ""
 
 #. translators: %s: time of day
-#: includes/class-sccm-scanner.php:1561
+#: includes/class-sccm-scanner.php:1570
 #, php-format
 msgid "This email is sent once a day at %s, only when something changed. The website's administrator can change this in WordPress under Compliance → Settings."
 msgstr ""
 
 #. translators: 1: number of cookies, 2: count per category, e.g. "Necessary 3 · Statistics 2"
-#: includes/class-sccm-scanner.php:1576
+#: includes/class-sccm-scanner.php:1585
 #, php-format
 msgid "Your cookie banner now lists %1$d cookie (%2$s)."
 msgid_plural "Your cookie banner now lists %1$d cookies (%2$s)."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-sccm-scanner.php:1631
+#: includes/class-sccm-scanner.php:1640
 msgid "Found in visitors' browsers"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1633
+#: includes/class-sccm-scanner.php:1642
 msgid "Found by the cookie scan"
 msgstr ""
 
-#: includes/class-sccm-scanner.php:1635
+#: includes/class-sccm-scanner.php:1644
 msgid "Found only in your browser during \"Scan now\""
 msgstr ""
 
 #. translators: %d: number of items
-#: includes/class-sccm-scanner.php:1663
+#: includes/class-sccm-scanner.php:1672
 #, php-format
 msgid "…and %d more. See the full list in the plugin."
 msgstr ""
@@ -3396,418 +3396,418 @@ msgstr ""
 msgid "Cookie list last updated: %s"
 msgstr ""
 
-#: includes/data/services.php:33
-#: includes/data/services.php:45
-#: includes/data/services.php:67
-#: includes/data/services.php:100
-#: includes/data/services.php:168
-#: includes/data/services.php:188
-#: includes/data/services.php:280
-#: includes/data/services.php:282
+#: includes/data/services.php:35
+#: includes/data/services.php:47
+#: includes/data/services.php:69
+#: includes/data/services.php:102
+#: includes/data/services.php:171
+#: includes/data/services.php:191
 #: includes/data/services.php:283
-#: includes/data/services.php:292
-#: includes/data/services.php:336
-#: includes/data/services.php:358
-#: includes/data/services.php:399
+#: includes/data/services.php:285
+#: includes/data/services.php:286
+#: includes/data/services.php:295
+#: includes/data/services.php:339
+#: includes/data/services.php:361
+#: includes/data/services.php:402
 msgid "1 year"
 msgstr ""
 
-#: includes/data/services.php:33
+#: includes/data/services.php:35
 msgid "Stores your cookie consent choice."
 msgstr ""
 
-#: includes/data/services.php:42
-#: includes/data/services.php:43
+#: includes/data/services.php:44
+#: includes/data/services.php:45
 msgid "Session / 14 days"
 msgstr ""
 
-#: includes/data/services.php:42
+#: includes/data/services.php:44
 msgid "Keeps logged-in users signed in."
 msgstr ""
 
-#: includes/data/services.php:43
+#: includes/data/services.php:45
 msgid "Secures the login session."
 msgstr ""
 
-#: includes/data/services.php:44
+#: includes/data/services.php:46
 msgid "Checks whether the browser accepts cookies."
 msgstr ""
 
-#: includes/data/services.php:45
+#: includes/data/services.php:47
 msgid "Stores dashboard preferences of logged-in users."
 msgstr ""
 
-#: includes/data/services.php:46
+#: includes/data/services.php:48
 msgid "Remembers the language chosen on the login screen."
 msgstr ""
 
-#: includes/data/services.php:55
+#: includes/data/services.php:57
 msgid "Tracks changes to the shopping cart."
 msgstr ""
 
-#: includes/data/services.php:56
+#: includes/data/services.php:58
 msgid "Knows whether the cart has items."
 msgstr ""
 
-#: includes/data/services.php:57
+#: includes/data/services.php:59
 msgid "2 days"
 msgstr ""
 
-#: includes/data/services.php:57
+#: includes/data/services.php:59
 msgid "Keeps the shopping session."
 msgstr ""
 
-#: includes/data/services.php:66
-#: includes/data/services.php:89
-#: includes/data/services.php:101
-#: includes/data/services.php:293
-#: includes/data/services.php:303
-#: includes/data/services.php:410
+#: includes/data/services.php:68
+#: includes/data/services.php:91
+#: includes/data/services.php:103
+#: includes/data/services.php:296
+#: includes/data/services.php:306
+#: includes/data/services.php:413
 msgid "30 minutes"
 msgstr ""
 
-#: includes/data/services.php:66
+#: includes/data/services.php:68
 msgid "Bot protection."
 msgstr ""
 
-#: includes/data/services.php:67
+#: includes/data/services.php:69
 msgid "Proves a security challenge was passed."
 msgstr ""
 
-#: includes/data/services.php:68
+#: includes/data/services.php:70
 msgid "Rate limiting and bot protection (Cloudflare)."
 msgstr ""
 
-#: includes/data/services.php:77
+#: includes/data/services.php:79
 msgid "Protects forms against spam and abuse."
 msgstr ""
 
-#: includes/data/services.php:78
-#: includes/data/services.php:79
+#: includes/data/services.php:80
+#: includes/data/services.php:81
 msgid "Distinguishes humans from bots to protect forms."
 msgstr ""
 
-#: includes/data/services.php:89
+#: includes/data/services.php:91
 msgid "Distinguishes humans from bots (Cloudflare, used by Calendly)."
 msgstr ""
 
-#: includes/data/services.php:90
+#: includes/data/services.php:92
 msgid "Rate limiting and bot protection (Cloudflare, used by Calendly)."
 msgstr ""
 
-#: includes/data/services.php:91
+#: includes/data/services.php:93
 msgid "21 days"
 msgstr ""
 
-#: includes/data/services.php:91
+#: includes/data/services.php:93
 msgid "Keeps the Calendly booking session working."
 msgstr ""
 
-#: includes/data/services.php:100
-#: includes/data/services.php:101
+#: includes/data/services.php:102
+#: includes/data/services.php:103
 msgid "Fraud prevention for card payments."
 msgstr ""
 
-#: includes/data/services.php:110
+#: includes/data/services.php:112
 msgid "Stores page layout state for this website (Elementor page builder)."
 msgstr ""
 
-#: includes/data/services.php:115
+#: includes/data/services.php:117
 msgid "PHP session"
 msgstr ""
 
-#: includes/data/services.php:120
+#: includes/data/services.php:122
 msgid "Keeps your session on this website (for example forms and logins)."
 msgstr ""
 
-#: includes/data/services.php:129
+#: includes/data/services.php:131
 msgid "Shows whether the page was served from the speed-up cache. Contains no personal data."
 msgstr ""
 
-#: includes/data/services.php:138
+#: includes/data/services.php:141
 msgid "Stores the languages the website can be translated into."
 msgstr ""
 
-#: includes/data/services.php:139
+#: includes/data/services.php:142
 msgid "Remembers whether the language is chosen automatically from your browser."
 msgstr ""
 
-#: includes/data/services.php:140
+#: includes/data/services.php:143
 msgid "Remembers the language you chose."
 msgstr ""
 
-#: includes/data/services.php:159
-#: includes/data/services.php:227
-#: includes/data/services.php:228
-#: includes/data/services.php:258
-#: includes/data/services.php:259
-#: includes/data/services.php:269
-#: includes/data/services.php:347
-#: includes/data/services.php:390
-#: includes/data/services.php:420
+#: includes/data/services.php:162
+#: includes/data/services.php:230
+#: includes/data/services.php:231
+#: includes/data/services.php:261
+#: includes/data/services.php:262
+#: includes/data/services.php:272
+#: includes/data/services.php:350
+#: includes/data/services.php:393
+#: includes/data/services.php:423
 msgid "2 years"
 msgstr ""
 
-#: includes/data/services.php:159
+#: includes/data/services.php:162
 msgid "Collects statistics about the Vimeo videos you watch."
 msgstr ""
 
-#: includes/data/services.php:168
-#: includes/data/services.php:177
-#: includes/data/services.php:179
+#: includes/data/services.php:171
+#: includes/data/services.php:180
+#: includes/data/services.php:182
 msgid "Remembers the selected language."
 msgstr ""
 
-#: includes/data/services.php:177
-#: includes/data/services.php:179
-#: includes/data/services.php:281
-#: includes/data/services.php:337
-#: includes/data/services.php:359
-#: includes/data/services.php:380
+#: includes/data/services.php:180
+#: includes/data/services.php:182
+#: includes/data/services.php:284
+#: includes/data/services.php:340
+#: includes/data/services.php:362
+#: includes/data/services.php:383
 msgid "1 day"
 msgstr ""
 
-#: includes/data/services.php:178
+#: includes/data/services.php:181
 msgid "Checks whether cookies work, for the language redirect."
 msgstr ""
 
-#: includes/data/services.php:183
+#: includes/data/services.php:186
 msgid "WordPress comments"
 msgstr ""
 
-#: includes/data/services.php:188
+#: includes/data/services.php:191
 msgid "Remembers your name and email for the comment form (only if you ask it to)."
 msgstr ""
 
-#: includes/data/services.php:197
+#: includes/data/services.php:200
 msgid "Identifies the live chat visitor."
 msgstr ""
 
-#: includes/data/services.php:198
+#: includes/data/services.php:201
 msgid "Keeps the live chat connection."
 msgstr ""
 
-#: includes/data/services.php:207
-#: includes/data/services.php:209
+#: includes/data/services.php:210
+#: includes/data/services.php:212
 msgid "9 months"
 msgstr ""
 
-#: includes/data/services.php:207
-#: includes/data/services.php:227
+#: includes/data/services.php:210
+#: includes/data/services.php:230
 msgid "Identifies the chat visitor."
 msgstr ""
 
-#: includes/data/services.php:208
-#: includes/data/services.php:228
+#: includes/data/services.php:211
+#: includes/data/services.php:231
 msgid "Keeps the chat session."
 msgstr ""
 
-#: includes/data/services.php:209
+#: includes/data/services.php:212
 msgid "Recognises the device so the chat can show earlier conversations."
 msgstr ""
 
-#: includes/data/services.php:218
+#: includes/data/services.php:221
 msgid "Keeps the live chat conversation."
 msgstr ""
 
-#: includes/data/services.php:237
+#: includes/data/services.php:240
 msgid "Keeps the live chat session."
 msgstr ""
 
-#: includes/data/services.php:258
-#: includes/data/services.php:269
+#: includes/data/services.php:261
+#: includes/data/services.php:272
 msgid "Distinguishes unique visitors."
 msgstr ""
 
-#: includes/data/services.php:259
+#: includes/data/services.php:262
 msgid "Keeps the session state."
 msgstr ""
 
-#: includes/data/services.php:270
+#: includes/data/services.php:273
 msgid "24 hours"
 msgstr ""
 
-#: includes/data/services.php:270
+#: includes/data/services.php:273
 msgid "Distinguishes visitors."
 msgstr ""
 
-#: includes/data/services.php:271
+#: includes/data/services.php:274
 msgid "1 minute"
 msgstr ""
 
-#: includes/data/services.php:271
+#: includes/data/services.php:274
 msgid "Limits the request rate."
 msgstr ""
 
-#: includes/data/services.php:280
+#: includes/data/services.php:283
 msgid "Stores the Clarity user ID."
 msgstr ""
 
-#: includes/data/services.php:281
+#: includes/data/services.php:284
 msgid "Connects page views into one session recording."
 msgstr ""
 
-#: includes/data/services.php:282
+#: includes/data/services.php:285
 msgid "Identifies the first time Clarity saw this browser."
 msgstr ""
 
-#: includes/data/services.php:283
+#: includes/data/services.php:286
 msgid "Microsoft user ID, used for analytics and ads."
 msgstr ""
 
-#: includes/data/services.php:292
+#: includes/data/services.php:295
 msgid "Stores a unique user ID."
 msgstr ""
 
-#: includes/data/services.php:293
+#: includes/data/services.php:296
 msgid "Holds current session data."
 msgstr ""
 
-#: includes/data/services.php:302
-#: includes/data/services.php:371
-#: includes/data/services.php:381
-#: includes/data/services.php:429
+#: includes/data/services.php:305
+#: includes/data/services.php:374
+#: includes/data/services.php:384
+#: includes/data/services.php:432
 msgid "13 months"
 msgstr ""
 
-#: includes/data/services.php:302
+#: includes/data/services.php:305
 msgid "Stores a unique visitor ID."
 msgstr ""
 
-#: includes/data/services.php:303
+#: includes/data/services.php:306
 msgid "Holds session data."
 msgstr ""
 
-#: includes/data/services.php:312
+#: includes/data/services.php:315
 msgid "Stores an anonymous visitor ID for statistics."
 msgstr ""
 
-#: includes/data/services.php:322
+#: includes/data/services.php:325
 msgid "Remembers how you arrived at the shop, to see which channels lead to orders."
 msgstr ""
 
-#: includes/data/services.php:335
+#: includes/data/services.php:338
 msgid "Stores ad-click information to measure conversions."
 msgstr ""
 
-#: includes/data/services.php:336
+#: includes/data/services.php:339
 msgid "Used by Google DoubleClick to show and measure ads."
 msgstr ""
 
-#: includes/data/services.php:337
+#: includes/data/services.php:340
 msgid "Checks whether your browser accepts cookies (Google DoubleClick)."
 msgstr ""
 
-#: includes/data/services.php:346
+#: includes/data/services.php:349
 msgid "Identifies browsers for advertising and analytics."
 msgstr ""
 
-#: includes/data/services.php:347
+#: includes/data/services.php:350
 msgid "Stores the last ad click."
 msgstr ""
 
-#: includes/data/services.php:348
+#: includes/data/services.php:351
 msgid "Used by Meta to deliver, measure and improve the relevance of ads."
 msgstr ""
 
-#: includes/data/services.php:357
-#: includes/data/services.php:361
-#: includes/data/services.php:362
+#: includes/data/services.php:360
+#: includes/data/services.php:364
+#: includes/data/services.php:365
 msgid "30 days"
 msgstr ""
 
-#: includes/data/services.php:357
+#: includes/data/services.php:360
 msgid "Measures LinkedIn ad conversions."
 msgstr ""
 
-#: includes/data/services.php:358
+#: includes/data/services.php:361
 msgid "LinkedIn browser identifier, used for ads and security."
 msgstr ""
 
-#: includes/data/services.php:359
+#: includes/data/services.php:362
 msgid "Selects the LinkedIn data centre."
 msgstr ""
 
-#: includes/data/services.php:360
+#: includes/data/services.php:363
 msgid "Stores your cookie choices for LinkedIn."
 msgstr ""
 
-#: includes/data/services.php:361
+#: includes/data/services.php:364
 msgid "Syncs LinkedIn ad IDs."
 msgstr ""
 
-#: includes/data/services.php:362
+#: includes/data/services.php:365
 msgid "Stores when LinkedIn last synced ad data."
 msgstr ""
 
-#: includes/data/services.php:371
+#: includes/data/services.php:374
 msgid "Measures TikTok ad performance."
 msgstr ""
 
-#: includes/data/services.php:380
+#: includes/data/services.php:383
 msgid "Measures Microsoft Ads conversions."
 msgstr ""
 
-#: includes/data/services.php:381
+#: includes/data/services.php:384
 msgid "Identifies returning visitors for Microsoft Ads."
 msgstr ""
 
-#: includes/data/services.php:390
+#: includes/data/services.php:393
 msgid "Measures X ad conversions."
 msgstr ""
 
-#: includes/data/services.php:399
+#: includes/data/services.php:402
 msgid "Measures Pinterest ad conversions."
 msgstr ""
 
-#: includes/data/services.php:408
+#: includes/data/services.php:411
 msgid "Tracks visitors for marketing."
 msgstr ""
 
-#: includes/data/services.php:409
+#: includes/data/services.php:412
 msgid "Identifies the visitor for HubSpot forms and marketing."
 msgstr ""
 
-#: includes/data/services.php:410
+#: includes/data/services.php:413
 msgid "Tracks sessions."
 msgstr ""
 
-#: includes/data/services.php:411
+#: includes/data/services.php:414
 msgid "Detects a new browser session."
 msgstr ""
 
-#: includes/data/services.php:420
+#: includes/data/services.php:423
 msgid "Identifies the visitor for email marketing."
 msgstr ""
 
-#: includes/data/services.php:429
+#: includes/data/services.php:432
 msgid "Measures Snapchat ad performance."
 msgstr ""
 
-#: includes/data/services.php:438
+#: includes/data/services.php:441
 msgid "Measures Reddit ad performance."
 msgstr ""
 
-#: includes/data/services.php:447
+#: includes/data/services.php:450
 msgid "Remembers your Google preferences and is used for personalised ads."
 msgstr ""
 
-#: includes/data/services.php:456
+#: includes/data/services.php:459
 msgid "Registers a unique ID to keep statistics of which YouTube videos you have seen."
 msgstr ""
 
-#: includes/data/services.php:457
+#: includes/data/services.php:460
 msgid "Estimates your bandwidth on pages with embedded YouTube videos."
 msgstr ""
 
-#: includes/data/services.php:458
+#: includes/data/services.php:461
 msgid "Stores your cookie choices for YouTube."
 msgstr ""
 
-#: includes/data/services.php:459
+#: includes/data/services.php:462
 msgid "Stores your YouTube video player preferences."
 msgstr ""
 
-#: includes/data/services.php:460
+#: includes/data/services.php:463
 msgid "Stores the last YouTube search or video for the embedded player."
 msgstr ""

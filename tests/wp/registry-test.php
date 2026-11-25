@@ -102,6 +102,12 @@ SCCM_Scanner::analyse_html( '<script>/* GTM-DOWN1 */</script>', 'example.test', 
 sccm_check( 'proof: a container that cannot be read is named in the report (run the scan again)', ! empty( $sccm_res4['notes']['gtm_GTM-DOWN1'] ) );
 remove_filter( 'pre_http_request', $sccm_gtm, 10 );
 sccm_check( 'proof: services that run on the site itself (no third-party file) are always proven', SCCM_Scanner::proven( 'sccm', array() ) );
+// Production 1.5.0: GTranslate loads its service from the site's own float.js, so no page names it.
+$sccm_plugins = get_option( 'active_plugins', array() );
+update_option( 'active_plugins', array_merge( (array) $sccm_plugins, array( 'gtranslate/gtranslate.php' ) ) );
+sccm_check( 'proof: a service whose WordPress plugin is active counts as loaded by the website (GTranslate)', SCCM_Scanner::proven( 'gtranslate', array() ) );
+update_option( 'active_plugins', $sccm_plugins );
+sccm_check( 'proof: without that plugin it does not', ! SCCM_Scanner::proven( 'gtranslate', array() ) );
 $wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE service <> 'sccm'" ); // phpcs:ignore
 delete_option( 'sccm_pending_alert' );
 delete_option( SCCM_Scanner::RESULT_OPTION );
