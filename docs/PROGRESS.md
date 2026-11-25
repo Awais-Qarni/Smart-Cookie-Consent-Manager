@@ -7,7 +7,7 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.5.1 (1.5.0 is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.5.1 (1.5.1 is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); 1.3.0 admin redesign after production feedback
 - **Last updated:** 2026-11-25 (session 16)
@@ -32,7 +32,7 @@ their data). Added proof: `site_services` from the server scan (`add_service_hit
 "Not loaded by your website"), empty cookie jar in scan mode (`sccm-boot.js` getter). Tests:
 unit 33, WP-CLI 256, visitor e2e 116, admin e2e 130 (MySQL 8.4).
 
-**Live test (1.5.0 deployed):** "Scan now" on prima.systems, 63 pages: nothing added, nothing for review, 3 cookies only in the admin browser not listed, but GTranslate named "not loaded" (its plugin loads the service from the site's own float.js). **1.5.1:** library key `plugins` (GTranslate: `gtranslate/gtranslate.php`); `proven()` is true when one is active. WP-CLI 256.
+**Live test (1.5.0 deployed):** "Scan now" on prima.systems, 63 pages: nothing added, nothing for review, 3 cookies only in the admin browser not listed, but GTranslate named "not loaded" (its plugin loads the service from the site's own float.js). **1.5.1:** library key `plugins` (GTranslate: `gtranslate/gtranslate.php`); `proven()` is true when one is active. WP-CLI 256. **Live test (1.5.1 deployed):** "Scan now", 63 pages: nothing added, nothing for review, 3 admin-browser cookies not listed, GTranslate no longer named "not loaded".
 
 **Next:** none open; watch the next change emails.
 
