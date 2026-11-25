@@ -30,19 +30,8 @@ function sccm_names( $status = 'pending' ) {
 	return array_column( SCCM_Cookies::query( array( 'status' => $status ) ), 'name' );
 }
 
-function sccm_as_visitor( $ip, $name, $type = 'cookie' ) {
-	$filter = function () use ( $ip ) {
-		return $ip;
-	};
-	add_filter( 'sccm_client_ip', $filter );
-	$result = SCCM_Cookies::record_seen( $name, $type, 'visitor' );
-	remove_filter( 'sccm_client_ip', $filter );
-	return $result;
-}
-
 // Start clean: only the plugin's own cookie, no candidates, settings at defaults.
 $wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE service <> 'sccm'" );
-delete_option( 'sccm_candidates' );
 delete_option( 'sccm_pending_alert' );
 SCCM_Settings::update( SCCM_Settings::defaults() );
 SCCM_Cookies::all_rows();
@@ -59,37 +48,64 @@ sccm_check( 'category keys (Consent Mode mapping) are unchanged', array( 'necess
 
 sccm_check( 'a fresh list holds only the plugin cookie (no WordPress login cookies)', array( 'sccm_consent' ) === sccm_names( 'active' ), implode( ',', sccm_names( 'active' ) ) );
 
-/* ---------------------------------------------------------------- Visitor reports */
+/* ---------------------------------------------------------------- Only the scan lists cookies (no visitor reports) */
 
-sccm_check( 'unknown cookie from ONE visitor is not listed', '' === sccm_as_visitor( '203.0.113.1', 'mystery_cookie' ) && ! in_array( 'mystery_cookie', sccm_names(), true ) );
-sccm_check( 'the same visitor reporting again still does not list it', '' === sccm_as_visitor( '203.0.113.1', 'mystery_cookie' ) && ! in_array( 'mystery_cookie', sccm_names(), true ) );
-sccm_check( 'a SECOND different visitor lists it as pending', 'pending' === sccm_as_visitor( '203.0.113.2', 'mystery_cookie' ) && in_array( 'mystery_cookie', sccm_names(), true ) );
-$v_before = (int) get_option( 'sccm_consent_version' );
-SCCM_Settings::update( array( 'reask_on_change' => 1 ) );
-sccm_check( 'a known library cookie reported by ONE visitor is not listed (fake reports cannot add services)', '' === sccm_as_visitor( '203.0.113.1', '_hjSession_998877' ) && ! SCCM_Cookies::find_matching( '_hjSession_998877' ) );
-sccm_check( 'a SECOND visitor lists it at once in the right category', 'active' === sccm_as_visitor( '203.0.113.2', '_hjSession_998877' ) && 'analytics' === SCCM_Cookies::find_matching( '_hjSession_998877' )['category'] );
-sccm_check( 'a cookie added from visitor reports does not ask everyone again (no consent version change)', $v_before === (int) get_option( 'sccm_consent_version' ) );
-sccm_as_visitor( '203.0.113.1', '_fbc' );
-sccm_check( 'a conditional library cookie (_fbc) is categorised when seen', 'active' === sccm_as_visitor( '203.0.113.2', '_fbc' ) && 'marketing' === SCCM_Cookies::find_matching( '_fbc' )['category'] );
-
-// Local storage never gets in, through the REST endpoint.
-$request = new WP_REST_Request( 'POST', '/sccm/v1/report' );
-$request->set_header( 'content-type', 'application/json' );
-$request->set_body( wp_json_encode( array( 'items' => array( array( 'n' => 'ls_key_a', 't' => 'localStorage' ), array( 'n' => 'ls_key_b', 't' => 'localStorage' ) ) ) ) );
-rest_do_request( $request );
-$request2 = new WP_REST_Request( 'POST', '/sccm/v1/report' );
-$request2->set_header( 'content-type', 'application/json' );
-$request2->set_body( wp_json_encode( array( 'items' => array( array( 'n' => 'ls_key_a', 't' => 'localStorage' ) ) ) ) );
-rest_do_request( $request2 );
-sccm_check( 'local storage keys are never listed', ! in_array( 'ls_key_a', sccm_names(), true ) && ! in_array( 'ls_key_a', sccm_names( 'active' ), true ) );
+sccm_check( 'visitor reporting is gone: no /sccm/v1/report route', 404 === rest_do_request( new WP_REST_Request( 'POST', '/sccm/v1/report' ) )->get_status() );
+sccm_check( 'visitor reporting is gone: no admin-ajax action, no report address or scanner flag in the page config', ! has_action( 'wp_ajax_nopriv_sccm_report' ) && ! isset( SCCM_Frontend::config()['rest']['report'] ) && ! isset( SCCM_Frontend::config()['scan'] ) && ! isset( SCCM_Frontend::config()['known'] ) );
+sccm_check( 'visitor reporting is gone: its settings are not stored', ! array_key_exists( 'scanner_client', SCCM_Settings::defaults() ) && ! array_key_exists( 'learn_visitors', SCCM_Settings::defaults() ) );
+sccm_check( 'the scan lists an unknown cookie for review', 'pending' === SCCM_Cookies::record_seen( 'mystery_cookie', 'cookie', 'scanner' ) && in_array( 'mystery_cookie', sccm_names(), true ) );
+sccm_check( 'the scan lists a known library cookie at once in the right category', 'active' === SCCM_Cookies::record_seen( '_fbc', 'cookie', 'scanner' ) && 'marketing' === SCCM_Cookies::find_matching( '_fbc' )['category'] );
 
 // Ignored cookies do not come back.
 $row = SCCM_Cookies::find_matching( 'mystery_cookie' );
 SCCM_Cookies::save( array( 'status' => 'ignored' ), $row['id'] );
-sccm_as_visitor( '203.0.113.3', 'mystery_cookie' );
-sccm_as_visitor( '203.0.113.4', 'mystery_cookie' );
-sccm_check( 'an ignored cookie is not reported again', ! in_array( 'mystery_cookie', sccm_names(), true ) && in_array( 'mystery_cookie', sccm_names( 'ignored' ), true ) );
+SCCM_Cookies::record_seen( 'mystery_cookie', 'cookie', 'scanner' );
+sccm_check( 'an ignored cookie is not listed again by the next scan', ! in_array( 'mystery_cookie', sccm_names(), true ) && in_array( 'mystery_cookie', sccm_names( 'ignored' ), true ) );
 
+/* ---------------------------------------------------------------- Proof: only services the website loads */
+
+// Production 1.2–1.4: Intercom, Hotjar, _gid, Microsoft Ads (_uetsid/_uetvid) and Clarity (_clck) were
+// listed from browsers (admin dashboards, extensions) although the website never loads them.
+$wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE service <> 'sccm'" ); // phpcs:ignore
+$sccm_base = array( 'time' => time(), 'pages' => array(), 'services' => array(), 'site_services' => array(), 'unclassified' => array(), 'cookies' => array(), 'notes' => array() );
+update_option( SCCM_Scanner::RESULT_OPTION, $sccm_base, false );
+$sccm_token = array( 'first' => 1, 'counts' => SCCM_Cookies::counts() );
+SCCM_Scanner::record_browser_scan( array( 'cookies' => array( '_clck', '_uetsid', '_uetvid', 'intercom-id-abc', '_hjSession_1', 'page_own_cookie' ), 'resources' => array( 'https://www.clarity.ms/tag/abc', 'https://bat.bing.com/bat.js' ), 'pages' => 1 ), $sccm_token, 'proof1' );
+$sccm_res = get_option( SCCM_Scanner::RESULT_OPTION );
+sccm_check( 'proof: cookies of services the website does not load are not listed (extension / tool in the browser)', ! SCCM_Cookies::find_matching( '_clck' ) && ! SCCM_Cookies::find_matching( '_uetsid' ) && ! SCCM_Cookies::find_matching( 'intercom-id-abc' ) && ! SCCM_Cookies::find_matching( '_hjSession_1' ), implode( ',', sccm_names( 'active' ) ) );
+sccm_check( 'proof: their files do not make the service count either', empty( $sccm_res['services']['microsoft-clarity'] ) && empty( $sccm_res['services']['microsoft-ads'] ?? null ) && empty( $sccm_res['site_services'] ) );
+sccm_check( 'proof: the scan report names them as "not loaded by your website"', isset( $sccm_res['not_loaded']['microsoft-clarity'] ) && in_array( '_clck', $sccm_res['not_loaded']['microsoft-clarity']['items'], true ), wp_json_encode( array_keys( (array) ( $sccm_res['not_loaded'] ?? array() ) ) ) );
+sccm_check( 'proof: an unknown cookie a scanned page writes still waits for review', in_array( 'page_own_cookie', sccm_names(), true ) );
+sccm_check( 'proof: nothing goes to the change email for them', ! array_filter( (array) get_option( 'sccm_pending_alert', array() ), function ( $q ) { return in_array( $q['name'], array( '_clck', '_uetsid', '_uetvid', 'intercom-id-*', '_hjSession_*' ), true ); } ) );
+// The website loads Clarity in a page: then its cookie is listed.
+$sccm_res2 = $sccm_base;
+SCCM_Scanner::analyse_html( '<html><head><script>(function(c,l,a,r,i,t,y){t=l.createElement(r);t.src="https://www.clarity.ms/tag/"+i;})(window,document,"clarity","script","abc");</script></head></html>', 'example.test', $sccm_res2 );
+update_option( SCCM_Scanner::RESULT_OPTION, $sccm_res2, false );
+SCCM_Scanner::record_browser_scan( array( 'cookies' => array( '_clck' ), 'resources' => array( 'https://www.clarity.ms/tag/abc' ), 'pages' => 1 ), $sccm_token, 'proof2' );
+sccm_check( 'proof: when a page of the website loads the service, its cookie is listed', SCCM_Cookies::find_matching( '_clck' ) && 'analytics' === SCCM_Cookies::find_matching( '_clck' )['category'] );
+// Google Tag Manager: services in the container count (the scan reads the public container file).
+$sccm_gtm = function ( $pre, $args, $url ) {
+	if ( false !== strpos( $url, 'googletagmanager.com/gtm.js?id=GTM-PROOF1' ) ) {
+		return array( 'response' => array( 'code' => 200, 'message' => 'OK' ), 'body' => 'var data={"resource":{"tags":[{"function":"__googtag","vtp_tagId":"G-PROOF123"},{"function":"__html","vtp_html":"<script src=\"https://static.hotjar.com/c/hotjar-1.js\"></script>"}]}};', 'headers' => array(), 'cookies' => array() );
+	}
+	if ( false !== strpos( $url, 'googletagmanager.com/gtm.js?id=GTM-DOWN1' ) ) {
+		return array( 'response' => array( 'code' => 503, 'message' => 'Unavailable' ), 'body' => '', 'headers' => array(), 'cookies' => array() );
+	}
+	return $pre;
+};
+add_filter( 'pre_http_request', $sccm_gtm, 10, 3 );
+$sccm_res3 = $sccm_base;
+SCCM_Scanner::analyse_html( '<html><head><script>(function(w,d,s,l,i){w[l].push({"gtm.start":1});})(window,document,"script","dataLayer","GTM-PROOF1");</script></head></html>', 'example.test', $sccm_res3 );
+sccm_check( 'proof: Google Tag Manager tags count (Google tag ID → Google Analytics, custom HTML → Hotjar)', ! empty( $sccm_res3['site_services']['google-analytics'] ) && ! empty( $sccm_res3['site_services']['hotjar'] ) && empty( $sccm_res3['site_services']['microsoft-clarity'] ), wp_json_encode( array_keys( (array) ( $sccm_res3['site_services'] ?? array() ) ) ) );
+$sccm_res4 = $sccm_base;
+SCCM_Scanner::analyse_html( '<script>/* GTM-DOWN1 */</script>', 'example.test', $sccm_res4 );
+sccm_check( 'proof: a container that cannot be read is named in the report (run the scan again)', ! empty( $sccm_res4['notes']['gtm_GTM-DOWN1'] ) );
+remove_filter( 'pre_http_request', $sccm_gtm, 10 );
+sccm_check( 'proof: services that run on the site itself (no third-party file) are always proven', SCCM_Scanner::proven( 'sccm', array() ) );
+$wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE service <> 'sccm'" ); // phpcs:ignore
+delete_option( 'sccm_pending_alert' );
+delete_option( SCCM_Scanner::RESULT_OPTION );
+SCCM_Cookies::flush();
 // Flood protection.
 for ( $i = 0; $i < SCCM_Cookies::MAX_PENDING + 10; $i++ ) {
 	SCCM_Cookies::record_seen( 'flood_' . $i, 'cookie', 'scanner' );
@@ -141,6 +157,8 @@ $token = SCCM_Scanner::scan_token( false, SCCM_Cookies::counts() );
 $data  = SCCM_Scanner::valid_scan_token( $token );
 sccm_check( 'a scan token is valid for the admin who created it', is_array( $data ) );
 sccm_check( 'a made-up scan token is refused', false === SCCM_Scanner::valid_scan_token( 'abcdefghijklmnopqrstuvwx' ) );
+// As after the server part of "Scan now": the pages load Google Analytics, YouTube and Calendly.
+update_option( SCCM_Scanner::RESULT_OPTION, array( 'time' => time(), 'pages' => array(), 'services' => array(), 'site_services' => array( 'google-analytics' => true, 'youtube' => true, 'calendly' => true ), 'unclassified' => array(), 'cookies' => array(), 'notes' => array() ), false );
 $summary = SCCM_Scanner::record_browser_scan(
 	array(
 		'pages'     => 2,
@@ -1004,12 +1022,9 @@ $wrong      = SCCM_Consent_Log::query( array( 'search' => $ids[2], 'version' => 
 sccm_check( 'records: the banner version filter finds exactly the records of that version', 1 === $by_version['total'] && 0 === $wrong['total'] );
 $counts = SCCM_Consent_Log::version_counts();
 sccm_check( 'records: records are counted per banner version, newest first', ( $counts[ $current ] ?? 0 ) >= 1 && ( $counts[ $current - 1 ] ?? 0 ) >= 1 && max( array_keys( $counts ) ) === array_key_first( $counts ) );
-$was_learning = SCCM_Settings::get( 'scanner_client' );
-SCCM_Settings::update( array( 'scanner_client' => 1 ) );
 $warnings = array();
 set_error_handler( function ( $no, $str ) use ( &$warnings ) { $warnings[] = $str; return true; } ); // phpcs:ignore
 $odd = SCCM_Consent_Log::insert( array( 'consent_id' => array( 'x' ), 'choice' => array( 'accept_all' ), 'version' => array( 2 ), 'url' => array( 'x' ) ) );
-SCCM_REST::store_report( array( 'items' => array( array( 'n' => array( 'x' ), 't' => array( 'cookie' ) ) ) ) );
 restore_error_handler();
 sccm_check( 'hardening: lists sent instead of single values are refused without PHP warnings', is_wp_error( $odd ) && ! $warnings, implode( ' | ', $warnings ) );
 
@@ -1023,127 +1038,6 @@ foreach ( $ids as $id ) {
 	SCCM_Consent_Log::delete_by_consent_id( $id );
 }
 
-// Visitor reports: never from logged-in users (also on the server).
-$admins = get_users( array( 'role' => 'administrator', 'number' => 1, 'fields' => 'ID' ) );
-wp_set_current_user( (int) $admins[0] );
-$logged = SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'from_an_admin_browser', 't' => 'cookie' ) ) ) );
-wp_set_current_user( 0 );
-sccm_check( 'visitor reports: a logged-in user\'s report is ignored on the server too', ! isset( $logged['added'] ) && ! isset( ( (array) get_option( 'sccm_candidates', array() ) )['cookie:from_an_admin_browser'] ) );
-// Fresh per-IP report limit (earlier checks and runs send reports from this IP too).
-$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '%sccm\_rl\_%'" );
-wp_cache_flush();
-// …also when there is no current user but the login cookie is there (a REST request without a nonce).
-$sccm_cookie_before          = $_COOKIE;
-$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( (int) $admins[0], time() + 3600, 'logged_in' );
-$logged                      = SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'from_a_rest_admin', 't' => 'cookie' ) ) ) );
-$_COOKIE                     = $sccm_cookie_before;
-sccm_check( 'visitor reports: the login cookie is checked too (REST requests have no current user)', 0 === get_current_user_id() && is_array( $logged ) && ! isset( $logged['added'] ) && ! isset( ( (array) get_option( 'sccm_candidates', array() ) )['cookie:from_a_rest_admin'] ) );
-// A logged-out browser that has been used to log in (WordPress keeps wp-settings-* for a year).
-$_COOKIE['wp-settings-1'] = 'libraryContent=browse';
-$logged                   = SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'from_a_staff_browser', 't' => 'cookie' ) ) ) );
-$_COOKIE                  = $sccm_cookie_before;
-sccm_check( 'visitor reports: a browser with a wp-settings-* cookie is ignored (it was used to log in)', SCCM_REST::is_wordpress_user_browser() === false && is_array( $logged ) && ! isset( $logged['added'] ) && ! isset( ( (array) get_option( 'sccm_candidates', array() ) )['cookie:from_a_staff_browser'] ) );
-$logged = SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'wp-settings-3', 't' => 'cookie' ), array( 'n' => 'from_a_staff_list', 't' => 'cookie' ) ) ) );
-sccm_check( 'visitor reports: a report that lists a wp-settings-* cookie is ignored', is_array( $logged ) && ! isset( $logged['added'] ) && ! isset( ( (array) get_option( 'sccm_candidates', array() ) )['cookie:from_a_staff_list'] ) );
-$logged = SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'from_a_real_visitor', 't' => 'cookie' ) ) ) );
-sccm_check( 'visitor reports: a real visitor\'s report still counts', is_array( $logged ) && isset( $logged['added'] ) );
-// The page a cookie was reported from is kept (path only), so the owner sees where it shows up.
-delete_option( SCCM_Cookies::FOUND_ON_OPTION );
-$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '%sccm\_rl\_%'" );
-wp_cache_flush();
-SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'seen_on_cookie', 't' => 'cookie' ), array( 'n' => '_uetsid', 't' => 'cookie' ) ), 'url' => home_url( '/contact/?email=someone@example.com#top' ) ) );
-SCCM_REST::store_report( array( 'items' => array( array( 'n' => 'seen_on_cookie', 't' => 'cookie' ) ), 'url' => 'https://another-site.example/landing/' ) );
-sccm_check( 'found on: the page of a report is noted as a path, without query string (no personal data)', array( '/contact/' ) === SCCM_Cookies::found_on( 'seen_on_cookie' ) && false === strpos( wp_json_encode( get_option( SCCM_Cookies::FOUND_ON_OPTION ) ), 'someone' ), wp_json_encode( get_option( SCCM_Cookies::FOUND_ON_OPTION ) ) );
-sccm_check( 'found on: a known cookie is noted under its listed name; other websites\' addresses are ignored', array( '/contact/' ) === SCCM_Cookies::found_on( '_uetsid' ) && 1 === count( SCCM_Cookies::found_on( 'seen_on_cookie' ) ) );
-foreach ( array( '/a/', '/b/', '/c/', '/d/' ) as $sccm_p ) {
-	SCCM_Cookies::note_page( 'seen_on_cookie', home_url( $sccm_p ) );
-}
-sccm_check( 'found on: at most 3 pages per cookie', 3 === count( SCCM_Cookies::found_on( 'seen_on_cookie' ) ) && 'Seen on: /contact/, /a/, /b/' === SCCM_Cookies::found_on_text( 'seen_on_cookie' ) );
-$sccm_mail_item = SCCM_Scanner::build_email( array( array( 'name' => '_uetsid', 'type' => 'cookie', 'status' => 'active', 'category' => 'marketing', 'origin' => 'visitors', 'time' => time() ) ) );
-sccm_check( 'found on: the change email names the page', false !== strpos( $sccm_mail_item['html'], 'Found in visitors&#039; browsers on: /contact/' ) && false !== strpos( $sccm_mail_item['text'], 'browsers on: /contact/' ), substr( wp_strip_all_tags( $sccm_mail_item['text'] ), 0, 300 ) );
-$sccm_row_id = SCCM_Cookies::save( array( 'name' => 'seen_on_cookie', 'type' => 'cookie', 'category' => 'necessary', 'status' => 'pending', 'source' => 'scanner' ) );
-$sccm_found_row = SCCM_Cookies::find_matching( 'seen_on_cookie', 'cookie' );
-SCCM_Cookies::delete( (int) $sccm_found_row['id'] );
-sccm_check( 'found on: forgotten when the cookie is deleted', array() === SCCM_Cookies::found_on( 'seen_on_cookie' ) );
-delete_option( SCCM_Cookies::FOUND_ON_OPTION );
-delete_option( 'sccm_candidates' );
-SCCM_Settings::update( array( 'scanner_client' => $was_learning ) );
-
-// Scan: speed hints (preconnect, dns-prefetch) are not third-party files; stylesheets are.
-$results = array( 'services' => array(), 'unclassified' => array(), 'cookies' => array(), 'pages' => array(), 'notes' => array() );
-SCCM_Scanner::analyse_html( '<link rel="preconnect" href="https://hint.example.org"><link rel="dns-prefetch" href="//dns.example.org"><link rel="stylesheet" href="https://css.example.org/a.css">', 'example.com', $results );
-$hosts = array_keys( $results['unclassified'] );
-sccm_check( 'scan: preconnect / dns-prefetch hints are not reported as third-party files, a stylesheet is', array( 'css.example.org' ) === $hosts, implode( ',', $hosts ) );
-
-// Email about a new third-party file only: says so first, no two zeros, and where to look.
-$file_only = SCCM_Scanner::build_email( array( array( 'name' => 'cdn.example.net', 'type' => 'resource', 'status' => 'unclassified', 'category' => '', 'time' => time() ) ) );
-sccm_check( 'email: a new third-party file alone is named in the subject and the summary (no "0 need review / 0 added")', false !== strpos( $file_only['subject'], '1 new third-party file found' ) && false !== strpos( $file_only['html'], 'new third-party file' ) && false === strpos( $file_only['html'], 'need review' ) && false === strpos( $file_only['html'], 'added automatically' ) );
-sccm_check( 'email: uses the same name as the admin screen and says where to find the full address', false !== strpos( $file_only['html'], 'Other third-party files' ) && false !== strpos( $file_only['html'], 'Compliance → Cookies → Scan report (details)' ) && false !== strpos( $file_only['text'], 'Scan report (details)' ) );
-if ( false === $history_before ) {
-	delete_option( SCCM_Cookies::VERSION_HISTORY_OPTION );
-} else {
-	update_option( SCCM_Cookies::VERSION_HISTORY_OPTION, $history_before, false );
-}
-
-// Cookie Policy page: after a reinstall (settings deleted) or a reset, the existing page is found
-// and linked again; the plugin never makes a second one. Drafts and other pages do not count.
-$linked_before = (int) SCCM_Settings::get( 'policy_page_id' );
-$policy_a      = wp_insert_post( array( 'post_title' => 'Cookie Policy (test)', 'post_content' => '[sccm_cookie_policy]', 'post_status' => 'publish', 'post_type' => 'page' ) );
-$draft_b       = wp_insert_post( array( 'post_title' => 'Cookie Policy draft (test)', 'post_content' => '[sccm_cookie_policy]', 'post_status' => 'draft', 'post_type' => 'page' ) );
-$count_pages   = function () {
-	global $wpdb;
-	return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i WHERE post_type = %s AND post_status = %s AND post_content LIKE %s', $wpdb->posts, 'page', 'publish', '%[sccm_cookie_policy%' ) ); // phpcs:ignore
-};
-$pages_before = $count_pages();
-SCCM_Settings::update( array( 'policy_page_id' => 0 ) );
-$found        = SCCM_Shortcodes::policy_page();
-$oldest       = SCCM_Shortcodes::find_policy_page();
-sccm_check( 'policy page: with no page linked, the existing Cookie Policy page is found and linked again', $found > 0 && $found === $oldest && $found === (int) SCCM_Settings::get( 'policy_page_id' ) && $found !== $draft_b, "found {$found}" );
-sccm_check( 'policy page: no new page is created', $pages_before === $count_pages() );
-wp_trash_post( $found === $policy_a ? $policy_a : $found );
-$after_trash = SCCM_Shortcodes::policy_page();
-sccm_check( 'policy page: a page in the trash is not used; another existing one is linked, or none', $after_trash !== $found && $after_trash !== $draft_b );
-if ( $found !== $policy_a ) {
-	wp_untrash_post( $found );
-	wp_publish_post( $found );
-}
-wp_delete_post( $policy_a, true );
-wp_delete_post( $draft_b, true );
-SCCM_Settings::update( array( 'policy_page_id' => $linked_before ) );
-
-// The consent cookie's listed duration follows the "ask again after" setting.
-$durations = array();
-foreach ( array( 365, 180, 45, 0 ) as $days ) {
-	SCCM_Settings::update( array( 'consent_expiry_days' => $days ) );
-	SCCM_Cookies::flush();
-	$durations[] = wp_list_pluck( SCCM_Cookies::all_rows(), 'duration', 'name' )['sccm_consent'] ?? 'missing';
-}
-SCCM_Settings::update( array( 'consent_expiry_days' => 365 ) );
-SCCM_Cookies::flush();
-sccm_check( 'consent cookie duration matches the "ask again after" setting (1 year, 6 months, 45 days, Session)', array( '1 year', '6 months', '45 days', 'Session' ) === $durations, implode( ', ', $durations ) );
-
-/* ---------------------------------------------------------------- "Learn from visitors" settings */
-
-$wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE name LIKE 'learn\\_test%'" ); // phpcs:ignore
-delete_option( SCCM_Cookies::CANDIDATES_OPTION );
-SCCM_Settings::update( array( 'learn_visitors' => 3, 'learn_days' => 14 ) );
-sccm_as_visitor( '203.0.113.31', 'learn_test_a' );
-sccm_as_visitor( '203.0.113.32', 'learn_test_a' );
-$after_two = SCCM_Cookies::find_matching( 'learn_test_a' );
-sccm_as_visitor( '203.0.113.33', 'learn_test_a' );
-sccm_check( 'setting "different visitors needed" = 3: two reports are not enough, the third lists it', ! $after_two && SCCM_Cookies::find_matching( 'learn_test_a' ) );
-SCCM_Settings::update( array( 'learn_visitors' => 2, 'learn_days' => 7 ) );
-sccm_as_visitor( '203.0.113.41', 'learn_test_b' );
-$cands = get_option( SCCM_Cookies::CANDIDATES_OPTION );
-$cands['cookie:learn_test_b']['t'] = time() - 8 * DAY_IN_SECONDS; // The first report is 8 days old.
-update_option( SCCM_Cookies::CANDIDATES_OPTION, $cands, false );
-sccm_as_visitor( '203.0.113.42', 'learn_test_b' );
-sccm_check( 'setting "within (days)" = 7: a report older than 7 days no longer counts', ! SCCM_Cookies::find_matching( 'learn_test_b' ) );
-$s = SCCM_Settings::update( array( 'learn_visitors' => 500, 'learn_days' => 0 ) );
-sccm_check( 'learning settings are kept within 1-50 visitors and 1-90 days', 50 === $s['learn_visitors'] && 1 === $s['learn_days'] );
-SCCM_Settings::update( array( 'learn_visitors' => 2, 'learn_days' => 14 ) );
-$wpdb->query( 'DELETE FROM ' . SCCM_Cookies::table() . " WHERE name LIKE 'learn\\_test%'" ); // phpcs:ignore
-delete_option( SCCM_Cookies::CANDIDATES_OPTION );
 
 /* ---------------------------------------------------------------- Pre-production review: lifecycle */
 

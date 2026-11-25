@@ -33,24 +33,9 @@ class SCCM_Cookies {
 	const MAX_PENDING = 50;
 
 	/**
-	 * Names of review items that were only found in the admin's browser (see record_unconfirmed()).
-	 */
-	const BROWSER_ONLY_OPTION = 'sccm_browser_only';
-
-	/**
 	 * Date and reason of every banner version (see bump_version()).
 	 */
 	const VERSION_HISTORY_OPTION = 'sccm_version_history';
-
-	/**
-	 * Different visitors that must report an unknown cookie before it is listed.
-	 */
-	const MIN_VISITORS = 2; // Default of the setting learn_visitors (see min_visitors()).
-
-	/**
-	 * Option that holds cookies reported by visitors but not yet listed.
-	 */
-	const CANDIDATES_OPTION = 'sccm_candidates';
 
 	/**
 	 * Option with the durations last measured by a scan (row id => text), see record_lifetime().
@@ -409,11 +394,6 @@ class SCCM_Cookies {
 		$old        = self::get( $id );
 		$ok         = $wpdb->delete( self::table(), array( 'id' => (int) $id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		self::$rows = null;
-		$found      = get_option( self::FOUND_ON_OPTION, array() );
-		if ( $ok && $old && is_array( $found ) && isset( $found[ $old['name'] ] ) ) {
-			unset( $found[ $old['name'] ] );
-			update_option( self::FOUND_ON_OPTION, $found, false );
-		}
 		if ( $ok && $old && 'active' === $old['status'] ) {
 			self::list_changed();
 		}
@@ -502,11 +482,11 @@ class SCCM_Cookies {
 	 * Record a cookie seen by the scanner or a visitor's browser.
 	 *
 	 * Known → update last_seen. Found in the library → add as active (automatic category).
-	 * Unknown → "needs review" (from a visitor's browser: only once enough visitors reported it).
+	 * Unknown → "needs review".
 	 *
 	 * @param string $name   Cookie name.
 	 * @param string $type   Storage type.
-	 * @param string $origin 'scanner' (server scan) or 'visitor' (reported by a browser).
+	 * @param string $origin 'scanner' (the only source: the server scan and "Scan now").
 	 * @return string '' when nothing was added, 'active' or 'pending' when added.
 	 */
 	public static function record_seen( $name, $type = 'cookie', $origin = 'scanner' ) {
@@ -523,12 +503,6 @@ class SCCM_Cookies {
 
 		$known = SCCM_Services::match_cookie( $name );
 		if ( $known && $known['type'] === $type ) {
-			// Reports come from anonymous browsers: a known cookie too needs several different
-			// visitors, and it does not ask everyone again (that stays with scans and the admin),
-			// so nobody can add services to the list or re-show the banner with fake reports.
-			if ( 'visitor' === $origin && ! self::add_candidate( $known['name'], $type ) ) {
-				return '';
-			}
 			self::bulk(
 				function () use ( $known, $type, $now ) {
 					self::save(
@@ -546,20 +520,15 @@ class SCCM_Cookies {
 							'last_seen'  => $now,
 						)
 					);
-				},
-				'visitor' !== $origin
+				}
 			);
-			self::queue_alert( $known['name'], $type, 'active', $known['category'], 'visitor' === $origin ? 'visitors' : 'scan' );
+			self::queue_alert( $known['name'], $type, 'active', $known['category'], 'scan' );
 			return 'active';
 		}
 
 		if ( self::pending_count() >= self::MAX_PENDING ) {
 			return '';
 		}
-		if ( 'visitor' === $origin && ! self::add_candidate( $name, $type ) ) {
-			return '';
-		}
-
 		self::save(
 			array(
 				'name'       => $name,
@@ -571,176 +540,10 @@ class SCCM_Cookies {
 				'last_seen'  => $now,
 			)
 		);
-		self::queue_alert( $name, $type, 'pending', '', 'visitor' === $origin ? 'visitors' : 'scan' );
+		self::queue_alert( $name, $type, 'pending', '', 'scan' );
 		return 'pending';
 	}
 
-	/**
-	 * A cookie that was only in the admin's own browser during "Scan now" (no scanned page wrote
-	 * it) while "Learn from visitors" is off: it waits for review, even when the library knows it,
-	 * and the review list marks it "Only found in your browser". Known details are filled in.
-	 *
-	 * @param string $name Cookie name.
-	 * @return bool Whether it was added.
-	 */
-	public static function record_unconfirmed( $name ) {
-		if ( self::find_matching( $name, 'cookie' ) || self::pending_count() >= self::MAX_PENDING ) {
-			return false;
-		}
-		$now   = current_time( 'mysql', true );
-		$known = SCCM_Services::match_cookie( $name );
-		$known = $known && 'cookie' === $known['type'] ? $known : null;
-		$row   = array(
-			'name'       => $known ? $known['name'] : $name,
-			'type'       => 'cookie',
-			'category'   => 'necessary',
-			'status'     => 'pending',
-			'source'     => 'scanner',
-			'first_seen' => $now,
-			'last_seen'  => $now,
-		);
-		if ( $known ) {
-			foreach ( array( 'provider', 'purpose', 'duration', 'service' ) as $field ) {
-				$row[ $field ] = $known[ $field ];
-			}
-		}
-		if ( ! self::save( $row ) ) {
-			return false;
-		}
-		// Keep the marks of items still waiting for review (approved / ignored ones are forgotten).
-		$pending = array();
-		foreach ( self::all_rows() as $item ) {
-			if ( 'pending' === $item['status'] ) {
-				$pending[] = $item['name'];
-			}
-		}
-		$marked = array_intersect( (array) get_option( self::BROWSER_ONLY_OPTION, array() ), $pending );
-		update_option( self::BROWSER_ONLY_OPTION, array_values( array_unique( array_merge( $marked, array( $row['name'] ) ) ) ), false );
-		self::queue_alert( $row['name'], 'cookie', 'pending', '', 'admin_browser' );
-		return true;
-	}
-
-	/**
-	 * Option: pages (paths only) visitors' browsers reported a cookie from: name => paths.
-	 */
-	const FOUND_ON_OPTION = 'sccm_found_on';
-
-	/**
-	 * Note the page a visitor's browser reported a cookie from, so the owner can see where it
-	 * shows up. Only the path of a page of this website is kept (no query string, which may hold
-	 * personal data), at most 3 pages per cookie and 200 cookies. A cookie stays in the browser
-	 * from page to page, so this is where it was seen, not always the page that set it.
-	 *
-	 * @param string $name Cookie name as reported.
-	 * @param string $url  Page address sent with the report.
-	 */
-	public static function note_page( $name, $url ) {
-		$parts = wp_parse_url( (string) $url );
-		$host  = wp_parse_url( home_url(), PHP_URL_HOST );
-		if ( empty( $parts['host'] ) || strtolower( $parts['host'] ) !== strtolower( (string) $host ) ) {
-			return;
-		}
-		$path = isset( $parts['path'] ) ? substr( sanitize_text_field( rawurldecode( $parts['path'] ) ), 0, 150 ) : '/';
-		$path = '' === $path ? '/' : $path;
-		// The name the cookie is listed under (a library pattern such as "_ga_*", or its own).
-		$known = SCCM_Services::match_cookie( $name );
-		$key   = $known ? $known['name'] : $name;
-		$all   = get_option( self::FOUND_ON_OPTION, array() );
-		$all   = is_array( $all ) ? $all : array();
-		$pages = isset( $all[ $key ] ) ? (array) $all[ $key ] : array();
-		if ( in_array( $path, $pages, true ) || count( $pages ) >= 3 || ( ! isset( $all[ $key ] ) && count( $all ) >= 200 ) ) {
-			return;
-		}
-		$pages[]     = $path;
-		$all[ $key ] = $pages;
-		update_option( self::FOUND_ON_OPTION, $all, false );
-	}
-
-	/**
-	 * Pages visitors' browsers reported a cookie from (see note_page()).
-	 *
-	 * @param string $name Listed cookie name.
-	 * @return string[] Paths, e.g. array( '/', '/contact/' ).
-	 */
-	public static function found_on( $name ) {
-		$all = get_option( self::FOUND_ON_OPTION, array() );
-		return is_array( $all ) && isset( $all[ $name ] ) ? array_map( 'strval', (array) $all[ $name ] ) : array();
-	}
-
-	/**
-	 * "Seen on: /, /contact/" for a cookie, or ''.
-	 *
-	 * @param string $name Listed cookie name.
-	 * @return string
-	 */
-	public static function found_on_text( $name ) {
-		$pages = self::found_on( $name );
-		/* translators: %s: page addresses, e.g. "/, /contact/" */
-		return $pages ? sprintf( __( 'Seen on: %s', 'smart-cookie-consent-manager' ), implode( ', ', $pages ) ) : '';
-	}
-
-	/**
-	 * Whether a row waiting for review was only found in the admin's browser (see record_unconfirmed()).
-	 *
-	 * @param array $row Registry row.
-	 * @return bool
-	 */
-	public static function only_in_admin_browser( array $row ) {
-		return 'pending' === $row['status'] && 'cookie' === $row['type'] && in_array( $row['name'], (array) get_option( self::BROWSER_ONLY_OPTION, array() ), true );
-	}
-
-	/**
-	 * How many different visitors must report a cookie before it is listed (setting
-	 * "learn_visitors", 1-50, default 2).
-	 *
-	 * @return int
-	 */
-	public static function min_visitors() {
-		return max( 1, (int) SCCM_Settings::get( 'learn_visitors' ) );
-	}
-
-	/**
-	 * Count one visitor's report of a cookie (within the days of the setting "learn_days").
-	 *
-	 * @param string $name Cookie name.
-	 * @param string $type Storage type.
-	 * @return bool True when enough different visitors have reported it (list it now).
-	 */
-	private static function add_candidate( $name, $type ) {
-		$candidates = get_option( self::CANDIDATES_OPTION, array() );
-		$candidates = is_array( $candidates ) ? $candidates : array();
-		$now        = time();
-		$key        = $type . ':' . $name;
-		$visitor    = substr( md5( SCCM_Consent_Log::client_ip() . '|' . wp_salt( 'nonce' ) ), 0, 10 );
-
-		// Forget stale candidates.
-		foreach ( $candidates as $k => $candidate ) {
-			if ( ! isset( $candidate['t'] ) || $now - (int) $candidate['t'] > (int) SCCM_Settings::get( 'learn_days' ) * DAY_IN_SECONDS ) {
-				unset( $candidates[ $k ] );
-			}
-		}
-
-		if ( ! isset( $candidates[ $key ] ) ) {
-			if ( count( $candidates ) >= 100 ) {
-				return false;
-			}
-			$candidates[ $key ] = array(
-				'v' => array(),
-				't' => $now,
-			);
-		}
-		if ( ! in_array( $visitor, $candidates[ $key ]['v'], true ) ) {
-			$candidates[ $key ]['v'][] = $visitor;
-			$candidates[ $key ]['t']   = $now;
-		}
-
-		$promote = count( $candidates[ $key ]['v'] ) >= self::min_visitors();
-		if ( $promote ) {
-			unset( $candidates[ $key ] );
-		}
-		update_option( self::CANDIDATES_OPTION, $candidates, false );
-		return $promote;
-	}
 
 	/**
 	 * Queue an item for the email digest.

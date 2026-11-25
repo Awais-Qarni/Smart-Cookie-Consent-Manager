@@ -2,8 +2,7 @@
 /**
  * Public endpoints used by the banner (pages are cached, so no nonces):
  *   POST /wp-json/sccm/v1/consent  → consent record
- *   POST /wp-json/sccm/v1/report   → cookie names seen in a visitor's browser (scanner)
- * and the same through admin-ajax.php (actions sccm_consent / sccm_report), which the browser
+ * and the same through admin-ajax.php (action sccm_consent), which the browser
  * uses when a site blocks the REST API for visitors (security plugins, firewalls). When the
  * block is known up front (see transport()), the browser goes straight to admin-ajax.php.
  *
@@ -26,10 +25,8 @@ class SCCM_REST {
 	 */
 	public static function init() {
 		add_action( 'rest_api_init', array( __CLASS__, 'routes' ) );
-		foreach ( array( 'consent', 'report' ) as $action ) {
-			add_action( 'wp_ajax_nopriv_sccm_' . $action, array( __CLASS__, 'ajax_' . $action ) );
-			add_action( 'wp_ajax_sccm_' . $action, array( __CLASS__, 'ajax_' . $action ) );
-		}
+		add_action( 'wp_ajax_nopriv_sccm_consent', array( __CLASS__, 'ajax_consent' ) );
+		add_action( 'wp_ajax_sccm_consent', array( __CLASS__, 'ajax_consent' ) );
 		// A plugin or its settings changed: check again whether visitors can use the REST API.
 		foreach ( array( 'activated_plugin', 'deactivated_plugin', 'sccm_settings_saved', 'update_option_admin_site_enhancements' ) as $hook ) {
 			add_action( $hook, array( __CLASS__, 'forget_rest_check' ) );
@@ -230,15 +227,6 @@ class SCCM_REST {
 				'permission_callback' => '__return_true',
 			)
 		);
-		register_rest_route(
-			self::NS,
-			'/report',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( __CLASS__, 'report' ),
-				'permission_callback' => '__return_true',
-			)
-		);
 	}
 
 	/**
@@ -329,89 +317,6 @@ class SCCM_REST {
 	}
 
 	/**
-	 * Receive cookie names seen in a browser that are not in the registry.
-	 *
-	 * Cookies only (local storage is plugin-internal state, not tracking, and made the list noisy).
-	 * An unknown cookie is listed only after several different visitors reported it, see
-	 * SCCM_Cookies::record_seen().
-	 *
-	 * @param WP_REST_Request $request Request.
-	 * @return WP_REST_Response|WP_Error
-	 */
-	public static function report( WP_REST_Request $request ) {
-		$result = self::store_report( $request->get_json_params() );
-		return is_wp_error( $result ) ? $result : new WP_REST_Response( $result, 200 );
-	}
-
-	/**
-	 * Record unknown cookie names reported by a browser (REST and admin-ajax).
-	 *
-	 * @param mixed $data Decoded JSON payload.
-	 * @return array|WP_Error array( ok, added ) or an error with an HTTP status.
-	 */
-	public static function store_report( $data ) {
-		// Never from browsers of people who log in to this WordPress (also checked in the browser):
-		// they carry cookies of the admin area and of extensions that are not part of the website.
-		if ( ! SCCM_Settings::get( 'scanner_client' ) || self::is_wordpress_user_browser() ) {
-			return array( 'ok' => true );
-		}
-		if ( self::rate_limited( 'report', 10 ) ) {
-			return new WP_Error( 'sccm_rate_limited', 'Too many requests.', array( 'status' => 429 ) );
-		}
-		$items = is_array( $data ) && is_array( $data['items'] ?? null ) ? array_slice( $data['items'], 0, 30 ) : array();
-		foreach ( $items as $item ) {
-			if ( is_array( $item ) && isset( $item['n'] ) && is_string( $item['n'] ) && 0 === strpos( $item['n'], 'wp-settings-' ) ) {
-				return array( 'ok' => true ); // The same sign, seen in the browser.
-			}
-		}
-
-		$added = 0;
-		foreach ( $items as $item ) {
-			if ( ! is_array( $item ) ) {
-				continue;
-			}
-			$name = isset( $item['n'] ) && is_string( $item['n'] ) ? $item['n'] : '';
-			$type = isset( $item['t'] ) && is_string( $item['t'] ) ? $item['t'] : 'cookie';
-			if ( ! self::valid_name( $name ) || 'cookie' !== $type ) {
-				continue;
-			}
-			if ( ! SCCM_Cookies::find_matching( $name, 'cookie' ) ) {
-				SCCM_Cookies::note_page( $name, is_array( $data ) && isset( $data['url'] ) && is_string( $data['url'] ) ? $data['url'] : '' );
-			}
-			if ( '' !== SCCM_Cookies::record_seen( $name, 'cookie', 'visitor' ) ) {
-				++$added;
-			}
-		}
-		return array(
-			'ok'    => true,
-			'added' => $added,
-		);
-	}
-
-	/**
-	 * Whether this request comes from a browser that is, or was, logged in to this WordPress.
-	 *
-	 * Plugins load support chats and analytics on their admin pages (e.g. a chat on a cache
-	 * plugin's settings page), and those cookies stay in the browser after logging out. Signs:
-	 * a logged-in user (read from the login cookie too: a REST request without a nonce has no
-	 * current user), or a wp-settings-* cookie, which WordPress sets in the admin area and keeps
-	 * for a year, also after logging out.
-	 *
-	 * @return bool
-	 */
-	public static function is_wordpress_user_browser() {
-		if ( is_user_logged_in() || wp_validate_auth_cookie( '', 'logged_in' ) ) {
-			return true;
-		}
-		foreach ( array_keys( $_COOKIE ) as $name ) {
-			if ( 0 === strpos( (string) $name, 'wp-settings-' ) ) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
 	 * admin-ajax fallback for consent records (the browser uses it when the REST API is blocked).
 	 * Public like the REST route: pages are cached, so there is no nonce; same validation and
 	 * rate limit as the REST route.
@@ -427,13 +332,6 @@ class SCCM_REST {
 			$limit = false;
 		}
 		self::respond( self::store_consent( self::ajax_payload(), $limit ) );
-	}
-
-	/**
-	 * admin-ajax fallback for visitor cookie reports.
-	 */
-	public static function ajax_report() {
-		self::respond( self::store_report( self::ajax_payload() ) );
 	}
 
 	/**

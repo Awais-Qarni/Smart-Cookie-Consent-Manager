@@ -15,7 +15,7 @@ class SCCM_Install {
 	/**
 	 * Database schema version. Bump when the table structure or stored data needs an upgrade step.
 	 */
-	const DB_VERSION = '6';
+	const DB_VERSION = '7';
 
 	/**
 	 * Option that stores the installed schema version.
@@ -93,8 +93,29 @@ class SCCM_Install {
 		if ( false !== $previous && version_compare( (string) $previous, '6', '<' ) ) {
 			self::upgrade_to_6();
 		}
+		if ( false !== $previous && version_compare( (string) $previous, '7', '<' ) ) {
+			self::upgrade_to_7();
+		}
 
 		update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
+	}
+
+	/**
+	 * Version 7: visitors' browsers no longer report cookies (their reports listed cookies of
+	 * extensions and other tools that the website does not set). Their stored data goes: the
+	 * reported names waiting for more visitors, the pages they were seen on, the marks of review
+	 * items that were only in the admin's browser, and the three settings.
+	 */
+	private static function upgrade_to_7() {
+		foreach ( array( 'sccm_candidates', 'sccm_found_on', 'sccm_browser_only' ) as $option ) {
+			delete_option( $option );
+		}
+		$settings = get_option( SCCM_Settings::OPTION );
+		if ( is_array( $settings ) ) {
+			unset( $settings['scanner_client'], $settings['learn_visitors'], $settings['learn_days'] );
+			update_option( SCCM_Settings::OPTION, $settings, true );
+			SCCM_Settings::flush();
+		}
 	}
 
 	/**

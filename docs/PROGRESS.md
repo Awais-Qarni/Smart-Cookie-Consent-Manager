@@ -7,13 +7,32 @@ Anyone (human or AI) continuing the work should start from the latest "Next".
 
 ## Current status
 
-- **Version:** 1.4.4 (1.4.3 is live on the owner's production site, WP Engine + NitroPack)
+- **Version:** 1.5.0 (1.4.4 is live on the owner's production site, WP Engine + NitroPack)
 - **Branch:** `feature/v1-build`, merged into `main` by pull request
 - **Phase:** 5b done (see `ROADMAP.md`); 1.3.0 admin redesign after production feedback
-- **Last updated:** 2026-11-16 (session 15)
-- **Tests:** unit 33, WP-CLI 268, visitor e2e 120, admin e2e 137, all passing on **MySQL 8.4
+- **Last updated:** 2026-11-25 (session 16)
+- **Tests:** unit 33, WP-CLI 254, visitor e2e 116, admin e2e 130, all passing on **MySQL 8.4
   and MariaDB 11.4**, no PHP notices under WP_DEBUG; WordPress.org
   Plugin Check clean on the release files except the requested `mailto:` Author URI
+
+---
+
+## 2026-11-25 — Session 16 (1.5.0: visitor scanning removed, proof only)
+
+**Production:** the change email added `_clck` (Microsoft Clarity) "found in visitors' browsers on
+/blog/, /services/…/data-migration/". Both pages with every category allowed set only `_ga` /
+`_ga_<id>`; the GTM container has only the Google tag. Third false finding from browsers (after
+Intercom/Hotjar and Microsoft Ads). The owner decided to remove visitor scanning.
+
+**Done:** removed: front-end reporter, `/sccm/v1/report` + `sccm_report` ajax, `store_report()`,
+`is_wordpress_user_browser()`, candidates / `min_visitors()`, `note_page()` / found-on (1.4.4),
+`record_unconfirmed()` / browser-only marks, settings `scanner_client` / `learn_*` (DB v7 deletes
+their data). Added proof: `site_services` from the server scan (`add_service_hit()`),
+`analyse_gtm()` (container patterns + G-/AW-/UA- IDs), `proven()`, `not_loaded()` (scan report
+"Not loaded by your website"), empty cookie jar in scan mode (`sccm-boot.js` getter). Tests:
+unit 33, WP-CLI 254, visitor e2e 116, admin e2e 130 (MySQL 8.4).
+
+**Next:** owner installs 1.5.0, deletes `_clck`, `_uetsid`, `_uetvid` from the list, runs "Scan now".
 
 ---
 

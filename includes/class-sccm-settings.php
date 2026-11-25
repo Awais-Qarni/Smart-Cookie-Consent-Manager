@@ -102,9 +102,6 @@ class SCCM_Settings {
 			'gpc_scope'            => 'all',      // all | marketing.
 
 			// Scanner.
-			'scanner_client'       => 1,
-			'learn_visitors'       => 2,          // Different visitors who must report a cookie before it is listed.
-			'learn_days'           => 14,         // ...within this many days.
 			'scan_schedule'        => 'weekly',   // daily | weekly | off.
 			'alerts_enabled'       => 1,
 			'alert_hour'           => 9,          // Daily email time (0-23, site time zone); sent only when something changed.
@@ -261,7 +258,7 @@ class SCCM_Settings {
 		$defaults = self::defaults();
 		$out      = $current;
 
-		$bools = array( 'enabled', 'floating_button', 'show_privacy_link', 'policy_hide_sidebar', 'reask_on_change', 'reload_on_withdraw', 'ads_data_redaction', 'url_passthrough', 'blocker_enabled', 'iframe_placeholder', 'gpc_enabled', 'scanner_client', 'alerts_enabled', 'alert_include_admin', 'report_enabled', 'log_enabled', 'delete_on_uninstall' );
+		$bools = array( 'enabled', 'floating_button', 'show_privacy_link', 'policy_hide_sidebar', 'reask_on_change', 'reload_on_withdraw', 'ads_data_redaction', 'url_passthrough', 'blocker_enabled', 'iframe_placeholder', 'gpc_enabled', 'alerts_enabled', 'alert_include_admin', 'report_enabled', 'log_enabled', 'delete_on_uninstall' );
 		foreach ( $bools as $key ) {
 			if ( array_key_exists( $key, $input ) ) {
 				$out[ $key ] = empty( $input[ $key ] ) ? 0 : 1;
@@ -293,8 +290,6 @@ class SCCM_Settings {
 			'border_radius'       => array( 0, 32 ),
 			'retention_months'    => array( 0, 120 ),
 			'alert_hour'          => array( 0, 23 ),
-			'learn_visitors'      => array( 1, 50 ),
-			'learn_days'          => array( 1, 90 ),
 		);
 		foreach ( $ints as $key => $range ) {
 			if ( isset( $input[ $key ] ) ) {

@@ -94,17 +94,15 @@ check('S1 "Until the browser is closed" sets 0', (await page.inputValue('#sccm-c
 await page.selectOption('#sccm-expiry-preset', '180');
 await page.locator('summary', { hasText: 'Cookie scan and email alerts' }).click();
 await page.fill('#sccm-alert_email', 'owner@example.com\nteam@example.com\nbroken-address');
-await page.fill('#sccm-learn_visitors', '5');
-await page.fill('#sccm-learn_days', '30');
 await page.locator('summary', { hasText: 'Consent records (the proof)' }).click();
 await page.selectOption('#sccm-ip_mode', 'full');
 await Promise.all([page.waitForNavigation(), page.click('p.submit input[type=submit]')]);
 const saved = option();
 check('S2 expiry saved (180 days)', saved.consent_expiry_days === 180);
 check('S3 two recipients saved, invalid dropped', saved.alert_email === 'owner@example.com, team@example.com', saved.alert_email);
-check('S4 "Learn from visitors" thresholds saved (5 visitors within 30 days)', saved.learn_visitors === 5 && saved.learn_days === 30, `${saved.learn_visitors}/${saved.learn_days}`);
+check('S4 visitor scanning is gone from Settings (no "Learn from visitors")', !(await page.$('#sccm-scanner_client')) && !(await page.$('#sccm-learn_visitors')) && saved.scanner_client === undefined);
 check('S5 IP address option "Save the full IP address" saved', saved.ip_mode === 'full', saved.ip_mode);
-wp('eval', `SCCM_Settings::update( array( 'learn_visitors' => 2, 'learn_days' => 14, 'ip_mode' => 'anonymize' ) );`);
+wp('eval', `SCCM_Settings::update( array( 'ip_mode' => 'anonymize' ) );`);
 await page.locator('summary', { hasText: 'Cookie scan and email alerts' }).click();
 if (fs.existsSync(CONTENT + '/mail-captured.json')) fs.unlinkSync(CONTENT + '/mail-captured.json');
 await Promise.all([page.waitForNavigation(), page.click('button:has-text("Send me a sample email")')]);
@@ -237,9 +235,10 @@ check('BS6 an expired login / nonce says so', /HTTP 403\. Your login or this pag
 shown = await failWith(403, '<html>Blocked by firewall</html>', 'text/html');
 check('BS6 a firewall block names the likely cause', /HTTP 403\. A security plugin, firewall/.test(shown), shown);
 
-// Cookies that were only in the admin's own browser (admin tools, other plugins' dashboards,
-// extensions) are not listed by the scan: real visitors decide. A site cookie that a script sets
-// only when the browser does not have it yet is not lost either.
+// Only proof from the website counts. Cookies that were only in the admin's own browser (admin
+// tools, other plugins' dashboards, extensions) are never listed, not even for review. A site
+// cookie that a script sets only when the browser does not have it yet is still found: in scan
+// mode the page sees an empty cookie jar, so the script writes it.
 const rows = () => JSON.parse(wp('eval', `echo wp_json_encode( array_map( function ( $r ) { return $r['name'] . '|' . $r['status']; }, SCCM_Cookies::all_rows() ) );`));
 const scanNow = async () => {
 	await page.goto(admin('cookies'));
@@ -247,36 +246,43 @@ const scanNow = async () => {
 	await page.waitForURL(/sccm_notice/, { timeout: 150000 });
 	return { notice: (await page.textContent('.notice')).trim(), rows: rows() };
 };
-wp('eval', `global $wpdb; $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE service <> 'sccm'", SCCM_Cookies::table() ) ); $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '%sccm\\\\_rl\\\\_%'" ); delete_option( SCCM_Cookies::BROWSER_ONLY_OPTION ); delete_option( 'sccm_candidates' ); update_option( 'sccm_test_once', 1 ); SCCM_Settings::update( array( 'scanner_client' => 1, 'learn_visitors' => 1 ) );`);
+wp('eval', `global $wpdb; $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE service <> 'sccm'", SCCM_Cookies::table() ) ); update_option( 'sccm_test_once', 1 );`);
 const host = new URL(BASE).hostname;
 await ctx.addCookies([
 	{ name: 'admin_tool_cookie', value: '1', domain: host, path: '/' },
 	{ name: 'test_once_cookie', value: '1', domain: host, path: '/' },
+	{ name: '_hjSessionUser_77', value: '1', domain: host, path: '/' }, // From a dashboard; Hotjar is not on the site.
 ]);
 let scan = await scanNow();
-check('BU1 a cookie that was only in the admin browser is not listed', !scan.rows.some((r) => /^(admin_tool_cookie|test_once_cookie)\|/.test(r)), scan.rows.join(', '));
-check('BU1 cookies the pages write are listed although the admin browser already had them (_ga, test_unknown_cookie)', scan.rows.includes('_ga|active') && scan.rows.includes('test_unknown_cookie|pending'), scan.rows.join(', '));
-check('BU1 the result says how many were only in the admin browser and that visitors decide', /2 cookies were only in your own browser .*listed if your visitors get them too/.test(scan.notice), scan.notice.slice(0, 300));
-
-const visitorCtx = await browser.newContext();
-const visitor = await visitorCtx.newPage();
-const reported = visitor.waitForResponse((r) => r.url().includes('/sccm/v1/report'), { timeout: 30000 }).catch(() => null);
-await visitor.goto(BASE + '/');
-const reply = await reported;
-await visitorCtx.close();
-const visited = rows();
-check('BU2 the site cookie set only once (the admin browser had it) is listed as soon as a real visitor gets it', visited.includes('test_once_cookie|pending'), (reply ? reply.status() : 'no report') + ' ' + visited.join(', '));
-check('BU2 the admin-only cookie never comes back (visitors do not have it)', !visited.some((r) => r.startsWith('admin_tool_cookie|')));
-
-wp('eval', `global $wpdb; $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE name IN ( 'test_once_cookie', 'admin_tool_cookie' )", SCCM_Cookies::table() ) ); SCCM_Settings::update( array( 'scanner_client' => 0 ) );`);
-scan = await scanNow();
-check('BU3 with "Learn from visitors" off, cookies only in the admin browser wait for review instead (nothing dropped)', scan.rows.includes('admin_tool_cookie|pending') && scan.rows.includes('test_once_cookie|pending'), scan.rows.join(', '));
-check('BU3 they are marked "Only found in your browser" in the review list', /Only found in your browser/.test(await page.locator('.sccm-inbox tr', { hasText: 'admin_tool_cookie' }).textContent()));
-check('BU3 the result message says so', /2 cookies were only in your own browser, not set by your pages/.test(scan.notice), scan.notice.slice(0, 300));
-check('BU3 other review items carry no such mark', !/Only found in your browser/.test(await page.locator('.sccm-inbox tr', { hasText: 'test_unknown_cookie' }).textContent()));
-wp('eval', `global $wpdb; $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE name IN ( 'test_once_cookie', 'admin_tool_cookie' )", SCCM_Cookies::table() ) ); delete_option( 'sccm_test_once' ); delete_option( SCCM_Cookies::BROWSER_ONLY_OPTION ); SCCM_Settings::update( array( 'scanner_client' => 1, 'learn_visitors' => 2 ) );`);
+check('BU1 cookies that were only in the admin browser are not listed, not even for review', !scan.rows.some((r) => /^(admin_tool_cookie|_hjSessionUser_)/.test(r)), scan.rows.join(', '));
+check('BU1 a site cookie set only when missing is found although the admin browser had it (the page sees an empty jar)', scan.rows.includes('test_once_cookie|pending'), scan.rows.join(', '));
+check('BU1 cookies the pages write are listed (_ga, test_unknown_cookie)', scan.rows.includes('_ga|active') && scan.rows.includes('test_unknown_cookie|pending'), scan.rows.join(', '));
+check('BU1 the admin\'s own cookies are left as they were', (await ctx.cookies()).some((c) => c.name === 'admin_tool_cookie' && c.value === '1'));
+wp('eval', `global $wpdb; $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE name IN ( 'test_once_cookie', 'admin_tool_cookie' )", SCCM_Cookies::table() ) ); delete_option( 'sccm_test_once' );`);
 await ctx.clearCookies({ name: 'admin_tool_cookie' }).catch(() => {});
 await ctx.clearCookies({ name: 'test_once_cookie' }).catch(() => {});
+await ctx.clearCookies({ name: '_hjSessionUser_77' }).catch(() => {});
+
+// An extension in the admin's browser that adds Microsoft Clarity and Microsoft Ads to every page
+// (production: _clck, _uetsid, _uetvid were listed although the website never loads them).
+await ctx.route(/clarity\.ms|bat\.bing\.com/, (r) => r.fulfill({ status: 200, contentType: 'application/javascript', body: '' }));
+await ctx.addInitScript(() => {
+	if (!/[?&]sccm_scan=/.test(location.search)) return;
+	document.addEventListener('DOMContentLoaded', () => {
+		document.cookie = '_clck=ext1; path=/';
+		document.cookie = '_uetsid=ext2; path=/';
+		['https://www.clarity.ms/tag/ext', 'https://bat.bing.com/bat.js'].forEach((src) => { const s = document.createElement('script'); s.src = src; document.head.appendChild(s); });
+	});
+});
+scan = await scanNow();
+check('BU2 an extension\'s Microsoft Clarity / Ads cookies are not listed (the website does not load them)', !scan.rows.some((r) => /^(_clck|_uet)/.test(r)), scan.rows.join(', '));
+check('BU2 the result message names them as not loaded by the website', /not loaded by your website, so not listed: .*Microsoft Clarity/.test(scan.notice), scan.notice.slice(0, 400));
+await page.locator('summary', { hasText: 'Scan report (details)' }).click();
+check('BU2 the scan report lists them under "Not loaded by your website"', /Not loaded by your website[\s\S]*Microsoft Clarity[\s\S]*_clck/.test(await page.textContent('.sccm-tab')));
+check('BU2 the website\'s own services are still found (Google Analytics from the page)', scan.rows.includes('_ga|active'));
+await ctx.unroute(/clarity\.ms|bat\.bing\.com/);
+await ctx.clearCookies({ name: '_clck' }).catch(() => {});
+await ctx.clearCookies({ name: '_uetsid' }).catch(() => {});
 
 // "Scan now" builds each page as a logged-out visitor: a support chat that a plugin loads only
 // for logged-in users (its cookie is in the library, so it would be added at once) is not listed.
@@ -289,50 +295,6 @@ check('BU4 the scan still finds what visitors get (_ga)', scan.rows.includes('_g
 check('BU4 the administrator is still logged in after the scan', /Compliance|Smart Cookie Consent Manager/.test(await page.title()));
 wp('eval', `delete_option( 'sccm_test_admin_chat' ); global $wpdb; $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE name LIKE 'intercom%%'", SCCM_Cookies::table() ) );`);
 await ctx.clearCookies({ name: 'intercom-id-admintest' }).catch(() => {});
-
-// Browsers of people who log in to this WordPress never report cookies, also after logging out:
-// plugins load support chats on their admin pages (e.g. a cache plugin's settings page), and
-// those cookies stay in the browser (production: Intercom from a plugin's settings page).
-{
-	const clean = `global $wpdb; $wpdb->query( $wpdb->prepare( "DELETE FROM %i WHERE name LIKE 'intercom%%'", SCCM_Cookies::table() ) ); $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '%sccm\\\\_rl\\\\_%'" ); delete_option( 'sccm_candidates' ); delete_option( 'sccm_pending_alert' ); SCCM_Settings::update( array( 'scanner_client' => 1, 'learn_visitors' => 1 ) );`;
-	const intercomRows = () => rows().filter((r) => r.startsWith('intercom-'));
-	// The visitor allowed all cookies before (otherwise the plugin deletes the Preferences
-	// cookie on page load, as it should, and there is nothing to report).
-	const allowed = encodeURIComponent(JSON.stringify({ id: '00000000-0000-4000-8000-00000000abcd', v: parseInt(wp('option', 'get', 'sccm_consent_version'), 10) || 1, t: Math.floor(Date.now() / 1000), c: { functional: 1, analytics: 1, marketing: 1 }, m: 'accept_all', g: 0 }));
-	const visit = async (cookies) => {
-		const c = await browser.newContext();
-		await c.addCookies([...cookies.map((name) => ({ name, value: '1', domain: host, path: '/' })), { name: 'sccm_consent', value: allowed, domain: host, path: '/' }]);
-		const p = await c.newPage();
-		let sent = false;
-		p.on('request', (r) => { if (/sccm\/v1\/report|action=sccm_report/.test(r.url() + (r.postData() || ''))) sent = true; });
-		await p.goto(BASE + '/');
-		await p.waitForTimeout(9000); // The report waits 4 s, then up to 3 s for an idle moment.
-		await c.close();
-		return sent;
-	};
-	wp('eval', clean);
-	const staffSent = await visit(['wp-settings-1', 'wp-settings-time-1', 'intercom-id-staff1']);
-	check('SB1 a logged-out browser that has used wp-admin (wp-settings-*) does not report its cookies', !staffSent && intercomRows().length === 0, String(staffSent) + ' ' + intercomRows().join());
-	// The server checks the same, for reports that do not come from the plugin's script.
-	const forged = await (await browser.newContext()).request.post(`${BASE}/wp-json/sccm/v1/report`, { headers: { cookie: 'wp-settings-1=1; intercom-id-staff2=1' }, data: { items: [{ n: 'intercom-id-staff2', t: 'cookie' }], url: BASE + '/' } });
-	check('SB2 the server ignores a report from a browser with a wp-settings-* cookie', forged.ok() && intercomRows().length === 0, forged.status() + ' ' + intercomRows().join());
-	const named = await (await browser.newContext()).request.post(`${BASE}/wp-json/sccm/v1/report`, { data: { items: [{ n: 'wp-settings-1', t: 'cookie' }, { n: 'intercom-id-staff3', t: 'cookie' }], url: BASE + '/' } });
-	check('SB2 …and a report that lists a wp-settings-* cookie', named.ok() && intercomRows().length === 0, named.status() + ' ' + intercomRows().join());
-	// Logged in, without wp-settings-*: a REST request without a nonce has no current user, so the
-	// login cookie itself is checked.
-	const state = await ctx.storageState();
-	const loginOnly = await browser.newContext({ storageState: { cookies: state.cookies.filter((x) => !x.name.startsWith('wp-settings')), origins: [] } });
-	const asUser = await loginOnly.request.post(`${BASE}/wp-json/sccm/v1/report`, { data: { items: [{ n: 'intercom-id-staff4', t: 'cookie' }], url: BASE + '/' } });
-	await loginOnly.close();
-	check('SB3 a logged-in user\'s REST report (no nonce) is ignored too', asUser.ok() && intercomRows().length === 0, asUser.status() + ' ' + intercomRows().join());
-	// Control: a real visitor with the same cookie still reports it.
-	wp('eval', clean);
-	const visitorSent = await visit(['intercom-id-visitor']);
-	check('SB4 a real visitor with that cookie still reports it, and it is added', visitorSent && intercomRows().length === 1, String(visitorSent) + ' ' + intercomRows().join());
-	const queued = JSON.parse(wp('eval', "echo wp_json_encode( array_values( (array) get_option( 'sccm_pending_alert', array() ) ) );"));
-	check('SB4 the email will say it was found in visitors\' browsers', queued.some((q) => q.name.startsWith('intercom-') && q.origin === 'visitors'), JSON.stringify(queued));
-	wp('eval', clean + ` SCCM_Settings::update( array( 'learn_visitors' => 2 ) );`);
-}
 
 // Dashboard switch off / on
 await page.goto(admin('dashboard'));

@@ -759,17 +759,19 @@ class SCCM_Admin {
 			$sum['active'],
 			$sum['pending']
 		);
-		if ( $only_mine && SCCM_Settings::get( 'scanner_client' ) ) {
+		if ( $only_mine ) {
 			$message .= ' ' . sprintf(
 				/* translators: %d: number of cookies */
-				_n( '%d cookie was only in your own browser (from admin tools or extensions, not from your pages). It will be listed if your visitors get it too.', '%d cookies were only in your own browser (from admin tools or extensions, not from your pages). They will be listed if your visitors get them too.', $only_mine, 'smart-cookie-consent-manager' ),
+				_n( '%d cookie was only in your own browser (admin tools or extensions, not set by your pages): not listed.', '%d cookies were only in your own browser (admin tools or extensions, not set by your pages): not listed.', $only_mine, 'smart-cookie-consent-manager' ),
 				$only_mine
 			);
-		} elseif ( $only_mine ) {
+		}
+		$not_loaded = (array) ( get_option( SCCM_Scanner::RESULT_OPTION )['not_loaded'] ?? array() );
+		if ( $not_loaded ) {
 			$message .= ' ' . sprintf(
-				/* translators: %d: number of cookies */
-				_n( '%d cookie was only in your own browser, not set by your pages: it waits for your review, marked "Only found in your browser".', '%d cookies were only in your own browser, not set by your pages: they wait for your review, marked "Only found in your browser".', $only_mine, 'smart-cookie-consent-manager' ),
-				$only_mine
+				/* translators: %s: services, e.g. "Microsoft Clarity, Hotjar" */
+				__( 'Seen in your browser but not loaded by your website, so not listed: %s (see Scan report).', 'smart-cookie-consent-manager' ),
+				implode( ', ', array_column( $not_loaded, 'name' ) )
 			);
 		}
 		if ( $blocked && $blocked >= $pages ) {

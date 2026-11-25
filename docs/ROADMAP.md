@@ -95,6 +95,7 @@ Tick items (`[x]`) as they are completed and log each session in `PROGRESS.md`.
 - [x] 1.4.2 (2026-11-13): weekly report readability (Outlook font, green/red arrows, aligned tiles, the rest explained)
 - [x] 1.4.3 (2026-11-13): legend colours in Outlook (■ characters)
 - [x] 1.4.4 (2026-11-16): the page a visitor-reported cookie was seen on (email + Cookies tab)
+- [x] 1.5.0 (2026-11-25): visitor scanning removed; only proof from the website (pages, Google Tag Manager, empty cookie jar in "Scan now")
 
 ## Later (not in scope for 1.0)
 - Geo-targeting (different banner per region)

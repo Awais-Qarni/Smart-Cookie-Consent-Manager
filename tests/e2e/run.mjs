@@ -617,59 +617,24 @@ const browser = await launch();
 	await context.close();
 }
 
-/* ---------------------------------------------------------------- Scanner reporting: quiet by design */
+/* ---------------------------------------------------------------- No visitor reporting */
 {
-	const run = async (loggedIn) => {
-		const { context, page } = await newPage(browser);
-		await context.addCookies([{ name: 'some_unknown_cookie', value: '1', url: BASE }]);
-		if (loggedIn) {
-			await page.addInitScript(() => document.addEventListener('DOMContentLoaded', () => document.body.classList.add('logged-in')));
-		}
-		let posted = null;
-		page.on('request', (r) => { if (r.url().includes('/sccm/v1/report')) posted = r.postDataJSON(); });
-		await page.goto(BASE + '/');
-		await page.evaluate(() => localStorage.setItem('some_extension_key', '1'));
-		await page.waitForTimeout(5500);
-		await context.close();
-		return posted;
-	};
-	const visitor = await run(false);
-	check('R1 a visitor reports unknown cookie NAMES only', visitor && visitor.items.some((i) => i.n === 'some_unknown_cookie') && !JSON.stringify(visitor).includes('"1"'), JSON.stringify(visitor));
-	check('R1 local storage keys are never reported', visitor && !visitor.items.some((i) => i.n === 'some_extension_key' || i.t !== 'cookie'));
-	const admin = await run(true);
-	check('R2 logged-in users never report', admin === null);
-
-	// Everything the plugin keeps in the browser is in its one cookie: the report note lives in
-	// sccm_consent (x.r) even before a choice, and such a cookie is not a choice.
-	{
-		const { context, page } = await newPage(browser);
-		await context.addCookies([{ name: 'some_unknown_cookie', value: '1', url: BASE }]);
-		let reports = 0;
-		page.on('request', (r) => { if (/sccm\/v1\/report|action=sccm_report/.test(r.url() + (r.postData() || ''))) reports++; });
-		await page.goto(BASE + '/');
-		await page.waitForTimeout(8000);
-		const store = await page.evaluate(() => {
-			const m = document.cookie.match(/(?:^|; )sccm_consent=([^;]+)/);
-			let o = null;
-			try { o = m ? JSON.parse(decodeURIComponent(m[1])) : null; } catch (e) { o = null; }
-			const own = (s) => Object.keys(s).filter((k) => /^sccm/i.test(k));
-			return { o, own: own(sessionStorage).concat(own(localStorage)) };
-		});
-		check('R3 the report note is kept in the sccm_consent cookie, nothing in sessionStorage / localStorage', store.o && store.o.x && Array.isArray(store.o.x.r) && !store.o.id && store.own.length === 0, JSON.stringify(store));
-		await page.reload();
-		await page.waitForTimeout(8000);
-		const after = await page.evaluate(() => ({ banner: !!document.querySelector('#sccm-banner:not([hidden])'), consent: window.SCCM.getConsent() }));
-		check('R3 a cookie with notes only is not a choice: the banner still shows', after.banner && after.consent === null, JSON.stringify(after));
-		check('R3 the same cookies are not reported twice (no second report after reload)', reports === 1, String(reports));
-		await page.click('#sccm-banner .sccm-btn--accept');
-		await page.waitForTimeout(800);
-		const chosen = await page.evaluate(() => {
-			const m = document.cookie.match(/(?:^|; )sccm_consent=([^;]+)/);
-			return { o: JSON.parse(decodeURIComponent(m[1])), api: window.SCCM.getConsent() };
-		});
-		check('R3 after a choice the cookie holds the choice and keeps the notes; SCCM.getConsent() shows only the choice', chosen.o.id && chosen.o.m === 'accept_all' && chosen.o.x && chosen.o.x.r && chosen.api && !('x' in chosen.api), JSON.stringify(chosen));
-		await context.close();
-	}
+	// Visitors' browsers never send cookie names: they hold extensions and other tools' cookies
+	// that the website does not set (production: Intercom, Hotjar, Microsoft Ads, Clarity).
+	const { context, page } = await newPage(browser);
+	await context.addCookies([{ name: 'some_unknown_cookie', value: '1', url: BASE }, { name: '_clck', value: 'ext', url: BASE }]);
+	let reports = 0;
+	page.on('request', (r) => { if (/sccm\/v1\/report|action=sccm_report/.test(r.url() + (r.postData() || ''))) reports++; });
+	await page.goto(BASE + '/');
+	await page.waitForTimeout(8000);
+	const state = await page.evaluate(() => {
+		const own = (s) => Object.keys(s).filter((k) => /^sccm/i.test(k));
+		return { own: own(sessionStorage).concat(own(localStorage)), config: Object.keys(window.SCCM_CONFIG.rest), scan: 'scan' in window.SCCM_CONFIG, known: 'known' in window.SCCM_CONFIG, sccmCookie: /(?:^|; )sccm_consent=/.test(document.cookie) };
+	});
+	check('R1 a visitor\'s browser sends no cookie names (no report request)', reports === 0, String(reports));
+	check('R1 the page config has no report address or scanner list', !state.config.includes('report') && !state.scan && !state.known, JSON.stringify(state));
+	check('R1 nothing is stored in the browser before a choice (no cookie, no storage keys)', !state.sccmCookie && state.own.length === 0, JSON.stringify(state));
+	await context.close();
 }
 
 await browser.close();
